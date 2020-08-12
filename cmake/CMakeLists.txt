@@ -36,4 +36,4 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 include (InstallRequiredSystemLibraries)
 
 add_subdirectory( blueprint )
-#add_subdirectory( blueprint_tests )
+add_subdirectory( blueprint_tests )

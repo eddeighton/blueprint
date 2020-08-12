@@ -1,14 +1,8 @@
 
-#include <fstream>
-#include <string>
-#include <sstream>
 
-#include <boost/filesystem.hpp>
+//#include "common/edsUnitTestWrapper.h"
 
-#include "common/edsUnitTestWrapper.h"
-#include "common/filepath.h"
-
-#include "parser/edFile.h"
+#include "ed/file.hpp"
 
 #include "blueprint/factory.h"
 #include "blueprint/toolbox.h"
@@ -16,11 +10,21 @@
 
 #include "core/serialisation.h"
 
+#include "common/file.hpp"
+
+#include <gtest/gtest.h>
+
+#include <boost/filesystem.hpp>
+
+#include <fstream>
+#include <string>
+#include <sstream>
+
 
 TEST( BlueprintTests, Check )
 {
-    const std::string strFile1 = "C:/WORKSPACE/Blueprint/data/test1.blu";
-    const std::string strFile2 = "C:/WORKSPACE/Blueprint/data/copies/test1.blu";
+    const std::string strFile1 = "../testdata/test1.blu";
+    const std::string strFile2 = "../testdata/test1.blu";
 
     Blueprint::Factory factory;
     Blueprint::Site::Ptr pTest = factory.load( strFile1 );
@@ -36,16 +40,17 @@ TEST( BlueprintTests, Check )
         boost::filesystem::absolute( strFile2 ) );
     ASSERT_TRUE( boost::filesystem::exists( path2 ) );
     
-    Parser::EdFile e1( path1.string() ), e2( path2.string() );
+    Ed::BasicFileSystem basicFS;
+    Ed::File e1( basicFS, path1.string() ), e2( basicFS, path2.string() );
     
-    ASSERT_EQ( e1.getContents(), e2.getContents() );
+    ASSERT_EQ( e1, e2 );
 
 }
 
 TEST( BlueprintTests, Check2 )
 {
-    const std::string strFile1 = "C:/WORKSPACE/Blueprint/data/test1.blu";
-    const std::string strFile2 = "C:/WORKSPACE/Blueprint/data/copies/test1.blu";
+    const std::string strFile1 = "../testdata/test1.blu";
+    const std::string strFile2 = "../testdata/test1.blu";
 
     Blueprint::Factory factory;
     Blueprint::Site::Ptr pTest = factory.load( strFile1 );
@@ -64,14 +69,16 @@ TEST( BlueprintTests, Check2 )
         boost::filesystem::absolute( strFile2 ) );
     ASSERT_TRUE( boost::filesystem::exists( path2 ) );
     
-    Parser::EdFile e1( path1.string() ), e2( path2.string() );
+    Ed::BasicFileSystem basicFS;
+    Ed::File e1( basicFS, path1.string() ), e2( basicFS, path2.string() );
     
-    ASSERT_EQ( e1.getContents(), e2.getContents() );
+    ASSERT_EQ( e1, e2 );
 
 }
 
 TEST( Serialisation, Points )
 {
+    using namespace Ed;
     wykobi::point2d< float > p = wykobi::make_point< float >( 123.567f, 321.765f );
     std::ostringstream os;
     os << p;
@@ -86,6 +93,7 @@ TEST( Serialisation, Points )
 
 TEST( Serialisation, Polygons )
 {
+    using namespace Ed;
     wykobi::polygon< float, 2 > p = wykobi::make_polygon< float >( 
         wykobi::make_circle< float >( 0.0f,0.0f,123.456f)  );
     std::ostringstream os;
