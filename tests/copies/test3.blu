@@ -1,0 +1,19 @@
+test3 Blueprint
+{
+	area_0 Area
+	{
+		area_5 Area
+		{
+			bottom Property(27.2971;)
+			left Property(8.54271;)
+			perimeter Property(1;)
+			right Property(24.5427;)
+			top Property(11.2971;)
+		}
+		bottom Property(-83.2064;)
+		left Property(-27.7845;)
+		perimeter Property(1;)
+		right Property(-11.7845;)
+		top Property(-99.2064;)
+	}
+}

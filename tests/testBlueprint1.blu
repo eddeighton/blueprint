@@ -1,0 +1,28 @@
+wholeThing Blueprint
+{
+	area1 Area
+	{
+		bottom Property(140;)
+		left Property(100;)
+		perimeter Property(1;)
+		right Property(180;)
+		text Property(This is some text;)
+		top Property(100;)
+	}
+	area2 Area
+	{
+		bottom Property(240;)
+		left Property(200;)
+		perimeter Property(2;)
+		right Property(280;)
+		text Property(This is some other text;)
+		top Property(200;)
+	}
+	thing Property(123;)
+	{
+		stuff Property(456;)
+		{
+			otherStuff Property(789;)
+		}
+	}
+}
