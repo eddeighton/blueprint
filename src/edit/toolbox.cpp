@@ -110,7 +110,7 @@ void Toolbox::recursiveLoad( const boost::filesystem::path& pathIter, const std:
     for( directory_iterator iter( pathIter ); iter != directory_iterator(); ++iter )
     {
         boost::filesystem::path pth = *iter;
-        if( is_regular_file( *iter ) && pth.extension().string() == "blu" )
+        if( is_regular_file( *iter ) && pth.extension().string() == ".blu" )
         {
             //load the file into the current palette
             Factory factory;
@@ -135,8 +135,9 @@ Toolbox::Toolbox( const std::string& strDirectoryPath )
 {
     //recursively load all blueprints under the root directory
     using namespace boost::filesystem;
+    VERIFY_RTE_MSG( exists( strDirectoryPath ), "Could not locate toolbox data path at: " << strDirectoryPath );
     path rootPath = canonical( absolute( strDirectoryPath ) );
-    VERIFY_RTE( exists( rootPath ) );
+    VERIFY_RTE_MSG( exists( rootPath ), "Path did not canonicalise properly: " << rootPath.string() );
     
     //generate defaults...
     Clip::Ptr pDefaultClip( new Clip( Site::Ptr(), "default" ) );

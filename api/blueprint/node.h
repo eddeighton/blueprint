@@ -163,6 +163,7 @@ private:
     PtrMap m_children;
     std::size_t m_iIndex;
     Timing::UpdateTick m_lastModifiedTick;
+    Ed::Node m_passThroughMetaData;
 };
 
 }

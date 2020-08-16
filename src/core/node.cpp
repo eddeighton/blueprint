@@ -1,10 +1,7 @@
 #include "blueprint/node.h"
 #include "blueprint/factory.h"
 
-#include "ed/node.hpp"
-
 #include "common/assert_verify.hpp"
-//#include "common/stl.h"
 
 #include <boost/optional.hpp>
 #include <boost/algorithm/string.hpp>
@@ -24,7 +21,8 @@ Node::Node( Node::Ptr pParent, const std::string& strName )
 Node::Node( Node::PtrCst pOriginal, Node::Ptr pNewParent, const std::string& strName )
     :   m_pParent( pNewParent ),
         m_strName( boost::to_lower_copy( strName ) ),
-        m_iIndex( pOriginal->m_iIndex )
+        m_iIndex( pOriginal->m_iIndex ),
+        m_passThroughMetaData( pOriginal->m_passThroughMetaData )
 {
 }
 
@@ -71,6 +69,10 @@ void Node::load( Node::Ptr pThis, Factory& factory, const Ed::Node& node )
             m_childrenOrdered.push_back( pNewNode );
             m_children.insert( std::make_pair( i->statement.declarator.identifier.get(), pNewNode ) );
         }
+        else
+        {
+            m_passThroughMetaData.children.push_back( *i ); //deep copy
+        }
     }
     setModified();
 }
@@ -85,6 +87,14 @@ void Node::save( Ed::Node& node ) const
         n.statement.declarator.identifier = (*i)->getName();
         (*i)->save( n );
         node.children.push_back( n );
+    }
+    
+    //save meta data
+    for( Ed::Node::Vector::const_iterator 
+        i = m_passThroughMetaData.children.begin(), 
+        iEnd = m_passThroughMetaData.children.end(); i!=iEnd; ++i )
+    {
+        node.children.push_back( *i );
     }
 }
 
