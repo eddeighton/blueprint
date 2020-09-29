@@ -59,13 +59,8 @@ public:
     virtual void set( float fX, float fY ){}
     virtual bool canEdit() const { return false; }
     
-    virtual bool canEditWithTool( const GlyphSpecProducer* pGlyphPrd, unsigned int uiToolType ) const { return false; }
+    //CmdTarget
     virtual void getCmds( CmdInfo::List& cmds ) const{};
-    virtual void getTools( ToolInfo::List& tools ) const{};
-    virtual IInteraction::Ptr beginToolDraw( unsigned int uiTool, float x, float y, float qX, float qY, boost::shared_ptr< Site > pClip ){ return IInteraction::Ptr(); }
-    virtual IInteraction::Ptr beginTool( unsigned int uiTool, float x, float y, float qX, float qY, 
-        GlyphSpecProducer* pHit, const std::set< GlyphSpecProducer* >& selection ){ return IInteraction::Ptr(); }
-
     
     virtual void getContour( FloatPairVector& contour ) { ASSERT( false ); }
 };
@@ -96,7 +91,7 @@ public:
     virtual bool canEvaluate( const Site::PtrVector& evaluated ) const;
     virtual EvaluationResult evaluate( DataBitmap& data );
     
-    void init( float x, float y );
+    void init( float x, float y, bool bEmptyContour );
     virtual void init();
     virtual Node::Ptr copy( Node::Ptr pParent, const std::string& strName ) const;
     virtual void load( Factory& factory, const Ed::Node& node );
@@ -138,22 +133,8 @@ public:
         eSomeCmd,
         TOTAL_CMDS
     };
-    enum eTools
-    {
-        ePerimeterWidth,
-        eBrush,
-        eBoundary,
-        ePoly,
-        TOTAL_TOOLS
-    };
     
-    virtual bool canEditWithTool( const GlyphSpecProducer* pGlyphPrd, unsigned int uiToolType ) const;
     virtual void getCmds( CmdInfo::List& cmds ) const;
-    virtual void getTools( ToolInfo::List& tools ) const;
-
-    virtual IInteraction::Ptr beginToolDraw( unsigned int uiTool, float x, float y, float qX, float qY, Site::Ptr pClip );
-    virtual IInteraction::Ptr beginTool( unsigned int uiTool, float x, float y, float qX, float qY, 
-        GlyphSpecProducer* pHit, const std::set< GlyphSpecProducer* >& selection );
 
     const ContourPointVector& getBoundaries() const { return m_boundaryPoints; }
     

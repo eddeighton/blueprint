@@ -31,6 +31,7 @@ Clip::Clip( PtrCst pOriginal, Node::Ptr pParent, const std::string& strName )
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
+/*
 class PerimeterWidth_Interaction : public IInteraction
 {
     friend class Area;
@@ -65,9 +66,10 @@ private:
     float m_startX, m_startY, m_fPerimeter;
     InitialValueVector m_initialValues;
 };
-
+*/
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
+/*
 class Brush_Interaction : public IInteraction
 {
     friend class Area;
@@ -101,93 +103,7 @@ private:
     PointVector m_points;
     InitialValueVector m_initialValues;
 };
-
-
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-class Boundary_Interaction : public IInteraction
-{
-    friend class Area;
-public:
-    /*
-    struct InitialValue
-    {
-        float x,y;
-        InitialValue( float _x, float _y ) : x( _x ), y( _y ) {}
-    };
-    typedef std::vector< InitialValue > InitialValueVector;
-    */
-private:
-    Boundary_Interaction( Area& area, float x, float y, float qX, float qY )
-        :   m_area( area ),
-            m_qX( qX ),
-            m_qY( qY ),
-            m_pBoundaryPoint( new Feature_ContourSegment( area.m_pContour, area.m_pContour->generateNewNodeName( "boundary" ) ) )
-    {
-        m_startX = x = Math::quantize_roundUp( x, qX );
-        m_startY = y = Math::quantize_roundUp( y, qY );
-        VERIFY_RTE( area.m_pContour->add( m_pBoundaryPoint ) );
-        m_area.m_boundaryPoints.push_back( m_pBoundaryPoint );
-        
-        const wykobi::point2d< float >& origin = m_area.m_pContour->get()[0];
-        OnMove( x, y );
-    }
-    
-public:
-    virtual void OnMove( float x, float y )
-    {
-        float fDeltaX = Math::quantize_roundUp( x, m_qX );
-        float fDeltaY = Math::quantize_roundUp( y, m_qY );
-
-        const wykobi::point2d< float >& origin = m_area.m_pContour->get()[0];
-        m_pBoundaryPoint->set( 0, fDeltaX - origin.x, fDeltaY - origin.y );
-    }
-
-private:
-    Area& m_area;
-    Feature_ContourSegment::Ptr m_pBoundaryPoint;
-    float m_startX, m_startY, m_qX, m_qY;
-};
-
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-class Polygon_Interaction : public IInteraction
-{
-    friend class Area;
-private:
-    Polygon_Interaction( Area& area, float x, float y, float qX, float qY )
-        :   m_area( area ),
-            m_qX( qX ),
-            m_qY( qY )
-    {
-        const wykobi::point2d< float >& origin = m_area.m_pContour->get()[0];
-        m_startX = x = Math::quantize_roundUp( x, qX );
-        m_startY = y = Math::quantize_roundUp( y, qY );
-
-        Feature_Contour::Ptr pContour = area.m_pContour;
-
-        wykobi::polygon< float, 2 > poly = pContour->get();
-        m_iPointIndex = poly.size();
-        poly.push_back( wykobi::make_point< float >( m_startX, m_startY ) );
-        area.m_pContour->set( poly );
-
-        OnMove( x, y );
-    }
-    
-public:
-    virtual void OnMove( float x, float y )
-    {
-        const float fDeltaX = Math::quantize_roundUp( x, m_qX );
-        const float fDeltaY = Math::quantize_roundUp( y, m_qY );
-
-        m_area.m_pContour->set( m_iPointIndex, fDeltaX, fDeltaY  );
-    }
-
-private:
-    Area& m_area;
-    float m_startX, m_startY, m_qX, m_qY;
-    int m_iPointIndex;
-};
+*/
 
 
 
@@ -229,8 +145,15 @@ Node::Ptr Area::copy( Node::Ptr pParent, const std::string& strName ) const
         boost::dynamic_pointer_cast< const Area >( shared_from_this() ), pSiteParent, strName );
 }
 
-void Area::init( float x, float y )
+void Area::init( float x, float y, bool bEmptyContour )
 {
+    if( bEmptyContour )
+    {
+        m_pContour = Feature_Contour::Ptr( new Feature_Contour( shared_from_this(), "contour" ) );
+        m_pContour->init();
+        add( m_pContour );
+    }
+    
     init();
 
     m_ptOrigin.x = Map_FloorAverage()( x );
@@ -403,7 +326,7 @@ void Area::getContour( FloatPairVector& contour )
         }
     }
 }
-
+/*
 bool Area::canEditWithTool( const GlyphSpecProducer* pGlyphPrd, unsigned int uiToolType ) const
 {
     bool bCanEdit = false;
@@ -436,66 +359,11 @@ bool Area::canEditWithTool( const GlyphSpecProducer* pGlyphPrd, unsigned int uiT
         }
     }
     return bCanEdit;
-}
+}*/
 
 void Area::getCmds( CmdInfo::List& cmds ) const
 {
     cmds.push_back( CmdTarget::CmdInfo( "SomeCmd", eSomeCmd ) );
-}
-
-void Area::getTools( ToolInfo::List& tools ) const
-{
-    //tools.push_back( CmdTarget::ToolInfo( "Perimeter Width", ePerimeterWidth ) );
-    //tools.push_back( CmdTarget::ToolInfo( "Brush", eBrush ) );
-    tools.push_back( CmdTarget::ToolInfo( "Boundary", eBoundary ) );
-    tools.push_back( CmdTarget::ToolInfo( "Polygon", ePoly ) );
-}
-
-IInteraction::Ptr Area::beginToolDraw( unsigned int uiTool, float x, float y, float qX, float qY, Site::Ptr pClip )
-{
-    IInteraction::Ptr pInteraction;
-    switch( uiTool )
-    {
-        case ePerimeterWidth:
-            //pInteraction.reset( new PerimeterWidth_Interaction( *this, x, y ) );
-            break;
-        case eBrush:
-            //pInteraction.reset( new Brush_Interaction( *this, x, y, qX, qY ) );
-            break;
-        case eBoundary:
-            pInteraction.reset( new Boundary_Interaction( *this, x, y, qX, qY ) );
-            break;
-        case ePoly:
-            pInteraction.reset( new Polygon_Interaction( *this, x, y, qX, qY ) );
-            break;
-        default:
-            break;
-    }
-    return pInteraction;
-}
-
-IInteraction::Ptr Area::beginTool( unsigned int uiTool, float x, float y, float qX, float qY, 
-    GlyphSpecProducer* pHit, const std::set< GlyphSpecProducer* >& selection )
-{
-    IInteraction::Ptr pInteraction;
-    switch( uiTool )
-    {
-        case ePerimeterWidth:
-            //pInteraction.reset( new PerimeterWidth_Interaction( *this, x, y ) );
-            break;
-        case eBrush:
-            //pInteraction.reset( new Brush_Interaction( *this, x, y, qX, qY ) );
-            break;
-        case eBoundary:
-            pInteraction.reset( new Boundary_Interaction( *this, x, y, qX, qY ) );
-            break;
-        case ePoly:
-            pInteraction.reset( new Polygon_Interaction( *this, x, y, qX, qY ) );
-            break;
-        default:
-            break;
-    }
-    return pInteraction;
 }
 
 }

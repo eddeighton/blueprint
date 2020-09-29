@@ -146,6 +146,21 @@ Toolbox::Toolbox( const std::string& strDirectoryPath )
     add( "clipboard", pDefaultClip, true );
 
     recursiveLoad( rootPath, pathToName( rootPath ) );
+    
+    //attempt to load the config file if it exists
+    const path configFile = rootPath / "config.ed";
+    if( exists( configFile ) )
+    {
+        Ed::BasicFileSystem filesystem;
+        Ed::File edConfigFile( filesystem, configFile.string() );
+        edConfigFile.expandShorthand();
+        edConfigFile.removeTypes();
+        edConfigFile.toNode( m_config );
+    }
+    else
+    {
+        THROW_RTE( "Failed to locate file: " << configFile.string() );
+    }
 }
 
 Site::Ptr Toolbox::getCurrentItem() const

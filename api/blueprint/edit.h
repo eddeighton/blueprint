@@ -24,18 +24,26 @@ class IEditContext
 public:
     enum ToolType
     {
-        eSelect =   100000,
-        eDraw =     100001
+        eSelect,
+        eDraw
     };
+    
+    enum ToolMode
+    {
+        eArea,
+        eContour,
+        eConnection
+    };
+    
     virtual ~IEditContext(){}
-    virtual IInteraction::Ptr interaction_start( float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection ) = 0;
-    virtual IInteraction::Ptr interaction_draw( float x, float y, float qX, float qY, Site::Ptr pSite ) = 0;
-    virtual IInteraction::Ptr interaction_tool( float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection, unsigned int uiToolID ) = 0;
-    virtual IInteraction::Ptr interaction_tool_draw( float x, float y, float qX, float qY, Site::Ptr pSite, unsigned int uiToolID ) = 0;
+    virtual IInteraction::Ptr interaction_start( ToolMode toolMode, float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection ) = 0;
+    virtual IInteraction::Ptr interaction_draw( ToolMode toolMode, float x, float y, float qX, float qY, Site::Ptr pSite ) = 0;
     virtual IEditContext* getNestedContext( const std::vector< IGlyph* >& candidates ) = 0;
     virtual IEditContext* getParent() = 0;
+    virtual bool isSiteContext( Site::Ptr pSite ) const = 0;
+    virtual IEditContext* getSiteContext( Site::Ptr pSite ) = 0;
     virtual const GlyphSpec* getImageSpec() const = 0;
-    virtual bool canEdit( IGlyph* pGlyph, unsigned int uiToolType ) const = 0;
+    virtual bool canEdit( IGlyph* pGlyph, ToolType toolType, ToolMode toolMode ) const = 0;
     
     virtual void cmd_delete( const std::set< IGlyph* >& selection ) = 0;
     virtual Node::Ptr cmd_cut( const std::set< IGlyph* >& selection ) = 0;
@@ -47,7 +55,6 @@ public:
     virtual void cmd_redo()=0;
 
     virtual void getCmds( CmdTarget::CmdInfo::List& cmds ) const = 0;
-    virtual void getTools( CmdTarget::ToolInfo::List& tools ) const = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -65,14 +72,14 @@ public:
     static Edit::Ptr create( GlyphFactory& glyphFactory, Site::Ptr pSite, const std::string& strFilePath = std::string() );
 
     //IEditContext
-    virtual IInteraction::Ptr interaction_start( float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection );
-    virtual IInteraction::Ptr interaction_draw( float x, float y, float qX, float qY, Site::Ptr pSite );
-    virtual IInteraction::Ptr interaction_tool( float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection, unsigned int uiToolID );
-    virtual IInteraction::Ptr interaction_tool_draw( float x, float y, float qX, float qY, Site::Ptr pSite, unsigned int uiToolID );
+    virtual IInteraction::Ptr interaction_start( ToolMode toolMode, float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection );
+    virtual IInteraction::Ptr interaction_draw( ToolMode toolMode, float x, float y, float qX, float qY, Site::Ptr pSite );
 
     virtual IEditContext* getNestedContext( const std::vector< IGlyph* >& candidates );
     virtual IEditContext* getParent() { return 0u; }
-    virtual bool canEdit( IGlyph* pGlyph, unsigned int uiToolType ) const;
+    virtual bool isSiteContext( Site::Ptr pSite ) const { return pSite == m_pSite; }
+    virtual IEditContext* getSiteContext( Site::Ptr pSite );
+    virtual bool canEdit( IGlyph* pGlyph, ToolType toolType, ToolMode toolMode ) const;
     virtual const GlyphSpec* getImageSpec() const { return 0u; }
     
     void interaction_evaluate();
@@ -95,7 +102,8 @@ public:
     void setFilePath( const std::string& strFilePath ) { m_strFilePath = strFilePath; }
     
     virtual void getCmds( CmdTarget::CmdInfo::List& cmds ) const;
-    virtual void getTools( CmdTarget::ToolInfo::List& tools ) const;
+    
+    Site::Ptr getSite() const { return m_pSite; }
 protected:
     IInteraction::Ptr cmd_paste( Site::PtrVector sites, float x, float y, float qX, float qY );
 

@@ -20,6 +20,7 @@ namespace Blueprint
 class DataBitmap;
 
 class Factory;
+class Site;
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 class IInteraction : public boost::enable_shared_from_this< IInteraction >
@@ -28,6 +29,7 @@ public:
     typedef boost::shared_ptr< IInteraction > Ptr;
     virtual ~IInteraction(){}
     virtual void OnMove( float x, float y ) = 0;
+    virtual boost::shared_ptr< Site > GetInteractionSite() const = 0;
 };
 
 class Site;
@@ -45,23 +47,7 @@ public:
         std::string strName;
         unsigned int uiCmdID;
     };
-    struct ToolInfo
-    {
-        typedef std::list< ToolInfo > List;
-        ToolInfo( const std::string& _strName, unsigned int _uiCmdID )
-            : strName( _strName ), uiToolID( _uiCmdID )
-        {}
-        std::string strName;
-        unsigned int uiToolID;
-    };
     virtual void getCmds( CmdInfo::List& cmds ) const=0;
-    virtual void getTools( ToolInfo::List& tools ) const=0;
-    
-    virtual IInteraction::Ptr beginToolDraw( unsigned int uiTool, float x, float y, float qX, float qY, boost::shared_ptr< Site > pClip )=0;
-    virtual IInteraction::Ptr beginTool( unsigned int uiTool, float x, float y, float qX, float qY, 
-        GlyphSpecProducer* pHit, const std::set< GlyphSpecProducer* >& selection )=0;
-
-    virtual bool canEditWithTool( const GlyphSpecProducer* pGlyphPrd, unsigned int uiToolType ) const=0;
 };
 
 

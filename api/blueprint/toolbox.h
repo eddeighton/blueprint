@@ -5,6 +5,8 @@
 
 #include "common/tick.hpp"
 
+#include "ed/node.hpp"
+
 #include <boost/shared_ptr.hpp>
 
 #include <string>
@@ -67,12 +69,35 @@ public:
             boost::bind( &Toolbox::add, this, boost::ref( strName ), _1, bSelect ) );
     }
     void remove( Palette::Ptr pPalette );
+    
+    template< typename TValue >
+    void getConfigValue( const std::string& strKey, TValue& value )
+    {
+        static std::map< std::string, TValue > cache;
+        
+        std::map< std::string, TValue >::const_iterator iFind = cache.find( strKey );
+        if( iFind != cache.end() )
+        {
+            value = iFind->second;
+            return;
+        }
+        
+        boost::optional< const Ed::Node& > findResult = 
+            Ed::find( m_config, strKey );
+        Ed::IShorthandStream is( findResult.get().statement.shorthand.get() );
+        is >> value;
+        
+        cache.insert( std::make_pair( strKey, value ) );
+    }
+    
 private:
     void recursiveLoad( const boost::filesystem::path& pathIter, const std::string& strCurrent );
 private:
     Palette::PtrMap m_palettes;
     std::string m_strRootDirectory;
     Palette::Ptr m_pCurrentPalette;
+    
+    Ed::Node m_config;
 };
 
 

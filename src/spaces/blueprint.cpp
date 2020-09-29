@@ -433,32 +433,8 @@ Blueprint::EvaluationResult Blueprint::evaluate( DataBitmap& data )
     return result;
 }
 
-bool Blueprint::canEditWithTool( const GlyphSpecProducer* pGlyphPrd, unsigned int uiToolType ) const
-{
-    if( uiToolType == IEditContext::eSelect || 
-        uiToolType == IEditContext::eDraw )
-        return true;
-    else
-        return false;
-}
-
 void Blueprint::getCmds( CmdInfo::List& cmds ) const
 {
-}
-
-void Blueprint::getTools( ToolInfo::List& tools ) const
-{
-}
-
-IInteraction::Ptr Blueprint::beginToolDraw( unsigned int uiTool, float x, float y, float qX, float qY, boost::shared_ptr< Site > pClip )
-{
-    return IInteraction::Ptr();
-}
-
-IInteraction::Ptr Blueprint::beginTool( unsigned int uiTool, float x, float y, float qX, float qY, 
-    GlyphSpecProducer* pHit, const std::set< GlyphSpecProducer* >& selection )
-{
-    return IInteraction::Ptr();
 }
 
 namespace

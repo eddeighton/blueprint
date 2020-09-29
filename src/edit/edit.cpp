@@ -32,13 +32,20 @@ public:
     typedef std::vector< InitialValue > InitialValueVector;
 
 private:
-    Interaction( Edit& edit, float x, float y, float qX, float qY, IGlyph::Ptr pHitGlyph, const IGlyph::PtrSet& selection );
+    Interaction( Edit& edit, IEditContext::ToolMode toolMode, 
+        float x, float y, float qX, float qY, 
+        IGlyph::Ptr pHitGlyph, const IGlyph::PtrSet& selection );
     
 public:
     virtual void OnMove( float x, float y );
+    virtual Site::Ptr GetInteractionSite() const
+    {
+        return m_edit.getSite();
+    }
 
 private:
     Edit& m_edit;
+    const IEditContext::ToolMode m_toolMode;
     float m_startX, m_startY, m_qX, m_qY;
     InitialValueVector m_initialValues;
     IGlyph::Ptr m_pHitGlyph;
@@ -46,8 +53,11 @@ private:
 };
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
-Interaction::Interaction( Edit& edit, float x, float y, float qX, float qY, IGlyph::Ptr pHitGlyph, const IGlyph::PtrSet& totalSelection )
+Interaction::Interaction( Edit& edit, IEditContext::ToolMode toolMode, 
+                float x, float y, float qX, float qY, 
+                IGlyph::Ptr pHitGlyph, const IGlyph::PtrSet& totalSelection )
     :   m_edit( edit ),
+        m_toolMode( toolMode ),
         m_startX( x ),
         m_startY( y ),
         m_qX( qX ),
@@ -60,10 +70,10 @@ Interaction::Interaction( Edit& edit, float x, float y, float qX, float qY, IGly
     {
         IGlyph::Ptr pGlyph = *i;
         //determine whether the glyph belongs to the current edit context...
-        if( m_edit.canEdit( pGlyph.get(), IEditContext::eSelect ) )
+        if( m_edit.canEdit( pGlyph.get(), IEditContext::eSelect, m_toolMode ) )
             selection.insert( pGlyph );
     }
-    if( pHitGlyph && m_edit.canEdit( pHitGlyph.get(), IEditContext::eSelect ) )
+    if( pHitGlyph && m_edit.canEdit( pHitGlyph.get(), IEditContext::eSelect, m_toolMode ) )
         selection.insert( pHitGlyph );
 
     if( !selection.empty() )
@@ -73,7 +83,7 @@ Interaction::Interaction( Edit& edit, float x, float y, float qX, float qY, IGly
         {
             if( GlyphImage* p = dynamic_cast< GlyphImage* >( i->get() ) )
             {
-                if( m_edit.canEdit( p, IEditContext::eSelect ) )
+                if( m_edit.canEdit( p, IEditContext::eSelect, m_toolMode ) )
                 {
                     m_interacted.push_back( *i );
                     m_initialValues.push_back( InitialValue( p->getImageSpec()->getX(), p->getImageSpec()->getY() ) );
@@ -85,7 +95,7 @@ Interaction::Interaction( Edit& edit, float x, float y, float qX, float qY, IGly
         {
             if( GlyphControlPoint* p = dynamic_cast< GlyphControlPoint* >( i->get() ) )
             {
-                if( m_edit.canEdit( p, IEditContext::eSelect ) )
+                if( m_edit.canEdit( p, IEditContext::eSelect, m_toolMode ) )
                 {
                     m_interacted.push_back( *i );
                     m_initialValues.push_back( InitialValue( p->getControlPoint()->getX(), p->getControlPoint()->getY() ) );
@@ -133,11 +143,101 @@ public:
         m_pToolInteraction->OnMove( x, y );
         m_edit.interaction_evaluate();
     }
+    virtual Site::Ptr GetInteractionSite() const
+    {
+        return m_edit.getSite();
+    }
 
 private:
     Edit& m_edit;
     IInteraction::Ptr m_pToolInteraction;
 };
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+class Boundary_Interaction : public IInteraction
+{
+    friend class Edit;
+private:
+    Boundary_Interaction( Area& area, float x, float y, float qX, float qY )
+        :   m_area( area ),
+            m_qX( qX ),
+            m_qY( qY ),
+            m_pBoundaryPoint( new Feature_ContourSegment( area.m_pContour, area.m_pContour->generateNewNodeName( "boundary" ) ) )
+    {
+        m_startX = x = Math::quantize_roundUp( x, qX );
+        m_startY = y = Math::quantize_roundUp( y, qY );
+        VERIFY_RTE( area.m_pContour->add( m_pBoundaryPoint ) );
+        m_area.m_boundaryPoints.push_back( m_pBoundaryPoint );
+        
+        const wykobi::point2d< float >& origin = m_area.m_pContour->get()[0];
+        OnMove( x, y );
+    }
+    
+public:
+    virtual void OnMove( float x, float y )
+    {
+        float fDeltaX = Math::quantize_roundUp( x, m_qX );
+        float fDeltaY = Math::quantize_roundUp( y, m_qY );
+
+        const wykobi::point2d< float >& origin = m_area.m_pContour->get()[0];
+        m_pBoundaryPoint->set( 0, fDeltaX - origin.x, fDeltaY - origin.y );
+    }
+    virtual Site::Ptr GetInteractionSite() const
+    {
+        return m_area.shared_from_this();
+    }
+
+private:
+    Area& m_area;
+    Feature_ContourSegment::Ptr m_pBoundaryPoint;
+    float m_startX, m_startY, m_qX, m_qY;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+class Polygon_Interaction : public IInteraction
+{
+    friend class Edit;
+private:
+    Polygon_Interaction( Area& area, float x, float y, float qX, float qY )
+        :   m_area( area ),
+            m_qX( qX ),
+            m_qY( qY )
+    {
+        m_startX = x = Math::quantize_roundUp( x, qX );
+        m_startY = y = Math::quantize_roundUp( y, qY );
+
+        Feature_Contour::Ptr pContour = area.m_pContour;
+
+        wykobi::polygon< float, 2 > poly = pContour->get();
+        m_iPointIndex = poly.size();
+        poly.push_back( wykobi::make_point< float >( m_startX, m_startY ) );
+        area.m_pContour->set( poly );
+
+        OnMove( x, y );
+    }
+    
+public:
+    virtual void OnMove( float x, float y )
+    {
+        const float fDeltaX = Math::quantize_roundUp( x, m_qX );
+        const float fDeltaY = Math::quantize_roundUp( y, m_qY );
+
+        m_area.m_pContour->set( m_iPointIndex, fDeltaX, fDeltaY  );
+    }
+    virtual Site::Ptr GetInteractionSite() const
+    {
+        return m_area.shared_from_this();
+    }
+
+private:
+    Area& m_area;
+    float m_startX, m_startY, m_qX, m_qY;
+    int m_iPointIndex;
+};
+
+
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 class SpaceGlyphs : public Edit
@@ -158,7 +258,6 @@ public:
     bool owns( IGlyph* pGlyph ) const;
     bool owns( const GlyphSpec* pGlyphSpec ) const;
     IGlyph::Ptr getMainGlyph() const { return m_pImageGlyph; }
-    //virtual bool canEdit( IGlyph* pGlyph, unsigned int uiToolType ) const;
     virtual void cmd_delete( const std::set< IGlyph* >& selection );
     
     virtual GlyphSpecProducer* fromGlyph( IGlyph* pGlyph ) const;
@@ -254,7 +353,7 @@ Edit::Ptr Edit::create( GlyphFactory& glyphFactory, Site::Ptr pSite, const std::
     return pNewEdit;
 }
 
-IInteraction::Ptr Edit::interaction_start( float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection )
+IInteraction::Ptr Edit::interaction_start( ToolMode toolMode, float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection )
 {
     ASSERT( !m_pActiveInteraction );
     
@@ -266,81 +365,131 @@ IInteraction::Ptr Edit::interaction_start( float x, float y, float qX, float qY,
         selectionShared.insert( pGlyph->shared_from_this() );
     }
     IGlyph::Ptr pHit = pHitGlyph ? pHitGlyph->shared_from_this() : IGlyph::Ptr();
-    m_pActiveInteraction = new Interaction( *this, x, y, qX, qY, pHit, selectionShared );
+    m_pActiveInteraction = new Interaction( *this, toolMode, x, y, qX, qY, pHit, selectionShared );
     return IInteraction::Ptr( m_pActiveInteraction, boost::bind( &Edit::interaction_end, this, _1 ) );
 }
 
-IInteraction::Ptr Edit::interaction_draw( float x, float y, float qX, float qY, Site::Ptr pSite )
+IInteraction::Ptr Edit::interaction_draw( ToolMode toolMode, float x, float y, float qX, float qY, Site::Ptr pSite )
 {
     ASSERT( !m_pActiveInteraction );
     
-    x = Math::quantize_roundUp( x , qX );
-    y = Math::quantize_roundUp( y , qY );
-
-    //generate space name    
-    Site::PtrSet newSites;
-    if( boost::dynamic_pointer_cast< Clip >( pSite ) || 
-        boost::dynamic_pointer_cast< Blueprint >( pSite ) )
+    if( toolMode == IEditContext::eContour )
     {
-        //determine the centroid of the clip and offset accordingly
-        std::vector< wykobi::point2d< float > > points;
-        wykobi::point2d< float > ptAverage = wykobi::make_point( 0.0f, 0.0f );
-        for( Node::PtrVector::const_iterator 
-            i = pSite->getChildren().begin(),
-            iEnd = pSite->getChildren().end(); i!=iEnd; ++i )
+        x = Math::quantize_roundUp( x , qX );
+        y = Math::quantize_roundUp( y , qY );
+        
+        if( Area* pArea = dynamic_cast< Area* >( m_pSite.get() ) )
         {
-            if( Site::Ptr pClipSite = boost::dynamic_pointer_cast< Site >( *i ) )
-            {
-                Site::Ptr pClipSiteCopy = 
-                    boost::dynamic_pointer_cast< Site >( pClipSite->copy( m_pSite, 
-                        m_pSite->generateNewNodeName( "area" ) ) );
-                m_pSite->add( pClipSiteCopy );
-                newSites.insert( pClipSiteCopy );
-                ptAverage.x += pClipSiteCopy->getX();
-                ptAverage.y += pClipSiteCopy->getY();
-            } 
+            IInteraction::Ptr pToolInteraction( new Polygon_Interaction( *pArea, x, y, qX, qY ) );
+            interaction_evaluate();
+            m_pActiveInteraction = new InteractionToolWrapper( *this, pToolInteraction );
+            return IInteraction::Ptr( m_pActiveInteraction, boost::bind( &Edit::interaction_end, this, _1 ) );
         }
-        ptAverage.x /= static_cast< float >( newSites.size() );
-        ptAverage.y /= static_cast< float >( newSites.size() );
-        ptAverage.x = Math::quantize_roundUp( ptAverage.x , qX );
-        ptAverage.y = Math::quantize_roundUp( ptAverage.y , qY );
+        else
+        {
+            //create new area
+            Area::Ptr pNewSite( new Area( m_pSite, m_pSite->generateNewNodeName( "area" ) ) );
+            pNewSite->init( x, y, true );
+            m_pSite->add( pNewSite );
+            interaction_evaluate();
+            
+            Edit* pNewEdit = dynamic_cast< Edit* >( getSiteContext( pNewSite ) );
+            ASSERT( pNewEdit );
+
+            IInteraction::Ptr pToolInteraction( new Polygon_Interaction( *pNewSite, 0, 0, qX, qY ) );
+            pNewEdit->m_pActiveInteraction = new InteractionToolWrapper( *pNewEdit, pToolInteraction );
+            pNewEdit->interaction_evaluate();
+            return IInteraction::Ptr( pNewEdit->m_pActiveInteraction, boost::bind( &Edit::interaction_end, pNewEdit, _1 ) );
+        }
+    }
+    else if( toolMode == IEditContext::eConnection )
+    {
+        x = Math::quantize_roundUp( x , qX );
+        y = Math::quantize_roundUp( y , qY );
+        
+        if( Area* pArea = dynamic_cast< Area* >( m_pSite.get() ) )
+        {
+            IInteraction::Ptr pToolInteraction( new Boundary_Interaction( *pArea, x, y, qX, qY ) );
+            interaction_evaluate();
+            m_pActiveInteraction = new InteractionToolWrapper( *this, pToolInteraction );
+            return IInteraction::Ptr( m_pActiveInteraction, boost::bind( &Edit::interaction_end, this, _1 ) );
+        }
+    }
+    else if( toolMode == IEditContext::eArea )
+    {
+        x = Math::quantize_roundUp( x , qX );
+        y = Math::quantize_roundUp( y , qY );
+
+        //generate space name    
+        Site::PtrSet newSites;
+        if( boost::dynamic_pointer_cast< Clip >( pSite ) || 
+            boost::dynamic_pointer_cast< Blueprint >( pSite ) )
+        {
+            //determine the centroid of the clip and offset accordingly
+            std::vector< wykobi::point2d< float > > points;
+            wykobi::point2d< float > ptAverage = wykobi::make_point( 0.0f, 0.0f );
+            for( Node::PtrVector::const_iterator 
+                i = pSite->getChildren().begin(),
+                iEnd = pSite->getChildren().end(); i!=iEnd; ++i )
+            {
+                if( Site::Ptr pClipSite = boost::dynamic_pointer_cast< Site >( *i ) )
+                {
+                    Site::Ptr pClipSiteCopy = 
+                        boost::dynamic_pointer_cast< Site >( pClipSite->copy( m_pSite, 
+                            m_pSite->generateNewNodeName( "area" ) ) );
+                    m_pSite->add( pClipSiteCopy );
+                    newSites.insert( pClipSiteCopy );
+                    ptAverage.x += pClipSiteCopy->getX();
+                    ptAverage.y += pClipSiteCopy->getY();
+                } 
+            }
+            ptAverage.x /= static_cast< float >( newSites.size() );
+            ptAverage.y /= static_cast< float >( newSites.size() );
+            ptAverage.x = Math::quantize_roundUp( ptAverage.x , qX );
+            ptAverage.y = Math::quantize_roundUp( ptAverage.y , qY );
+            for( Site::PtrSet::iterator i = newSites.begin(),
+                iEnd = newSites.end(); i!=iEnd; ++i )
+            {
+                Site::Ptr pClipSiteCopy = *i;
+                pClipSiteCopy->set( 
+                    pClipSiteCopy->getX() + x - ptAverage.x, 
+                    pClipSiteCopy->getY() + y - ptAverage.y );
+            }
+        }
+        else if( Area::Ptr pArea = boost::dynamic_pointer_cast< Area >( pSite ) )
+        {
+            Area::Ptr pNewSite = 
+                boost::dynamic_pointer_cast< Area >( pArea->copy( m_pSite, 
+                    m_pSite->generateNewNodeName( "area" ) ) );
+            pNewSite->init( x, y, false );
+            m_pSite->add( pNewSite );
+            newSites.insert( pNewSite );
+        }
+
+        m_pSite->init();
+
+        interaction_evaluate();
+        
+        IGlyph::PtrSet selection;
         for( Site::PtrSet::iterator i = newSites.begin(),
             iEnd = newSites.end(); i!=iEnd; ++i )
         {
-            Site::Ptr pClipSiteCopy = *i;
-            pClipSiteCopy->set( 
-                pClipSiteCopy->getX() + x - ptAverage.x, 
-                pClipSiteCopy->getY() + y - ptAverage.y );
+            SiteMap::iterator iFind = m_glyphMap.find( *i );
+            if( iFind != m_glyphMap.end() )
+                selection.insert( iFind->second->getMainGlyph() );
         }
+
+        m_pActiveInteraction = new Interaction( *this, toolMode, x, y, qX, qY, IGlyph::Ptr(), selection );
+        m_pActiveInteraction->OnMove( x, y );
+        return IInteraction::Ptr( m_pActiveInteraction, boost::bind( &Edit::interaction_end, this, _1 ) );
+            
     }
-    else if( Area::Ptr pArea = boost::dynamic_pointer_cast< Area >( pSite ) )
+    else
     {
-        Area::Ptr pNewSite = 
-            boost::dynamic_pointer_cast< Area >( pArea->copy( m_pSite, 
-                m_pSite->generateNewNodeName( "area" ) ) );
-        pNewSite->init( x, y );
-        m_pSite->add( pNewSite );
-        newSites.insert( pNewSite );
+        THROW_RTE( "Unknown tool mode" );
     }
-
-    m_pSite->init();
-
-    interaction_evaluate();
-    
-    IGlyph::PtrSet selection;
-    for( Site::PtrSet::iterator i = newSites.begin(),
-        iEnd = newSites.end(); i!=iEnd; ++i )
-    {
-        SiteMap::iterator iFind = m_glyphMap.find( *i );
-        if( iFind != m_glyphMap.end() )
-            selection.insert( iFind->second->getMainGlyph() );
-    }
-
-    m_pActiveInteraction = new Interaction( *this, x, y, qX, qY, IGlyph::Ptr(), selection );
-    m_pActiveInteraction->OnMove( x, y );
-    return IInteraction::Ptr( m_pActiveInteraction, boost::bind( &Edit::interaction_end, this, _1 ) );
 }
-
+/*
 IInteraction::Ptr Edit::interaction_tool( float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection, unsigned int uiToolID )
 {
     IInteraction::Ptr pNewInteraction;
@@ -383,7 +532,7 @@ IInteraction::Ptr Edit::interaction_tool_draw( float x, float y, float qX, float
         return IInteraction::Ptr();
     }
 }
-
+*/
 IEditContext* Edit::getNestedContext( const std::vector< IGlyph* >& candidates )
 {
     IEditContext* pEditContext = 0u;
@@ -407,15 +556,48 @@ IEditContext* Edit::getNestedContext( const std::vector< IGlyph* >& candidates )
     return pEditContext;
 }
 
-bool Edit::canEdit( IGlyph* pGlyph, unsigned int uiToolType ) const
+IEditContext* Edit::getSiteContext( Site::Ptr pSite )
+{
+    SiteMap::const_iterator iFind = m_glyphMap.find( pSite );
+    if( iFind != m_glyphMap.end() )
+    {
+        return iFind->second.get();
+    }
+    return nullptr;
+}
+
+bool Edit::canEdit( IGlyph* pGlyph, ToolType toolType, ToolMode toolMode ) const
 {
     
     if( pGlyph->getGlyphSpec()->canEdit() )
     {
+        
         if( const GlyphSpecProducer* pGlyphPrd = fromGlyph( pGlyph ) )
-            return m_pSite->canEditWithTool( pGlyphPrd, uiToolType );
+        {
+            return true;
+            /*if( dynamic_cast< const Feature_ContourSegment* >( pGlyphPrd ) )
+            {
+                
+            }
+            else if( dynamic_cast< const Site* >( pGlyphPrd ) )
+            {
+                
+            }
+            else
+            {
+                
+            }*/
+            
+            
+            
+            //return m_pSite->canEditWithTool( pGlyphPrd, uiToolType );
+        }
+        
+        
     }
     return false;
+    
+    
     /*
     bool bCanEdit = false;
     
@@ -664,7 +846,7 @@ IInteraction::Ptr Edit::cmd_paste( Site::PtrVector sites, float x, float y, floa
         copies.insert( pSpaceGlyphs->getMainGlyph() );
     }
 
-    m_pActiveInteraction = new Interaction( *this, x, y, qX, qY, IGlyph::Ptr(), copies );
+    m_pActiveInteraction = new Interaction( *this, IEditContext::eArea, x, y, qX, qY, IGlyph::Ptr(), copies );
     pNewInteraction = IInteraction::Ptr( m_pActiveInteraction, boost::bind( &Edit::interaction_end, this, _1 ) );
     
     m_pSite->init();
@@ -689,10 +871,6 @@ void Edit::getCmds( Site::CmdInfo::List& cmds ) const
     m_pSite->getCmds( cmds );
 }
 
-void Edit::getTools( Site::ToolInfo::List& tools ) const
-{
-    m_pSite->getTools( tools );
-}
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 SpaceGlyphs::SpaceGlyphs( IEditContext& parentContext, Site::Ptr pSpace, GlyphFactory& glyphFactory )
@@ -895,7 +1073,7 @@ bool SpaceGlyphs::owns( IGlyph* pGlyph ) const
         containsSecondPtr( m_features, pGlyph );
 }
 /*
-bool SpaceGlyphs::canEdit( IGlyph* pGlyph, unsigned int uiToolType ) const
+bool SpaceGlyphs::canEdit( IGlyph* pGlyph, ToolType toolType, ToolMode toolMode ) const
 {
     if( pGlyph->getGlyphSpec()->canEdit() )
     {

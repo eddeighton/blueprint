@@ -120,6 +120,12 @@ public:
     }
     const std::string& getName(  int id ) const { return Node::getName(); }
     
+    void setSinglePoint( float x, float y )
+    {
+        m_polygon.clear();
+        m_polygon.push_back( wykobi::make_point< float >( Map_FloorAverage()( x ), Map_FloorAverage()( y ) ) );
+        recalculateControlPoints();
+    }
     void set( const wykobi::polygon< float, 2 >& shape )
     {
         m_polygon = shape;

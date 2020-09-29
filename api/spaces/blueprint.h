@@ -65,12 +65,7 @@ public:
     virtual bool canEdit()                  const { return false; }
 
     //CmdTarget
-    virtual bool canEditWithTool( const GlyphSpecProducer* pGlyphPrd, unsigned int uiToolType ) const { return false; }
     virtual void getCmds( CmdInfo::List& cmds ) const{};
-    virtual void getTools( ToolInfo::List& tools ) const{};
-    virtual IInteraction::Ptr beginToolDraw( unsigned int uiTool, float x, float y, float qX, float qY, boost::shared_ptr< Site > pClip ){ return IInteraction::Ptr(); }
-    virtual IInteraction::Ptr beginTool( unsigned int uiTool, float x, float y, float qX, float qY, 
-        GlyphSpecProducer* pHit, const std::set< GlyphSpecProducer* >& selection ){ return IInteraction::Ptr(); }
 
     //Site
     virtual bool canEvaluate( const Site::PtrVector& evaluated ) const { return true; }
@@ -162,12 +157,7 @@ public:
     virtual void set( float fX, float fY ) {}
 
     //CmdTarget
-    virtual bool canEditWithTool( const GlyphSpecProducer* pGlyphPrd, unsigned int uiToolType ) const;
     virtual void getCmds( CmdInfo::List& cmds ) const;
-    virtual void getTools( ToolInfo::List& tools ) const;    
-    virtual IInteraction::Ptr beginToolDraw( unsigned int uiTool, float x, float y, float qX, float qY, boost::shared_ptr< Site > pClip );
-    virtual IInteraction::Ptr beginTool( unsigned int uiTool, float x, float y, float qX, float qY, 
-        GlyphSpecProducer* pHit, const std::set< GlyphSpecProducer* >& selection );
 
     //Site
     virtual bool canEvaluate( const Site::PtrVector& evaluated ) const { return true; }
