@@ -83,7 +83,7 @@ set( BLUEPRINT_SOURCES_SRC
     ${BLUEPRINT_SRC_DIR}/spaces/spaceUtils.cpp
     )
 
-set( BLUEPRINT_SOURCES ${BLUEPRINT_SOURCES_API} ${BLUEPRINT_SOURCES_SRC} )
+set( BLUEPRINT_SOURCES ${BLUEPRINT_SOURCES_API} ${BLUEPRINT_SOURCES_SRC} ${AGG_SRC} )
 
 source_group( src FILES ${BLUEPRINT_SOURCES} )
 
@@ -103,6 +103,7 @@ link_wykobi( blueprintlib )
 link_clipper( blueprintlib )
 link_common( blueprintlib )
 link_ed( blueprintlib )
+link_agg( blueprintlib )
 
 install( FILES ${BLUEPRINT_API} DESTINATION include/blueprint )
 install( FILES ${BLUEPRINT_CORE_API} DESTINATION include/core )
