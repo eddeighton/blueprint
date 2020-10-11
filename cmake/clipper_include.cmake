@@ -7,6 +7,5 @@ set( CLIPPER_INCLUDE_PATH ${CLIPPER_INSTALL_PATH}/cpp )
 set( CLIPPER_SOURCE ${CLIPPER_INCLUDE_PATH}/clipper.hpp ${CLIPPER_INCLUDE_PATH}/clipper.cpp )
 
 function( link_clipper targetname )
-	target_include_directories( ${targetname} PRIVATE ${CLIPPER_INCLUDE_PATH} )
-#	#target_link_libraries( ${targetname} PUBLIC ED::edlib )
+	target_include_directories( ${targetname} PUBLIC ${CLIPPER_INCLUDE_PATH} )
 endfunction( link_clipper )

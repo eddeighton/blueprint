@@ -51,8 +51,6 @@ public:
     virtual IInteraction::Ptr cmd_paste( Node::Ptr pPaste, float x, float y, float qX, float qY ) = 0;
     virtual IInteraction::Ptr cmd_paste( IGlyph* pGlyph, float x, float y, float qX, float qY ) = 0;
     virtual IInteraction::Ptr cmd_paste( const std::set< IGlyph* >& selection, float x, float y, float qX, float qY ) = 0;
-    virtual void cmd_undo()=0;
-    virtual void cmd_redo()=0;
 
     virtual void getCmds( CmdTarget::CmdInfo::List& cmds ) const = 0;
 };
@@ -95,8 +93,6 @@ public:
     virtual IInteraction::Ptr cmd_paste( Node::Ptr pPaste, float x, float y, float qX, float qY );
     virtual IInteraction::Ptr cmd_paste( IGlyph* pGlyph, float x, float y, float qX, float qY );
     virtual IInteraction::Ptr cmd_paste( const std::set< IGlyph* >& selection, float x, float y, float qX, float qY );
-    virtual void cmd_undo();
-    virtual void cmd_redo();
 
     const std::string getFilePath() const { return m_strFilePath; }
     void setFilePath( const std::string& strFilePath ) { m_strFilePath = strFilePath; }
@@ -104,6 +100,8 @@ public:
     virtual void getCmds( CmdTarget::CmdInfo::List& cmds ) const;
     
     Site::Ptr getSite() const { return m_pSite; }
+    
+    void generateExtrusion( const std::string& strFilePath, float fAmount, bool bConvexHull ) const;
 protected:
     IInteraction::Ptr cmd_paste( Site::PtrVector sites, float x, float y, float qX, float qY );
 

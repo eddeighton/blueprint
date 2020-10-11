@@ -5,11 +5,12 @@
 
 #include "blueprint/property.h"
 #include "blueprint/dataBitmap.h"
+#include "blueprint/factory.h"
 
 #include "common/assert_verify.hpp"
 #include "common/rounding.hpp"
-//#include "common/stl.h"
-//#include "common/log.h"
+
+#include "wykobi_algorithm.hpp"
 
 #include <sstream>
 #include <map>
@@ -489,50 +490,7 @@ IInteraction::Ptr Edit::interaction_draw( ToolMode toolMode, float x, float y, f
         THROW_RTE( "Unknown tool mode" );
     }
 }
-/*
-IInteraction::Ptr Edit::interaction_tool( float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection, unsigned int uiToolID )
-{
-    IInteraction::Ptr pNewInteraction;
 
-    GlyphSpecProducer* pHit = fromGlyph( pHitGlyph );
-    std::set< GlyphSpecProducer* > nodeSelection;
-    for( auto i = selection.begin(),
-        iEnd = selection.end(); i!=iEnd; ++i )
-    {
-        if( GlyphSpecProducer* pSel = fromGlyph( *i ) )
-            nodeSelection.insert( pSel );
-    }
-    
-    if( IInteraction::Ptr pToolInteraction = m_pSite->beginTool( uiToolID, x, y, qX, qY, pHit, nodeSelection ) )
-    {
-        interaction_evaluate();
-        m_pActiveInteraction = new InteractionToolWrapper( *this, pToolInteraction );
-        return IInteraction::Ptr( m_pActiveInteraction, boost::bind( &Edit::interaction_end, this, _1 ) );
-    }
-    else
-    {
-        ASSERT( false );
-        return IInteraction::Ptr();
-    }
-}
-
-IInteraction::Ptr Edit::interaction_tool_draw( float x, float y, float qX, float qY, Site::Ptr pSite, unsigned int uiToolID )
-{
-    ASSERT( !m_pActiveInteraction );
-    
-    if( IInteraction::Ptr pToolInteraction = m_pSite->beginToolDraw( uiToolID, x, y, qX, qY, pSite ) )
-    {
-        interaction_evaluate();
-        m_pActiveInteraction = new InteractionToolWrapper( *this, pToolInteraction );
-        return IInteraction::Ptr( m_pActiveInteraction, boost::bind( &Edit::interaction_end, this, _1 ) );
-    }
-    else
-    {
-        ASSERT( false );
-        return IInteraction::Ptr();
-    }
-}
-*/
 IEditContext* Edit::getNestedContext( const std::vector< IGlyph* >& candidates )
 {
     IEditContext* pEditContext = 0u;
@@ -855,20 +813,72 @@ IInteraction::Ptr Edit::cmd_paste( Site::PtrVector sites, float x, float y, floa
 
     return pNewInteraction;
 }
-    
-void Edit::cmd_undo()
-{
-    interaction_evaluate();
-}
-
-void Edit::cmd_redo()
-{
-    interaction_evaluate();
-}
 
 void Edit::getCmds( Site::CmdInfo::List& cmds ) const
 {
     m_pSite->getCmds( cmds );
+}
+
+void Edit::generateExtrusion( const std::string& strFilePath, float fAmount, bool bConvexHull ) const
+{
+    wykobi::polygon< float, 2 > extrudedContour;
+    {
+        wykobi::polygon< float, 2 > contour;
+        {
+            if( Blueprint::Ptr pBlueprint = boost::dynamic_pointer_cast< Blueprint >( m_pSite ) )
+            {
+                std::vector< Site::FloatPairVector > blueprintContours;
+                pBlueprint->getContour( blueprintContours );
+                VERIFY_RTE( !blueprintContours.empty() );
+                const Site::FloatPairVector& outer = blueprintContours.front();
+                for( const Site::FloatPair& fp : outer )
+                {
+                    contour.push_back( wykobi::make_point< float >( fp.first, fp.second ) );
+                }
+            }
+            else
+            {
+                Site::FloatPairVector outer;
+                m_pSite->getContour( outer );
+                for( const Site::FloatPair& fp : outer )
+                {
+                    contour.push_back( wykobi::make_point< float >( fp.first, fp.second ) );
+                }
+            }
+        }
+        
+        if( bConvexHull )
+        {
+            std::vector< wykobi::point2d< float > > convexContour;
+            wykobi::algorithm::convex_hull_graham_scan< wykobi::point2d< float > >( 
+                contour.begin(), contour.end(), std::back_inserter( convexContour ) );
+                
+            wykobi::polygon< float, 2u > convexPoly( convexContour.size() );
+            std::copy( convexContour.rbegin(), convexContour.rend(), convexPoly.begin() );
+            
+            offsetSimplePolygon( convexPoly, extrudedContour, fAmount );
+        }
+        else
+        {
+            offsetSimplePolygon( contour, extrudedContour, fAmount );
+        }
+    }
+    
+    const boost::filesystem::path filePath = strFilePath;
+    Blueprint::Ptr pBlueprint( new Blueprint( filePath.filename().replace_extension( "" ).string() ) );
+    {
+        pBlueprint->init();
+        
+        Area::Ptr pContourArea( new Area( pBlueprint, "area_0000" ) );
+        pContourArea->init();
+        pBlueprint->add( pContourArea );
+        Feature_Contour::Ptr pContour = pContourArea->getContour();
+        pContour->set( extrudedContour );
+    }
+    
+    Factory factory;
+    factory.save( pBlueprint, strFilePath );
+    
 }
 
 //////////////////////////////////////////////////////////////////////////////

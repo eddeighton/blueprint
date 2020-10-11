@@ -99,9 +99,12 @@ void Toolbox::Palette::select( Site::Ptr pSite )
 
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
+
+    
 std::string pathToName( const boost::filesystem::path& p )
 {
-    return p.leaf().replace_extension().string();
+    return p.string();
+    //return p.leaf().replace_extension().string();
 }
 
 void Toolbox::recursiveLoad( const boost::filesystem::path& pathIter, const std::string& strCurrent )

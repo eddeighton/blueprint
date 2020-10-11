@@ -6,6 +6,5 @@ find_path( WYKOBI_INSTALL_PATH wykobi.hpp PATHS ${BLUEPRINT_THIRD_PARTY_DIR}/wyk
 set( WYKOBI_INCLUDE_PATH ${WYKOBI_INSTALL_PATH}/src )
 
 function( link_wykobi targetname )
-	target_include_directories( ${targetname} PRIVATE ${WYKOBI_INCLUDE_PATH} )
-	#target_link_libraries( ${targetname} PUBLIC ED::edlib )
+	target_include_directories( ${targetname} PUBLIC ${WYKOBI_INCLUDE_PATH} )
 endfunction( link_wykobi )

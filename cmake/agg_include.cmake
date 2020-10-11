@@ -8,5 +8,5 @@ file( GLOB AGG_SRC ${AGG_INSTALL_PATH}/src/*.cpp )
 source_group( agg FILES  ${AGG_HEADERS} ${AGG_SRC} )
 
 function( link_agg targetname )
-	target_include_directories( ${targetname} PRIVATE ${AGG_INSTALL_PATH}/include )
+	target_include_directories( ${targetname} PUBLIC ${AGG_INSTALL_PATH}/include )
 endfunction( link_agg )
