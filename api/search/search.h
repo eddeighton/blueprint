@@ -83,7 +83,7 @@ public:
         bool bHasResult = false;
         if( !m_priorityQueue.empty() )
         {
-            PriorityQueue::const_iterator 
+            typename PriorityQueue::const_iterator 
                 iStart = m_priorityQueue.begin();
             result = iStart->second;
             bHasResult = true;
@@ -100,7 +100,7 @@ public:
             while( --iSanityCheck )
             {
                 result.push_back( iter );
-                PredecessorMap::const_iterator iFind = m_predecessors.find( iter );
+                typename PredecessorMap::const_iterator iFind = m_predecessors.find( iter );
                 if( iFind == m_predecessors.end() )
                     break;
                 else
@@ -133,13 +133,12 @@ public:
     void initialise( const std::list< std::pair< T, WeightType > >& startList, Visitor& visitor )
     {
         reset();
-        for( std::list< std::pair< T, WeightType > >::const_iterator 
-            i = startList.begin(), iEnd = startList.end(); i!=iEnd; ++i )
+        for( const std::pair< T, WeightType >& i : startList )
         {
-            const WeightType fDist = visitor.Heuristic_Estimate( i->first );
-            m_priorityQueue.insert( PriorityQueuePair( i->second + fDist, i->first ) );
-            m_openSet.insert( i->first );
-            m_weight[ i->first ]  = i->second;
+            const WeightType fDist = visitor.Heuristic_Estimate( i.first );
+            m_priorityQueue.insert( PriorityQueuePair( i.second + fDist, i.first ) );
+            m_openSet.insert( i.first );
+            m_weight[ i.first ]  = i.second;
         }
     }
 
@@ -150,7 +149,7 @@ public:
 
         while( !m_priorityQueue.empty() )
         {
-            PriorityQueue::iterator iFirst = m_priorityQueue.begin();
+            typename PriorityQueue::iterator iFirst = m_priorityQueue.begin();
             T node_current = iFirst->second;
             const WeightType node_current_weight = m_weight[ node_current ];
 
@@ -163,13 +162,13 @@ public:
             m_closedSet.insert( node_current );
         
             //open all adjacent nodes
-            for( AdjacencyType::Iterator 
+            for( typename AdjacencyType::Iterator 
                     n = AdjacencyType::Begin( node_current ); 
                     n != AdjacencyType::End( node_current ); 
                     AdjacencyType::Increment( n ) )
             {
                 T node_adjacent;
-                AdjacencyType::adjacent< T >( node_current, n, node_adjacent );
+                AdjacencyType::template adjacent< T >( node_current, n, node_adjacent );
 
                 if( m_closedSet.find( node_adjacent ) != m_closedSet.end() )
                     continue;
@@ -192,7 +191,7 @@ public:
                     //update priority queue
                     if( !bNewNode )
                     {
-                        for( PriorityQueue::iterator i = m_priorityQueue.begin(),
+                        for( typename PriorityQueue::iterator i = m_priorityQueue.begin(),
                             iEnd = m_priorityQueue.end(); i!=iEnd; ++i )
                         {
                             if( i->second == node_adjacent )

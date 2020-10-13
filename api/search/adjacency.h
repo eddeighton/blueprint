@@ -11,9 +11,9 @@ struct AdjacencyTraits_8WayDiscrete
 {
     typedef char Iterator;
     template< class T >
-    static Iterator Begin( T )    { return EdsMath::Angle< 8 >::eEast; }
+    static Iterator Begin( T )    { return Math::Angle< 8 >::eEast; }
     template< class T >
-    static Iterator End( T )      { return EdsMath::Angle< 8 >::TOTAL_ANGLES; }
+    static Iterator End( T )      { return Math::Angle< 8 >::TOTAL_ANGLES; }
     static void Increment( Iterator& iter )
     {
         ++iter;
@@ -23,8 +23,8 @@ struct AdjacencyTraits_8WayDiscrete
     static inline void adjacent( const TVectorType& v, Iterator dir, TVectorType& adj )
     {
         TVectorType r;
-        EdsMath::toVectorDiscrete< EdsMath::Angle< 8 > >( 
-            static_cast< typename EdsMath::Angle< 8 >::Value >( dir ), r.x, r.y );
+        Math::toVectorDiscrete< Math::Angle< 8 > >( 
+            static_cast< typename Math::Angle< 8 >::Value >( dir ), r.x, r.y );
         adj = v + r;
     }
 };
