@@ -40,7 +40,7 @@ public:
     virtual std::string getStatement() const { return getName(); }
     
     virtual bool canEvaluate( const Site::PtrVector& evaluated ) const { ASSERT( false ); return true; }
-    virtual EvaluationResult evaluate( DataBitmap& data ) 
+    virtual EvaluationResult evaluate( const EvaluationMode& mode, DataBitmap& data ) 
     { 
         EvaluationResult result; 
         return result; 
@@ -89,7 +89,7 @@ public:
     virtual Node::Ptr getPtr() { return shared_from_this(); }
     
     virtual bool canEvaluate( const Site::PtrVector& evaluated ) const;
-    virtual EvaluationResult evaluate( DataBitmap& data );
+    virtual EvaluationResult evaluate( const EvaluationMode& mode, DataBitmap& data );
     
     void init( float x, float y, bool bEmptyContour );
     virtual void init();
@@ -125,8 +125,19 @@ public:
     }
 
     //GlyphSpecProducer
-    virtual void getMarkupTexts( MarkupText::List& text) { if( m_pLabel.get() ) text.push_back( m_pLabel.get() ); }
-    virtual void getMarkupPaths( MarkupPath::List& paths ) { if( m_pPath.get() ) paths.push_back( m_pPath.get() ); }
+    virtual void getMarkupTexts( MarkupText::List& text) 
+    { 
+        if( m_pLabel.get() ) 
+            text.push_back( m_pLabel.get() ); 
+    }
+    
+    virtual void getMarkupPaths( MarkupPath::List& paths ) 
+    { 
+        if( m_pPath.get() ) 
+            paths.push_back( m_pPath.get() ); 
+        if( m_pPath2.get() ) 
+            paths.push_back( m_pPath2.get() ); 
+    }
     
     enum eCmds
     {
@@ -143,17 +154,17 @@ private:
     Site::WeakPtr m_pSiteParent;
     wykobi::point2d< float > m_ptOrigin;
     wykobi::point2d< float > m_ptOffset;
-    float m_fPerimeterWidth;
     MarkupPath::PathCmdVector m_path;
+    MarkupPath::PathCmdVector m_path2;
 
     NavBitmap::Ptr m_pBuffer;
     std::unique_ptr< TextImpl > m_pLabel;
     std::unique_ptr< PathImpl > m_pPath;
+    std::unique_ptr< PathImpl > m_pPath2;
     Feature_Contour::Ptr m_pContour;
 
     ContourPointVector m_boundaryPoints;
 
-    boost::optional< float > m_fPerimeterWidthCache;
     boost::optional< wykobi::polygon< float, 2u > > m_polygonCache;
 };
 

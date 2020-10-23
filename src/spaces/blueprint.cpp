@@ -98,7 +98,7 @@ wykobi::point2d< float > getContourSegmentPointAbsolute( Feature_ContourSegment:
         pArea->getY() + pContour->getY( 0u ) + pPoint->getY( pointType ) );
 }
 
-Site::EvaluationResult Connection::evaluate( DataBitmap& data )
+Site::EvaluationResult Connection::evaluate( const EvaluationMode& mode, DataBitmap& data )
 {
     EvaluationResult result;
 
@@ -356,7 +356,7 @@ void Blueprint::computePairings( ConnectionPairingSet& pairings ) const
     //LOG_PROFILE_END( BlueprintPairingCalc );
 }
 
-Blueprint::EvaluationResult Blueprint::evaluate( DataBitmap& data )
+Blueprint::EvaluationResult Blueprint::evaluate( const EvaluationMode& mode, DataBitmap& data )
 {
     ConnectionPairingSet pairings;
     computePairings( pairings );
@@ -415,7 +415,7 @@ Blueprint::EvaluationResult Blueprint::evaluate( DataBitmap& data )
             Site::Ptr pFront = *i;
             if( pFront->canEvaluate( evaluated ) )
             {
-                pFront->evaluate( data);
+                pFront->evaluate( mode, data );
                 pending.erase( i );
                 evaluated.push_back( pFront );
                 bEvaluated = true;

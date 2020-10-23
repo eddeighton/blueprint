@@ -102,6 +102,8 @@ public:
     Site::Ptr getSite() const { return m_pSite; }
     
     void generateExtrusion( const std::string& strFilePath, float fAmount, bool bConvexHull ) const;
+    
+    void setViewMode( bool bBitmap, bool bCellComplex, bool bClearance );
 protected:
     IInteraction::Ptr cmd_paste( Site::PtrVector sites, float x, float y, float qX, float qY );
 
@@ -114,6 +116,7 @@ protected:
     typedef std::map< Site::Ptr, boost::shared_ptr< SpaceGlyphs > > SiteMap;
     SiteMap m_glyphMap;
 
+    bool m_bViewBitmap, m_bViewCellComplex, m_bViewClearance;
 };
 
 }

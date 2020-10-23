@@ -81,7 +81,13 @@ public:
         EvaluationResult() : bSuccess( false ) {}
         bool bSuccess;
     };
-    virtual EvaluationResult evaluate( DataBitmap& data )=0;
+    struct EvaluationMode
+    {
+        bool bBitmap = false;
+        bool bCellComplex = false;
+        bool bClearance = false;
+    };
+    virtual EvaluationResult evaluate( const EvaluationMode& mode, DataBitmap& data )=0;
 
     //spaces
     const Site::PtrVector& getSpaces() const { return m_spaces; }

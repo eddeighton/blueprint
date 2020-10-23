@@ -69,7 +69,7 @@ public:
 
     //Site
     virtual bool canEvaluate( const Site::PtrVector& evaluated ) const { return true; }
-    virtual EvaluationResult evaluate( DataBitmap& data );
+    virtual EvaluationResult evaluate( const EvaluationMode& mode, DataBitmap& data );
     
     virtual void getContour( FloatPairVector& contour );
     virtual bool isConnection() { return true; }
@@ -161,7 +161,7 @@ public:
 
     //Site
     virtual bool canEvaluate( const Site::PtrVector& evaluated ) const { return true; }
-    virtual EvaluationResult evaluate( DataBitmap& data );
+    virtual EvaluationResult evaluate( const EvaluationMode& mode, DataBitmap& data );
     
     virtual bool add( Node::Ptr pNewNode );
     virtual void remove( Node::Ptr pNode );

@@ -11,6 +11,7 @@
 #include "common/variant_utils.hpp"
 
 #include <boost/variant.hpp>
+#include <boost/filesystem/path.hpp>
 
 #include <fstream>
 
@@ -164,8 +165,17 @@ void Factory::load( const std::string& strFilePath, Node::PtrVector& results )
 
 void Factory::save( Site::Ptr pBlueprint, const std::string& strFilePath )
 {
-    Ed::Node node( Ed::Statement( Ed::Declarator( pBlueprint->Node::getName() ) ) );
+    boost::filesystem::path filePath = strFilePath;
+    const std::string strName = filePath.filename().replace_extension( "" ).string();
+    
+    VERIFY_RTE_MSG( !strName.empty(), "Invalid file name specified: " << strFilePath );
+    
+    Ed::Node node( Ed::Statement( Ed::Declarator( ( Ed::Identifier( strName ) ) ) ) );
+    
     pBlueprint->save( node );
+    
+    node.statement.declarator.identifier = strName;
+    
     std::ofstream of( strFilePath );
     of << node;
 }

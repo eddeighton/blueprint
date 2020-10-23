@@ -119,8 +119,7 @@ Area::Area( Site::Ptr pParent, const std::string& strName )
     :   Site( pParent, strName ),
         m_pSiteParent( pParent ),
         m_ptOrigin( wykobi::make_point( 0.0f, 0.0f ) ),
-        m_ptOffset( wykobi::make_point( 0.0f, 0.0f ) ),
-        m_fPerimeterWidth( 1.0f )
+        m_ptOffset( wykobi::make_point( 0.0f, 0.0f ) )
 {
 }
 
@@ -128,8 +127,7 @@ Area::Area( PtrCst pOriginal, Site::Ptr pParent, const std::string& strName )
     :   Site( pOriginal, pParent, strName ),
         m_pSiteParent( pParent ),
         m_ptOrigin( pOriginal->m_ptOrigin ),
-        m_ptOffset( pOriginal->m_ptOffset ),
-        m_fPerimeterWidth( pOriginal->m_fPerimeterWidth )
+        m_ptOffset( pOriginal->m_ptOffset )
 {
 }
 
@@ -174,9 +172,12 @@ void Area::init()
 
     if( !m_pLabel.get() )
         m_pLabel.reset( new TextImpl( this, Node::getName(), 0.0f, 0.0f ) ); 
-
+    
     if( !m_pPath.get() )
         m_pPath.reset( new PathImpl( m_path, this ) );
+    
+    if( !m_pPath2.get() )
+        m_pPath2.reset( new PathImpl( m_path2, this ) );
 
     m_boundaryPoints.clear();
     for_each_recursive( 
@@ -231,17 +232,18 @@ bool Area::canEvaluate( const Site::PtrVector& evaluated ) const
     return bCanEvaluate;
 }
 
-Site::EvaluationResult Area::evaluate( DataBitmap& data )
+Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& data )
 {
+    typedef PathImpl::AGGContainerAdaptor< wykobi::polygon< float, 2 > > WykobiPolygonAdaptor;
+    typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
+    
     bool bSuccess = true;
 
     const wykobi::polygon< float, 2u >& polygon = m_pContour->get();
 
     if( !m_polygonCache || 
         !( m_polygonCache.get().size() == polygon.size() ) || 
-        !std::equal( polygon.begin(), polygon.end(), m_polygonCache.get().begin() ) || 
-        !m_fPerimeterWidthCache || 
-        !(m_fPerimeterWidthCache.get() == m_fPerimeterWidth))
+        !std::equal( polygon.begin(), polygon.end(), m_polygonCache.get().begin() ))
     {
         bool bIsInteriorArea = false;
         wykobi::point2d< float > ptOrigin = m_ptOrigin;
@@ -255,54 +257,65 @@ Site::EvaluationResult Area::evaluate( DataBitmap& data )
             } 
             bIsInteriorArea = iParentCount > 1;
         }
-
-        wykobi::polygon< float, 2u > outerPolygon;
-
-        //if( m_fPerimeterWidth > 0.0f )
-        //    offsetSimplePolygon( polygon, outerPolygon, m_fPerimeterWidth );
-        //else
-            outerPolygon = polygon;
-
-        const wykobi::rectangle< float > aabbBox = wykobi::aabb( outerPolygon );
+        
+        const wykobi::rectangle< float > aabbBox = wykobi::aabb( polygon );
 
         m_pLabel->setPos( wykobi::centroid( aabbBox ) );
-    
-        //allocate the buffer on demand
-        m_ptOffset = sizeBuffer( m_pBuffer, aabbBox );
-
-        //rasterize bounding rect space
-        typedef PathImpl::AGGContainerAdaptor< wykobi::polygon< float, 2 > > WykobiPolygonAdaptor;
-        typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
-    
-        Rasteriser ras( m_pBuffer );
-        if( bIsInteriorArea )
-            ras.renderPath( Adaptor( WykobiPolygonAdaptor( outerPolygon ), true ),
-                Rasteriser::ColourType( 1u ), -m_ptOffset.x, -m_ptOffset.y, 0.0f );
-        else
-            ras.renderPath( Adaptor( WykobiPolygonAdaptor( outerPolygon ), true ),
-                Rasteriser::ColourType( 1u ), -m_ptOffset.x, -m_ptOffset.y, 1.0f );
-        //ras.renderPath( Adaptor( WykobiPolygonAdaptor( outerPolygon ), true ),
-        //    Rasteriser::ColourType( 255u ), -m_ptOffset.x, -m_ptOffset.y, 1.0f );
-
         
-        data.makeClaim( DataBitmap::Claim( 
-            ptOrigin.x + m_ptOffset.x, 
-            ptOrigin.y + m_ptOffset.y, m_pBuffer, shared_from_this() ) );
+        //update the paths
+        {
+            PathImpl::aggPathToMarkupPath( m_path, Adaptor( WykobiPolygonAdaptor( polygon ), true ) );
+            {
+                wykobi::polygon< float, 2 > extrudedContour;
+                offsetSimplePolygon( polygon, extrudedContour, 2.0 );
+                PathImpl::aggPathToMarkupPath( m_path2, Adaptor( WykobiPolygonAdaptor( extrudedContour ), true ) );
+            }
+            m_polygonCache = polygon;
+        }
+        
+        //this does not work due to the way the SpaceGlyphs::SpaceGlyphs creates the m_pImageGlyph somehow?
+        /*if( !mode.bBitmap )
+        {
+            if( m_pBuffer )
+                m_pBuffer.reset();
+            m_ptOffset = calculateOffset( aabbBox );
+        }
+        else*/
+        {
+            if( !m_pBuffer )
+                m_pBuffer.reset( new NavBitmap( 1u, 1u ) );
+    
+            //allocate the buffer on demand
+            m_ptOffset = sizeBuffer( m_pBuffer, aabbBox );
 
-        PathImpl::aggPathToMarkupPath( m_path, Adaptor( WykobiPolygonAdaptor( polygon ), true ) );
+            //rasterize bounding rect space
+            Rasteriser ras( m_pBuffer );
+            if( bIsInteriorArea )
+                ras.renderPath( Adaptor( WykobiPolygonAdaptor( polygon ), true ),
+                    Rasteriser::ColourType( 1u ), -m_ptOffset.x, -m_ptOffset.y, 0.0f );
+            else
+                ras.renderPath( Adaptor( WykobiPolygonAdaptor( polygon ), true ),
+                    Rasteriser::ColourType( 1u ), -m_ptOffset.x, -m_ptOffset.y, 1.0f );
+                    
+            //ras.renderPath( Adaptor( WykobiPolygonAdaptor( outerPolygon ), true ),
+            //    Rasteriser::ColourType( 255u ), -m_ptOffset.x, -m_ptOffset.y, 1.0f );
 
-        //mess with the bitmap
-        //PerimeterVisitor::bfs( PerimeterVisitor::makeI2( 0, 0 ), PerimeterVisitor( m_pBuffer ) );
-        m_polygonCache = polygon;
-        m_fPerimeterWidthCache = m_fPerimeterWidth;
-        m_pBuffer->setModified();
+            data.makeClaim( DataBitmap::Claim( 
+                ptOrigin.x + m_ptOffset.x, 
+                ptOrigin.y + m_ptOffset.y, m_pBuffer, shared_from_this() ) );
+
+            m_pBuffer->setModified();
+            
+            //mess with the bitmap
+            //PerimeterVisitor::bfs( PerimeterVisitor::makeI2( 0, 0 ), PerimeterVisitor( m_pBuffer ) );
+        }
     }
 
     Site::EvaluationResult result;
 
     for( PtrVector::iterator i = m_spaces.begin(),
         iEnd = m_spaces.end(); i!=iEnd; ++i )
-        (*i)->evaluate( data );
+        (*i)->evaluate( mode, data );
 
     return result;
 }

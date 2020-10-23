@@ -297,7 +297,10 @@ Edit::Edit( GlyphFactory& glyphFactory, Site::Ptr pSite, const std::string& strF
     :   m_glyphFactory( glyphFactory ),
         m_pSite( pSite ),
         m_pActiveInteraction( 0u ),
-        m_strFilePath( strFilePath )
+        m_strFilePath( strFilePath ),
+        m_bViewBitmap( false ),
+        m_bViewCellComplex( false ),
+        m_bViewClearance( false )
 {
 }
 
@@ -580,9 +583,10 @@ bool Edit::canEdit( IGlyph* pGlyph, ToolType toolType, ToolMode toolMode ) const
 void Edit::interaction_evaluate()
 {
     //LOG_PROFILE_BEGIN( edit_interaction_evaluate );
+    const Site::EvaluationMode mode = { m_bViewBitmap, m_bViewCellComplex, m_bViewClearance };
 
     DataBitmap data;
-    m_pSite->evaluate( data );
+    m_pSite->evaluate( mode, data );
     interaction_update();
 
     //LOG_PROFILE_END( edit_interaction_evaluate );
@@ -830,10 +834,35 @@ void Edit::generateExtrusion( const std::string& strFilePath, float fAmount, boo
                 std::vector< Site::FloatPairVector > blueprintContours;
                 pBlueprint->getContour( blueprintContours );
                 VERIFY_RTE( !blueprintContours.empty() );
-                const Site::FloatPairVector& outer = blueprintContours.front();
-                for( const Site::FloatPair& fp : outer )
+                
+                if( bConvexHull )
                 {
-                    contour.push_back( wykobi::make_point< float >( fp.first, fp.second ) );
+                    for( const Site::FloatPairVector& fpv : blueprintContours )
+                    {
+                        for( const Site::FloatPair& fp : fpv )
+                        {
+                            contour.push_back( wykobi::make_point< float >( fp.first, fp.second ) );
+                        }
+                    }
+                    
+                    std::vector< wykobi::point2d< float > > convexContour;
+                    wykobi::algorithm::convex_hull_graham_scan< wykobi::point2d< float > >( 
+                        contour.begin(), contour.end(), std::back_inserter( convexContour ) );
+                        
+                    wykobi::polygon< float, 2u > convexPoly( convexContour.size() );
+                    std::copy( convexContour.rbegin(), convexContour.rend(), convexPoly.begin() );
+                    
+                    offsetSimplePolygon( convexPoly, extrudedContour, fAmount );
+                }
+                else
+                {
+                    const Site::FloatPairVector& outer = blueprintContours.front();
+                    for( const Site::FloatPair& fp : outer )
+                    {
+                        contour.push_back( wykobi::make_point< float >( fp.first, fp.second ) );
+                    }
+                    
+                    offsetSimplePolygon( contour, extrudedContour, fAmount );
                 }
             }
             else
@@ -844,24 +873,25 @@ void Edit::generateExtrusion( const std::string& strFilePath, float fAmount, boo
                 {
                     contour.push_back( wykobi::make_point< float >( fp.first, fp.second ) );
                 }
+                
+                if( bConvexHull )
+                {
+                    std::vector< wykobi::point2d< float > > convexContour;
+                    wykobi::algorithm::convex_hull_graham_scan< wykobi::point2d< float > >( 
+                        contour.begin(), contour.end(), std::back_inserter( convexContour ) );
+                        
+                    wykobi::polygon< float, 2u > convexPoly( convexContour.size() );
+                    std::copy( convexContour.rbegin(), convexContour.rend(), convexPoly.begin() );
+                    
+                    offsetSimplePolygon( convexPoly, extrudedContour, fAmount );
+                }
+                else
+                {
+                    offsetSimplePolygon( contour, extrudedContour, fAmount );
+                }
             }
         }
         
-        if( bConvexHull )
-        {
-            std::vector< wykobi::point2d< float > > convexContour;
-            wykobi::algorithm::convex_hull_graham_scan< wykobi::point2d< float > >( 
-                contour.begin(), contour.end(), std::back_inserter( convexContour ) );
-                
-            wykobi::polygon< float, 2u > convexPoly( convexContour.size() );
-            std::copy( convexContour.rbegin(), convexContour.rend(), convexPoly.begin() );
-            
-            offsetSimplePolygon( convexPoly, extrudedContour, fAmount );
-        }
-        else
-        {
-            offsetSimplePolygon( contour, extrudedContour, fAmount );
-        }
     }
     
     const boost::filesystem::path filePath = strFilePath;
@@ -881,6 +911,15 @@ void Edit::generateExtrusion( const std::string& strFilePath, float fAmount, boo
     
 }
 
+void Edit::setViewMode( bool bBitmap, bool bCellComplex, bool bClearance )
+{
+    m_bViewBitmap = bBitmap;
+    m_bViewCellComplex = bCellComplex;
+    m_bViewClearance = bClearance;
+    
+    interaction_evaluate();
+}
+    
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 SpaceGlyphs::SpaceGlyphs( IEditContext& parentContext, Site::Ptr pSpace, GlyphFactory& glyphFactory )

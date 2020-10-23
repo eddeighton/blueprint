@@ -75,6 +75,10 @@ protected:
         {
             VERIFY_RTE( pCopy->add( (*i)->copy( pCopy, (*i)->getName() ) ) );
         }
+        
+        //copy meta data
+        pCopy->m_passThroughMetaData = m_passThroughMetaData;
+        
         pCopy->init();
         return pCopy;
     }

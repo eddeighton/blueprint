@@ -23,6 +23,14 @@
 namespace Blueprint
 {
 
+static wykobi::point2d< float > calculateOffset( const wykobi::rectangle< float >& aabbBox )
+{
+    wykobi::point2d< float > ptTopLeft = wykobi::rectangle_corner( aabbBox, 0 );
+    ptTopLeft.x = std::floorf( ptTopLeft.x );
+    ptTopLeft.y = std::floorf( ptTopLeft.y );
+    return ptTopLeft;
+}
+
 static wykobi::point2d< float > sizeBuffer( NavBitmap::Ptr& pBuffer, const wykobi::rectangle< float >& aabbBox )
 {
     wykobi::point2d< float > ptTopLeft = wykobi::rectangle_corner( aabbBox, 0 );
@@ -330,25 +338,29 @@ static const double CLIPPER_MAG = 1000000.0;
 
 static void offsetSimplePolygon( const wykobi::polygon< float, 2u >& polygon, wykobi::polygon< float, 2u >& result, float fAmt )
 {
-    ClipperLib::Path clipperPathIn;
-    for( wykobi::polygon< float, 2u >::const_iterator 
-        i = polygon.begin(),
-        iEnd = polygon.end(); i!=iEnd; ++i )
-    {
-        clipperPathIn.push_back( 
-            ClipperLib::IntPoint( 
-                static_cast< ClipperLib::cInt >( i->x * CLIPPER_MAG ), 
-                static_cast< ClipperLib::cInt >( i->y * CLIPPER_MAG ) ) );
-    }
-
-    clipperPathIn.push_back( clipperPathIn.front() );
     ClipperLib::Paths in;
-    in.push_back( clipperPathIn );
-    //ClipperLib::OffsetPaths( in, in, fAmt * CLIPPER_MAG, ClipperLib::jtRound, ClipperLib::etClosed );
     
-    ClipperLib::ClipperOffset co;// = new ClipperLib::ClipperOffset();
-    co.AddPaths( in, ClipperLib::jtSquare, ClipperLib::etClosedPolygon );
-    co.Execute( in, fAmt * CLIPPER_MAG );
+    if( polygon.size() != 0U )
+    {
+        ClipperLib::Path clipperPathIn;
+        for( wykobi::polygon< float, 2u >::const_iterator 
+            i = polygon.begin(),
+            iEnd = polygon.end(); i!=iEnd; ++i )
+        {
+            clipperPathIn.push_back( 
+                ClipperLib::IntPoint( 
+                    static_cast< ClipperLib::cInt >( i->x * CLIPPER_MAG ), 
+                    static_cast< ClipperLib::cInt >( i->y * CLIPPER_MAG ) ) );
+        }
+
+        clipperPathIn.push_back( clipperPathIn.front() );
+        in.push_back( clipperPathIn );
+        //ClipperLib::OffsetPaths( in, in, fAmt * CLIPPER_MAG, ClipperLib::jtRound, ClipperLib::etClosed );
+        
+        ClipperLib::ClipperOffset co;// = new ClipperLib::ClipperOffset();
+        co.AddPaths( in, ClipperLib::jtSquare, ClipperLib::etClosedPolygon );
+        co.Execute( in, fAmt * CLIPPER_MAG );
+    }
     
     //ClipperLib::OffsetPaths( in, in, fAmt * CLIPPER_MAG, ClipperLib::jtSquare, ClipperLib::etClosed );
     if( !in.empty() )
