@@ -158,6 +158,7 @@ public:
         generics::for_each_second( m_children, DepthFirstRecursion< TFunctor, TPredicateCutOff >( functor, cutoffPredicate ) );
     }
 
+    const Ed::Node& getMetaData() const { return m_passThroughMetaData; }
 protected:
     PtrWeak m_pParent;
 
