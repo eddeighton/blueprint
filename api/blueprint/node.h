@@ -14,7 +14,6 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/optional.hpp>
-#include <boost/bind.hpp>
 #include <boost/chrono.hpp>
 
 #include <string>

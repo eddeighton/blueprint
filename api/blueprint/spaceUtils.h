@@ -1,15 +1,14 @@
 #ifndef SPACEUTILS_15_09_2013
 #define SPACEUTILS_15_09_2013
 
-
-#include "core/rasteriser.h"
+#include "blueprint/rasteriser.h"
 
 #include "blueprint/buffer.h"
 #include "blueprint/glyphspec.h"
 #include "blueprint/dataBitmap.h"
 
-#include "search/adjacency.h"
-#include "search/search.h"
+//#include "blueprint/adjacency.h"
+//#include "blueprint/search.h"
 
 #include "clipper.hpp"
 #include "wykobi.hpp"

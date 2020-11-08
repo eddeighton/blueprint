@@ -8,7 +8,7 @@
 #include "blueprint/toolbox.h"
 #include "blueprint/site.h"
 
-#include "core/serialisation.h"
+#include "blueprint/serialisation.h"
 
 #include "common/file.hpp"
 

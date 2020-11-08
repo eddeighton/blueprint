@@ -3,6 +3,7 @@
 
 #include "basicFeature.h"
 #include "basicarea.h"
+#include "connection.h"
 
 #include "blueprint/buffer.h"
 #include "blueprint/property.h"
@@ -21,68 +22,6 @@
 
 namespace Blueprint
 {
-
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-class Connection : public Site, public boost::enable_shared_from_this< Connection >
-{
-    Connection& operator=( const Connection& );
-public:
-    typedef boost::shared_ptr< Connection > Ptr;
-    typedef boost::shared_ptr< const Connection > PtrCst;
-    typedef boost::weak_ptr< Connection > WeakPtr;
-    typedef std::list< Ptr > PtrList;
-    typedef std::vector< Ptr > PtrVector;
-    typedef std::list< WeakPtr > WeakPtrList;
-    typedef std::map< Ptr, Ptr > PtrMap;
-    
-    static const std::string& TypeName();
-    Connection( Site::Ptr pParent, const std::string& strName );
-    Connection( PtrCst pOriginal, Site::Ptr pParent, const std::string& strName );
-    virtual Node::PtrCst getPtr() const { return shared_from_this(); }
-    virtual Node::Ptr getPtr() { return shared_from_this(); }
-    virtual Node::Ptr copy( Node::Ptr pParent, const std::string& strName ) const;
-    virtual void init();
-    void init( const Ed::Reference& sourceRef, const Ed::Reference& targetRef );
-    virtual void load( Factory& factory, const Ed::Node& node );
-    virtual void save( Ed::Node& node ) const;
-    virtual std::string getStatement() const { return ""; }
-
-    Reference::Ptr getSource() { return m_pSourceRef; }
-    Reference::Ptr getTarget() { return m_pTargetRef; }
-    
-    //GlyphSpec
-    virtual const std::string& getName() const { return Node::getName(); }
-    virtual const GlyphSpec* getParent() const { return m_pSiteParent.lock().get(); }
-
-    //ImageSpec
-    virtual float getX()                    const { return m_ptOrigin.x; }
-    virtual float getY()                    const { return m_ptOrigin.y; }
-    virtual float getOffsetX()              const { return m_ptOffset.x; }
-    virtual float getOffsetY()              const { return m_ptOffset.y; }
-    virtual NavBitmap::Ptr getBuffer()      const { return m_pBuffer; }
-    virtual void set( float fX, float fY ) {  }
-    virtual bool canEdit()                  const { return false; }
-
-    //CmdTarget
-    virtual void getCmds( CmdInfo::List& cmds ) const{};
-
-    //Site
-    virtual bool canEvaluate( const Site::PtrVector& evaluated ) const { return true; }
-    virtual EvaluationResult evaluate( const EvaluationMode& mode, DataBitmap& data );
-    
-    virtual void getContour( FloatPairVector& contour );
-    virtual bool isConnection() { return true; }
-
-private:
-    Reference::Ptr m_pSourceRef, m_pTargetRef;
-    
-    Site::WeakPtr m_pSiteParent;
-    NavBitmap::Ptr m_pBuffer;
-    wykobi::point2d< float > m_ptOrigin;
-    wykobi::point2d< float > m_ptOffset;
-    boost::optional< wykobi::polygon< float, 2u > > m_polygonCache;
-};
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -147,17 +86,21 @@ public:
     virtual const GlyphSpec* getParent() const { return 0u; }
     virtual const std::string& getName() const { return Node::getName(); }
 
-    //ImageSpec
-    virtual float getX()                    const { return 0.0f; }
-    virtual float getY()                    const { return 0.0f; }
-    virtual float getOffsetX()              const { return 0.0f; }
-    virtual float getOffsetY()              const { return 0.0f; }
-    virtual NavBitmap::Ptr getBuffer()      const { return NavBitmap::Ptr(); }
+    //Origin
+    virtual const Transform& getTransform() const 
+    { 
+        static const Transform m_transform;
+        return m_transform; 
+    }
+    virtual void setTransform( const Transform& transform ) 
+    { 
+        ASSERT( false );
+    }
+    virtual const MarkupPath* getPolygon()  const { return nullptr; }
+    
+    
     virtual bool canEdit()                  const { return false; }
     virtual void set( float fX, float fY ) {}
-
-    //CmdTarget
-    virtual void getCmds( CmdInfo::List& cmds ) const;
 
     //Site
     virtual bool canEvaluate( const Site::PtrVector& evaluated ) const { return true; }
@@ -166,9 +109,8 @@ public:
     virtual bool add( Node::Ptr pNewNode );
     virtual void remove( Node::Ptr pNode );
     
-    virtual void getContour( FloatPairVector& contour ) { ASSERT( false ); }
-
-    void getContour( std::vector< FloatPairVector >& contour );
+    virtual void getAbsoluteContour( FloatPairVector& contour ) { ASSERT( false ); }
+    void getAbsoluteContours( std::vector< FloatPairVector >& contour );
 
 private:
     void computePairings( ConnectionPairingSet& pairings ) const;

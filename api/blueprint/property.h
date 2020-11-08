@@ -13,7 +13,6 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/optional.hpp>
-#include <boost/bind.hpp>
 #include <boost/chrono.hpp>
 
 #include <string>
@@ -28,31 +27,6 @@ namespace Blueprint
 class Factory;
 class Property;
 
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-class GlyphSpecProducer : public Node
-{
-public:
-    typedef boost::shared_ptr< GlyphSpecProducer > Ptr;
-    typedef boost::shared_ptr< const GlyphSpecProducer > PtrCst;
-
-    GlyphSpecProducer( Node::Ptr pParent, const std::string& strName )
-        : Node( pParent, strName )
-    {
-    }
-    GlyphSpecProducer( PtrCst pOriginal, Node::Ptr pParent, const std::string& strName )
-        :   Node( pOriginal, pParent, strName )
-    {
-    }
-    virtual int getControlPointCount() { return 0; }
-    virtual void getControlPoints( ControlPoint::List& ) {}
-    //virtual void getPorts( Port::List& ) {}
-    //virtual void getConnections( Connection::List& ) {}
-    virtual void getMarkupPaths( MarkupPath::List& ) {}
-    virtual void getMarkupTexts( MarkupText::List& ) {}
-
-    virtual bool cmd_delete( const GlyphSpec* ) { return false; }
-};
 
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
@@ -261,36 +235,6 @@ private:
     Ed::Reference m_reference;
 };
 
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
-class Feature : public GlyphSpecProducer, public boost::enable_shared_from_this< Feature >
-{
-public:
-    typedef boost::shared_ptr< Feature > Ptr;
-    typedef boost::shared_ptr< const Feature > PtrCst;
-    typedef std::set< Ptr > PtrSet;
-    typedef std::vector< Ptr > PtrVector;
-    typedef std::map< std::string, Ptr > PtrMap;
-    
-    static const std::string& TypeName();
-    Feature( Node::Ptr pParent, const std::string& strName )
-        : GlyphSpecProducer( pParent, strName )
-    {
-
-    }
-    Feature( PtrCst pOriginal, Node::Ptr pParent, const std::string& strName )
-        :   GlyphSpecProducer( pOriginal, pParent, strName )
-    {
-    }
-    virtual Node::PtrCst getPtr() const { return shared_from_this(); }
-    virtual Node::Ptr getPtr() { return shared_from_this(); }
-    virtual Node::Ptr copy( Node::Ptr pParent, const std::string& strName ) const;
-    virtual void init();
-    virtual void load( Factory& factory, const Ed::Node& node );
-    virtual void save( Ed::Node& node ) const;
-    virtual std::string getStatement() const { return ""; }
-    
-};
 }
 
 #endif //PROPERTY_18_09_2013

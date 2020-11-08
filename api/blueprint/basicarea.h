@@ -50,19 +50,26 @@ public:
     virtual const std::string& getName() const { return Node::getName(); }
     virtual const GlyphSpec* getParent() const { return 0u; }
 
-    //ImageSpec
-    virtual float getX()                    const { return 0.0f; }
-    virtual float getY()                    const { return 0.0f; }
-    virtual float getOffsetX()              const { return 0.0f; }
-    virtual float getOffsetY()              const { return 0.0f; }
-    virtual NavBitmap::Ptr getBuffer()      const { return NavBitmap::Ptr(); }
+    //Origin
+    virtual const Transform& getTransform() const 
+    { 
+        static const Transform m_transform;
+        return m_transform; 
+    }
+    virtual void setTransform( const Transform& transform ) 
+    { 
+        ASSERT( false );
+    }
+    virtual const MarkupPath* getPolygon()  const { return nullptr; }
+    
+    //virtual float getOffsetX()              const { return 0.0f; }
+    //virtual float getOffsetY()              const { return 0.0f; }
+    //virtual NavBitmap::Ptr getBuffer()      const { return NavBitmap::Ptr(); }
+    
     virtual void set( float fX, float fY ){}
     virtual bool canEdit() const { return false; }
     
-    //CmdTarget
-    virtual void getCmds( CmdInfo::List& cmds ) const{};
-    
-    virtual void getContour( FloatPairVector& contour ) { ASSERT( false ); }
+    virtual void getAbsoluteContour( FloatPairVector& contour ) { ASSERT( false ); }
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -104,22 +111,23 @@ public:
     virtual const std::string& getName() const { return Node::getName(); }
     virtual const GlyphSpec* getParent() const { return m_pSiteParent.lock().get(); }
 
-    //ImageSpec
-    virtual float getX()                    const { return m_ptOrigin.x; }
-    virtual float getY()                    const { return m_ptOrigin.y; }
-    virtual float getOffsetX()              const { return m_ptOffset.x; }
-    virtual float getOffsetY()              const { return m_ptOffset.y; }
-    virtual NavBitmap::Ptr getBuffer()      const { return m_pBuffer; }
+    //Origin
+    virtual const Transform& getTransform() const { return m_transform; }
+    virtual void setTransform( const Transform& transform );
+    virtual const MarkupPath* getPolygon()  const { return m_pPath.get(); }
+    
+    //virtual float getOffsetX()              const { return m_ptOffset.x; }
+    //virtual float getOffsetY()              const { return m_ptOffset.y; }
+    //virtual NavBitmap::Ptr getBuffer()      const { return m_pBuffer; }
     virtual bool canEdit()                  const { return true; }
 
     virtual void set( float fX, float fY )
     {
         const float fNewValueX = Map_FloorAverage()( fX );
         const float fNewValueY = Map_FloorAverage()( fY );
-        if( m_ptOrigin.x != fNewValueX || m_ptOrigin.y != fNewValueY )
+        if( ( m_transform.X() != fNewValueX ) || ( m_transform.Y() != fNewValueY ) )
         {
-            m_ptOrigin.x = fNewValueX;
-            m_ptOrigin.y = fNewValueY;
+            m_transform.setTranslation( fNewValueX, fNewValueY );
             setModified();
         }
     }
@@ -135,32 +143,25 @@ public:
     { 
         if( m_pPath.get() ) 
             paths.push_back( m_pPath.get() ); 
-        if( m_pPath2.get() ) 
-            paths.push_back( m_pPath2.get() ); 
     }
     
-    enum eCmds
-    {
-        eSomeCmd,
-        TOTAL_CMDS
-    };
-    
-    virtual void getCmds( CmdInfo::List& cmds ) const;
+    //cmds
+    void cmd_rotateLeft();
+    void cmd_rotateRight();
+    void cmd_flipHorizontally();
+    void cmd_flipVertically();
 
     const ContourPointVector& getBoundaries() const { return m_boundaryPoints; }
     
-    virtual void getContour( FloatPairVector& contour );
+    virtual void getAbsoluteContour( FloatPairVector& contour );
 private:
     Site::WeakPtr m_pSiteParent;
-    wykobi::point2d< float > m_ptOrigin;
-    wykobi::point2d< float > m_ptOffset;
+    Transform m_transform;
     MarkupPath::PathCmdVector m_path;
-    MarkupPath::PathCmdVector m_path2;
 
-    NavBitmap::Ptr m_pBuffer;
+    //NavBitmap::Ptr m_pBuffer;
     std::unique_ptr< TextImpl > m_pLabel;
     std::unique_ptr< PathImpl > m_pPath;
-    std::unique_ptr< PathImpl > m_pPath2;
     Feature_Contour::Ptr m_pContour;
 
     ContourPointVector m_boundaryPoints;

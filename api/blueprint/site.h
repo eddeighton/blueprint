@@ -1,9 +1,9 @@
 #ifndef SITE_13_09_2013
 #define SITE_13_09_2013
 
-#include "buffer.h"
-#include "glyphSpec.h"
-#include "property.h"
+#include "blueprint/buffer.h"
+#include "blueprint/glyphSpec.h"
+#include "blueprint/glyphSpecProducer.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -32,31 +32,11 @@ public:
     virtual boost::shared_ptr< Site > GetInteractionSite() const = 0;
 };
 
-class Site;
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-class CmdTarget
-{
-public:
-    struct CmdInfo
-    {
-        typedef std::list< CmdInfo > List;
-        CmdInfo( const std::string& _strName, unsigned int _uiCmdID )
-            : strName( _strName ), uiCmdID( _uiCmdID )
-        {}
-        std::string strName;
-        unsigned int uiCmdID;
-    };
-    virtual void getCmds( CmdInfo::List& cmds ) const=0;
-};
-
-
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 class Site : 
     public GlyphSpecProducer, 
-    public CmdTarget, 
-    public ImageSpec
+    public Origin
 {
     Site& operator=( const Site& );
 public:
@@ -93,9 +73,12 @@ public:
     const Site::PtrVector& getSpaces() const { return m_spaces; }
 
     //generator
+    void getAbsoluteTransform( Matrix& transform );
+    
     typedef std::pair< float, float > FloatPair;
     typedef std::vector< FloatPair> FloatPairVector;
-    virtual void getContour( FloatPairVector& contour ) = 0;
+    virtual void getAbsoluteContour( FloatPairVector& contour ) = 0;
+    
     virtual bool isConnection() { return false; }
 
 protected:

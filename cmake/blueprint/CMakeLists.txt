@@ -19,68 +19,48 @@ include( ${BLUEPRINT_ROOT_DIR}/cmake/common_include.cmake )
 include( ${BLUEPRINT_ROOT_DIR}/cmake/ed_include.cmake )
 
 set( BLUEPRINT_API
+    ${BLUEPRINT_API_DIR}/blueprint/transform.h
+    ${BLUEPRINT_API_DIR}/blueprint/node.h
+    ${BLUEPRINT_API_DIR}/blueprint/property.h
+    ${BLUEPRINT_API_DIR}/blueprint/glyphSpecProducer.h
     ${BLUEPRINT_API_DIR}/blueprint/buffer.h
     ${BLUEPRINT_API_DIR}/blueprint/dataBitmap.h
     ${BLUEPRINT_API_DIR}/blueprint/edit.h
     ${BLUEPRINT_API_DIR}/blueprint/factory.h
     ${BLUEPRINT_API_DIR}/blueprint/glyph.h
     ${BLUEPRINT_API_DIR}/blueprint/glyphSpec.h
-    ${BLUEPRINT_API_DIR}/blueprint/node.h
-    ${BLUEPRINT_API_DIR}/blueprint/property.h
     ${BLUEPRINT_API_DIR}/blueprint/site.h
     ${BLUEPRINT_API_DIR}/blueprint/toolbox.h
+    ${BLUEPRINT_API_DIR}/blueprint/rasteriser.h
+    ${BLUEPRINT_API_DIR}/blueprint/serialisation.h
+    ${BLUEPRINT_API_DIR}/blueprint/basicarea.h
+    ${BLUEPRINT_API_DIR}/blueprint/basicFeature.h
+    ${BLUEPRINT_API_DIR}/blueprint/connection.h
+    ${BLUEPRINT_API_DIR}/blueprint/blueprint.h
+    ${BLUEPRINT_API_DIR}/blueprint/spaceUtils.h
     )
     
-set( BLUEPRINT_CORE_API
-    ${BLUEPRINT_API_DIR}/core/rasteriser.h
-    ${BLUEPRINT_API_DIR}/core/serialisation.h
-    )
-    
-set( BLUEPRINT_MESH_API
-    ${BLUEPRINT_API_DIR}/mesh/osgMesh.h
-    ${BLUEPRINT_API_DIR}/mesh/polyvoxGenerator.h
-    ${BLUEPRINT_API_DIR}/mesh/sqcoreGenerator.h
-    )
-    
-set( BLUEPRINT_SPACES_API
-    ${BLUEPRINT_API_DIR}/spaces/basicarea.h
-    ${BLUEPRINT_API_DIR}/spaces/basicFeature.h
-    ${BLUEPRINT_API_DIR}/spaces/blueprint.h
-    ${BLUEPRINT_API_DIR}/spaces/spaceUtils.h
-    )
-    
-set( BLUEPRINT_SEARCH_API
-    ${BLUEPRINT_API_DIR}/search/adjacency.h
-    ${BLUEPRINT_API_DIR}/search/search.h
-    )
     
 set( BLUEPRINT_SOURCES_API 
         ${BLUEPRINT_API} 
-        ${BLUEPRINT_CORE_API} 
-        ${BLUEPRINT_MESH_API} 
-        ${BLUEPRINT_SPACES_API} 
-        ${BLUEPRINT_SEARCH_API} 
         )
 
 set( BLUEPRINT_SOURCES_SRC
-    ${BLUEPRINT_SRC_DIR}/core/dataBitmap.cpp
-    ${BLUEPRINT_SRC_DIR}/core/node.cpp
-    ${BLUEPRINT_SRC_DIR}/core/property.cpp
-    ${BLUEPRINT_SRC_DIR}/core/site.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/dataBitmap.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/node.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/property.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/site.cpp
 
-    ${BLUEPRINT_SRC_DIR}/edit/edit.cpp
-    ${BLUEPRINT_SRC_DIR}/edit/glyph.cpp
-    ${BLUEPRINT_SRC_DIR}/edit/toolbox.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/edit.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/glyph.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/toolbox.cpp
 
-    ${BLUEPRINT_SRC_DIR}/mesh/osgMesh.cpp
-    ${BLUEPRINT_SRC_DIR}/mesh/polyvoxGenerator.cpp
-    ${BLUEPRINT_SRC_DIR}/mesh/sqcoreGenerator.cpp
-
-    ${BLUEPRINT_SRC_DIR}/spaces/basicarea.cpp
-    ${BLUEPRINT_SRC_DIR}/spaces/basicFeature.cpp
-    ${BLUEPRINT_SRC_DIR}/spaces/blueprint.cpp
-    ${BLUEPRINT_SRC_DIR}/spaces/factory.cpp
-    ${BLUEPRINT_SRC_DIR}/spaces/spaceUtils.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/basicarea.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/basicFeature.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/connection.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/blueprint.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/factory.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/spaceUtils.cpp
     )
 
 set( BLUEPRINT_SOURCES ${BLUEPRINT_SOURCES_API} ${BLUEPRINT_SOURCES_SRC} )

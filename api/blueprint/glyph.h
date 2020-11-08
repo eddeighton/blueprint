@@ -5,11 +5,8 @@
 #include "node.h"
 #include "glyphSpec.h"
 
-//#include "common/stl.h"
-
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
-#include <boost/bind.hpp>
 
 #include <vector>
 #include <set>
@@ -52,6 +49,22 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
+class GlyphOrigin : public IGlyph
+{
+    friend class SpaceGlyphs;
+    friend class Interaction;
+public:
+    GlyphOrigin( Origin* pOrigin, IGlyph::Ptr pParent )
+        :   IGlyph( pOrigin, pParent )
+    {}
+    
+    const Origin* getOrigin() const { return dynamic_cast< const Origin* >( m_pGlyphSpec ); }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+/*
 class GlyphImage : public IGlyph
 {
     friend class SpaceGlyphs;
@@ -62,7 +75,7 @@ public:
     {}
     
     const ImageSpec* getImageSpec() const { return dynamic_cast< const ImageSpec* >( m_pGlyphSpec ); }
-};
+};*/
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -92,7 +105,8 @@ class GlyphFactory
 {
 public:
     virtual IGlyph::Ptr createControlPoint( ControlPoint* pControlPoint, IGlyph::Ptr pParent ) = 0;
-    virtual IGlyph::Ptr createImage( ImageSpec* pImageSpec, IGlyph::Ptr pParent ) = 0;
+    //virtual IGlyph::Ptr createImage( ImageSpec* pImageSpec, IGlyph::Ptr pParent ) = 0;
+    virtual IGlyph::Ptr createOrigin( Origin* pOrigin, IGlyph::Ptr pParent ) = 0;
     virtual IGlyph::Ptr createMarkupPath( MarkupPath* pMarkupPath, IGlyph::Ptr pParent ) = 0;
     virtual IGlyph::Ptr createMarkupText( MarkupText* pMarkupText, IGlyph::Ptr pParent ) = 0;
 };

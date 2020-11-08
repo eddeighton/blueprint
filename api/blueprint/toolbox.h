@@ -36,8 +36,10 @@ public:
         template< class TCont >
         void addABunch( const TCont& container, bool bSelect = false )
         {
-            std::for_each( container.begin(), container.end(),
-                boost::bind( &Palette::add, this, _1, bSelect ) );
+            for( auto& i : container )
+            {
+                add( i, bSelect );
+            }
         }
 
         void remove( Site::Ptr pClip );
@@ -65,8 +67,10 @@ public:
     template< class TCont >
     void addABunch( const std::string& strName, const TCont& container, bool bSelect = false )
     {
-        std::for_each( container.begin(), container.end(),
-            boost::bind( &Toolbox::add, this, boost::ref( strName ), _1, bSelect ) );
+        for( auto& i : container )
+        {
+            add( strName, i, bSelect );
+        }
     }
     void remove( Palette::Ptr pPalette );
     

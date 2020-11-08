@@ -6,6 +6,7 @@
 #include "blueprint/buffer.h"
 #include "blueprint/property.h"
 #include "blueprint/glyphSpec.h"
+#include "blueprint/glyphSpecProducer.h"
 
 #include "ed/node.hpp"
 
@@ -22,6 +23,37 @@
 namespace Blueprint
 {
 class Factory;
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+class Feature : public GlyphSpecProducer, public boost::enable_shared_from_this< Feature >
+{
+public:
+    typedef boost::shared_ptr< Feature > Ptr;
+    typedef boost::shared_ptr< const Feature > PtrCst;
+    typedef std::set< Ptr > PtrSet;
+    typedef std::vector< Ptr > PtrVector;
+    typedef std::map< std::string, Ptr > PtrMap;
+    
+    static const std::string& TypeName();
+    Feature( Node::Ptr pParent, const std::string& strName )
+        : GlyphSpecProducer( pParent, strName )
+    {
+
+    }
+    Feature( PtrCst pOriginal, Node::Ptr pParent, const std::string& strName )
+        :   GlyphSpecProducer( pOriginal, pParent, strName )
+    {
+    }
+    virtual Node::PtrCst getPtr() const { return shared_from_this(); }
+    virtual Node::Ptr getPtr() { return shared_from_this(); }
+    virtual Node::Ptr copy( Node::Ptr pParent, const std::string& strName ) const;
+    virtual void init();
+    virtual void load( Factory& factory, const Ed::Node& node );
+    virtual void save( Ed::Node& node ) const;
+    virtual std::string getStatement() const { return ""; }
+    
+};
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
@@ -205,6 +237,7 @@ public:
     virtual std::string getStatement() const;
 
     const unsigned int getContourPointIndex() const { return m_uiContourPointIndex; }
+    float getRatio() const { return m_fRatio; }
     
     //ControlPointCallback
     virtual const GlyphSpec* getParent( int id ) const;
@@ -253,6 +286,7 @@ public:
     };
 
     void getBoundaryPoint( Points type, unsigned int& polyIndex, float& x, float& y, float& fDistance ) const;
+    float getWidth() const { return m_fWidth; }
 
     virtual float getX( int id ) const;
     virtual float getY( int id ) const;
