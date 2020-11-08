@@ -87,9 +87,6 @@ void Area::init()
         m_pContour->set( wykobi::make_rectangle< float >( -15, -15, 15, 15 ) );
         add( m_pContour );
     }
-
-    if( !m_pLabel.get() )
-        m_pLabel.reset( new TextImpl( this, Node::getName(), 0.0f, 0.0f ) ); 
     
     if( !m_pPath.get() )
         m_pPath.reset( new PathImpl( m_path, this ) );
@@ -101,6 +98,39 @@ void Area::init()
             Node::ConvertPtrType< Feature_ContourSegment >() ),
             Node::ConvertPtrType< Site >() );
 
+    //m_propertyLabels.clear();
+    //m_properties.clear();
+    //m_propertyStrings.clear();
+    m_strLabelText.clear();
+    {
+        std::ostringstream os;
+        os << Node::getName();
+        {
+            PropertyVector m_properties;
+            for_each_recursive( 
+                generics::collectIfConvert( m_properties, 
+                    Node::ConvertPtrType< Property >(), 
+                    Node::ConvertPtrType< Property >() ),
+                    Node::ConvertPtrType< Property >() );
+                    
+            for( Property::Ptr pProperty : m_properties )
+            {
+                os << "\n" << pProperty->getName() << ": " << pProperty->getValue();
+                //m_propertyStrings.push_back( os.str() );
+            }
+        }
+        m_strLabelText = os.str();
+    }
+    /*for( const std::string& str : m_propertyStrings )
+    {
+        std::shared_ptr< TextImpl > pText( 
+            new TextImpl( this, str, 0.0f, 0.0f ) );
+        m_propertyLabels.push_back( pText );
+    }*/
+
+    if( !m_pLabel.get() )
+        m_pLabel.reset( new TextImpl( this, m_strLabelText, 0.0f, 0.0f ) ); 
+    
     //if( !m_pBuffer ) m_pBuffer.reset( new NavBitmap( 1u, 1u ) );
 }
 
@@ -181,8 +211,18 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
         */
         
         const wykobi::rectangle< float > aabbBox = wykobi::aabb( polygon );
-
-        m_pLabel->setPos( wykobi::centroid( aabbBox ) );
+        auto labelPos = wykobi::centroid( aabbBox );
+        
+        labelPos.x -= 2.0f;
+        labelPos.y += 3.0f;
+        m_pLabel->setPos( labelPos );
+        
+        /*
+        for( std::shared_ptr< TextImpl > p : m_propertyLabels )
+        {
+            labelPos.y -= 3.0f;
+            p->setPos( labelPos );
+        }*/
         
         //update the paths
         {

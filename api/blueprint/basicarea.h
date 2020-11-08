@@ -84,6 +84,7 @@ class Area : public Site, public boost::enable_shared_from_this< Area >
 public:
     typedef ControlPointCallback< Area > PointType;
     typedef std::vector< Feature_ContourSegment::Ptr > ContourPointVector;
+    typedef std::vector< Property::Ptr > PropertyVector;
 
     typedef boost::shared_ptr< Area > Ptr;
     typedef boost::shared_ptr< const Area > PtrCst;
@@ -137,6 +138,8 @@ public:
     { 
         if( m_pLabel.get() ) 
             text.push_back( m_pLabel.get() ); 
+        //for( std::shared_ptr< TextImpl > p : m_propertyLabels )
+        //    text.push_back( p.get() ); 
     }
     
     virtual void getMarkupPaths( MarkupPath::List& paths ) 
@@ -161,11 +164,17 @@ private:
 
     //NavBitmap::Ptr m_pBuffer;
     std::unique_ptr< TextImpl > m_pLabel;
+    //std::vector< std::shared_ptr< TextImpl > > m_propertyLabels;
     std::unique_ptr< PathImpl > m_pPath;
     Feature_Contour::Ptr m_pContour;
 
     ContourPointVector m_boundaryPoints;
-
+    std::string m_strLabelText;
+    //PropertyVector m_properties;
+    //std::vector< std::string > m_propertyStrings;
+    //using PropertyLabelMap = std::map< Property::Ptr, std::shared_ptr< TextImpl > >;
+    //PropertyLabelMap m_propertyLabels;
+    
     boost::optional< wykobi::polygon< float, 2u > > m_polygonCache;
 };
 
