@@ -174,7 +174,11 @@ namespace Ed
             {
                 const std::string* pFind =
                     std::find( szAngles, szAngles + 8, strAngle );
-                angle = static_cast< Math::Angle< 8 >::Value >( std::distance( szAngles, pFind ) );
+                const std::size_t szDistance = std::distance( szAngles, pFind );
+                if( szDistance >= 8 )
+                    angle = Math::Angle< 8 >::eEast;
+                else
+                    angle = static_cast< Math::Angle< 8 >::Value >( szDistance );
             }
         }
         

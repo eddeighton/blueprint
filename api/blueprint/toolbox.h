@@ -57,6 +57,8 @@ public:
     typedef boost::shared_ptr< Toolbox > Ptr;
 
     Toolbox( const std::string& strDirectoryPath );
+    
+    void reload();
 
     Site::Ptr getCurrentItem() const;
     const Palette::PtrMap& get() const { return m_palettes; }
@@ -97,8 +99,8 @@ public:
 private:
     void recursiveLoad( const boost::filesystem::path& pathIter, const std::string& strCurrent );
 private:
+    boost::filesystem::path m_rootPath;
     Palette::PtrMap m_palettes;
-    std::string m_strRootDirectory;
     Palette::Ptr m_pCurrentPalette;
     
     Ed::Node m_config;
