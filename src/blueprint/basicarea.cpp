@@ -99,11 +99,11 @@ void Area::init()
             Node::ConvertPtrType< Site >() );
 
     m_strLabelText.clear();
+    m_properties.clear();
     {
         std::ostringstream os;
         os << Node::getName();
         {
-            PropertyVector m_properties;
             for_each_recursive( 
                 generics::collectIfConvert( m_properties, 
                     Node::ConvertPtrType< Property >(), 

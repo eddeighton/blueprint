@@ -153,6 +153,7 @@ public:
     void cmd_flipVertically();
 
     const ContourPointVector& getBoundaries() const { return m_boundaryPoints; }
+    const PropertyVector& getProperties() const { return m_properties; }
     
     virtual void getAbsoluteContour( FloatPairVector& contour );
 private:
@@ -166,6 +167,7 @@ private:
     Feature_Contour::Ptr m_pContour;
 
     ContourPointVector m_boundaryPoints;
+    PropertyVector m_properties;
     std::string m_strLabelText;
     
     boost::optional< wykobi::polygon< float, 2u > > m_polygonCache;
