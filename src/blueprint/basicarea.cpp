@@ -98,9 +98,6 @@ void Area::init()
             Node::ConvertPtrType< Feature_ContourSegment >() ),
             Node::ConvertPtrType< Site >() );
 
-    //m_propertyLabels.clear();
-    //m_properties.clear();
-    //m_propertyStrings.clear();
     m_strLabelText.clear();
     {
         std::ostringstream os;
@@ -111,22 +108,15 @@ void Area::init()
                 generics::collectIfConvert( m_properties, 
                     Node::ConvertPtrType< Property >(), 
                     Node::ConvertPtrType< Property >() ),
-                    Node::ConvertPtrType< Property >() );
+                    Node::ConvertPtrType< Site >() );
                     
             for( Property::Ptr pProperty : m_properties )
             {
                 os << "\n" << pProperty->getName() << ": " << pProperty->getValue();
-                //m_propertyStrings.push_back( os.str() );
             }
         }
         m_strLabelText = os.str();
     }
-    /*for( const std::string& str : m_propertyStrings )
-    {
-        std::shared_ptr< TextImpl > pText( 
-            new TextImpl( this, str, 0.0f, 0.0f ) );
-        m_propertyLabels.push_back( pText );
-    }*/
 
     if( !m_pLabel.get() )
         m_pLabel.reset( new TextImpl( this, m_strLabelText, 0.0f, 0.0f ) ); 
@@ -210,12 +200,12 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
         }
         */
         
-        const wykobi::rectangle< float > aabbBox = wykobi::aabb( polygon );
-        auto labelPos = wykobi::centroid( aabbBox );
+        //const wykobi::rectangle< float > aabbBox = wykobi::aabb( polygon );
+        //auto labelPos = wykobi::centroid( aabbBox );
         
-        labelPos.x -= 2.0f;
-        labelPos.y += 3.0f;
-        m_pLabel->setPos( labelPos );
+       //labelPos.x -= 2.0f;
+        //labelPos.y += 3.0f;
+        //m_pLabel->setPos( labelPos );
         
         /*
         for( std::shared_ptr< TextImpl > p : m_propertyLabels )
