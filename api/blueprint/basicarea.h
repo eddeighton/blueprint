@@ -68,8 +68,6 @@ public:
     
     virtual void set( float fX, float fY ){}
     virtual bool canEdit() const { return false; }
-    
-    virtual void getAbsoluteContour( FloatPairVector& contour ) { ASSERT( false ); }
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -154,8 +152,6 @@ public:
 
     const ContourPointVector& getBoundaries() const { return m_boundaryPoints; }
     const PropertyVector& getProperties() const { return m_properties; }
-    
-    virtual void getAbsoluteContour( FloatPairVector& contour );
 private:
     Site::WeakPtr m_pSiteParent;
     Transform m_transform;

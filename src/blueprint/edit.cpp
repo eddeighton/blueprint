@@ -6,6 +6,7 @@
 #include "blueprint/property.h"
 #include "blueprint/dataBitmap.h"
 #include "blueprint/factory.h"
+#include "blueprint/contour.h"
 
 #include "common/assert_verify.hpp"
 #include "common/rounding.hpp"
@@ -211,7 +212,7 @@ private:
 
         Feature_Contour::Ptr pContour = area.m_pContour;
 
-        wykobi::polygon< float, 2 > poly = pContour->get();
+        Polygon2D poly = pContour->get();
         m_iPointIndex = poly.size();
         poly.push_back( wykobi::make_point< float >( m_startX, m_startY ) );
         area.m_pContour->set( poly );
@@ -886,93 +887,158 @@ void Edit::cmd_flipVertically( const std::set< IGlyph* >& selection )
     interaction_evaluate();
 }
 
-void Edit::generateExtrusion( const std::string& strFilePath, float fAmount, bool bConvexHull ) const
+std::set< IGlyph* > Edit::generateExtrusion( float fAmount, bool bConvexHull )
 {
-    wykobi::polygon< float, 2 > extrudedContour;
+    Blueprint::Ptr pBlueprint = boost::dynamic_pointer_cast< Blueprint >( m_pSite );
+    VERIFY_RTE_MSG( pBlueprint, "Can only extrue blueprint" );
+    
+    std::vector< Polygon2D > extrudedContours;
     {
-        wykobi::polygon< float, 2 > contour;
+        ConnectionAnalysis connectionAnalysis( pBlueprint );
+        
+        struct AreaPoints
         {
-            if( Blueprint::Ptr pBlueprint = boost::dynamic_pointer_cast< Blueprint >( m_pSite ) )
+            Area::Ptr pArea;
+            std::vector< Point > points;
+            int totalBoundaries;
+        };
+        std::vector< AreaPoints > areaPointsArray;
+        std::vector< WallSection > wallSections;
+        
+        for( Site::Ptr pSite : pBlueprint->getSpaces() )
+        {
+            if( Area::Ptr pArea = boost::dynamic_pointer_cast< Area >( pSite ) )
             {
-                std::vector< Site::FloatPairVector > blueprintContours;
-                pBlueprint->getAbsoluteContours( blueprintContours );
-                VERIFY_RTE( !blueprintContours.empty() );
-                
-                if( bConvexHull )
                 {
-                    for( const Site::FloatPairVector& fpv : blueprintContours )
-                    {
-                        for( const Site::FloatPair& fp : fpv )
-                        {
-                            contour.push_back( wykobi::make_point< float >( fp.first, fp.second ) );
-                        }
-                    }
-                    
-                    std::vector< wykobi::point2d< float > > convexContour;
-                    wykobi::algorithm::convex_hull_graham_scan< wykobi::point2d< float > >( 
-                        contour.begin(), contour.end(), std::back_inserter( convexContour ) );
-                        
-                    wykobi::polygon< float, 2u > convexPoly( convexContour.size() );
-                    std::copy( convexContour.rbegin(), convexContour.rend(), convexPoly.begin() );
-                    
-                    offsetSimplePolygon( convexPoly, extrudedContour, fAmount );
+                    AreaPoints areaPoints{ pArea };
+                    getAreaPoints( m_strFilePath, connectionAnalysis, pArea, 
+                        areaPoints.points, areaPoints.totalBoundaries );
+                    areaPointsArray.emplace_back( std::move( areaPoints ) );
                 }
-                else
-                {
-                    const Site::FloatPairVector& outer = blueprintContours.front();
-                    for( const Site::FloatPair& fp : outer )
-                    {
-                        contour.push_back( wykobi::make_point< float >( fp.first, fp.second ) );
-                    }
-                    
-                    offsetSimplePolygon( contour, extrudedContour, fAmount );
-                }
-            }
-            else
-            {
-                Site::FloatPairVector outer;
-                m_pSite->getAbsoluteContour( outer );
-                for( const Site::FloatPair& fp : outer )
-                {
-                    contour.push_back( wykobi::make_point< float >( fp.first, fp.second ) );
-                }
-                
-                if( bConvexHull )
-                {
-                    std::vector< wykobi::point2d< float > > convexContour;
-                    wykobi::algorithm::convex_hull_graham_scan< wykobi::point2d< float > >( 
-                        contour.begin(), contour.end(), std::back_inserter( convexContour ) );
-                        
-                    wykobi::polygon< float, 2u > convexPoly( convexContour.size() );
-                    std::copy( convexContour.rbegin(), convexContour.rend(), convexPoly.begin() );
-                    
-                    offsetSimplePolygon( convexPoly, extrudedContour, fAmount );
-                }
-                else
-                {
-                    offsetSimplePolygon( contour, extrudedContour, fAmount );
-                }
+
+                getWallSections( m_strFilePath, 
+                        areaPointsArray.back().points, 
+                        areaPointsArray.back().totalBoundaries, 
+                        wallSections );
             }
         }
         
+        WallSection::ListPtrVector wallSectionLists;
+        getWallSectionLists( wallSections, wallSectionLists );
+        
+        Contour::PtrVector contours;
+        getContours( wallSectionLists, contours );
+        
+        VERIFY_RTE( !contours.empty() );
+        
+        if( bConvexHull )
+        {
+            std::vector< Point2D > allPoints;
+            for( Contour::Ptr pContour : contours )
+            {
+                Polygon2D contourPolygon;
+                pContour->getOuterPolygon( contourPolygon );
+                for( const Point2D& p : contourPolygon )
+                {
+                    allPoints.push_back( p );
+                }
+            }
+            
+            std::vector< wykobi::point2d< float > > convexContour;
+            wykobi::algorithm::convex_hull_graham_scan< wykobi::point2d< float > >( 
+                allPoints.begin(), allPoints.end(), std::back_inserter( convexContour ) );
+                
+            wykobi::polygon< float, 2u > convexPoly( convexContour.size() );
+            std::copy( convexContour.rbegin(), convexContour.rend(), convexPoly.begin() );
+            
+            Polygon2D extrudedContour;
+            offsetSimplePolygon( convexPoly, extrudedContour, fAmount );
+            extrudedContours.push_back( extrudedContour );
+        }
+        else
+        {
+            for( Contour::Ptr pContour : contours )
+            {
+                Polygon2D contourPolygon;
+                pContour->getOuterPolygon( contourPolygon );
+                
+                Polygon2D extrudedContour;
+                offsetSimplePolygon( contourPolygon, extrudedContour, fAmount );
+                extrudedContours.push_back( extrudedContour );
+            }
+        }
     }
     
+    Site::PtrVector newSites;
+    for( const Polygon2D& extrudedContour : extrudedContours )
+    {
+        Area::Ptr pContourArea( new Area( pBlueprint, pBlueprint->generateNewNodeName( "area" ) ) );
+        pContourArea->init();
+        pBlueprint->add( pContourArea );
+        Feature_Contour::Ptr pContour = pContourArea->getContour();
+        pContour->set( extrudedContour );
+        
+        SpaceGlyphs::Ptr pSpaceGlyphs( new SpaceGlyphs( *this, pContourArea, m_glyphFactory ) );
+        m_glyphMap.insert( std::make_pair( pContourArea, pSpaceGlyphs ) );
+        
+        newSites.push_back( pContourArea );
+    }
+    
+    m_pSite->init();
+
+    interaction_evaluate();
+    
+    std::set< IGlyph* > selection;
+    {
+        for( Site::Ptr pNewNode : newSites )
+        {
+            SiteMap::iterator iFind = m_glyphMap.find( pNewNode );
+            if( iFind != m_glyphMap.end() )
+                selection.insert( iFind->second->getMainGlyph().get() );
+        }
+    }
+    
+    return selection;
+}
+
+void Edit::save( const std::set< IGlyph* >& selection, const std::string& strFilePath )
+{
+    Site::PtrSet sites;
+    for( std::set< IGlyph* >::const_iterator 
+        i = selection.begin(), iEnd = selection.end(); i!=iEnd; ++i )
+    {
+        IGlyph* pGlyph = *i;
+
+        for( SiteMap::const_iterator j = m_glyphMap.begin(),
+            jEnd = m_glyphMap.end(); j!=jEnd; ++j )
+        {
+            Site::Ptr pSite = j->first;
+            if( dynamic_cast< const GlyphSpec* >( pSite.get() ) == pGlyph->getGlyphSpec() )
+            {
+                sites.insert( pSite );
+                break;
+            }
+        }
+    }
+
     const boost::filesystem::path filePath = strFilePath;
     Blueprint::Ptr pBlueprint( new Blueprint( filePath.filename().replace_extension( "" ).string() ) );
     {
         pBlueprint->init();
         
-        Area::Ptr pContourArea( new Area( pBlueprint, "area_0000" ) );
-        pContourArea->init();
-        pBlueprint->add( pContourArea );
-        Feature_Contour::Ptr pContour = pContourArea->getContour();
-        pContour->set( extrudedContour );
+        for( Site::PtrSet::iterator 
+            i = sites.begin(),
+            iEnd = sites.end(); i!=iEnd; ++i )
+        {
+            bool bResult = pBlueprint->add( (*i)->copy( pBlueprint, (*i)->Node::getName() ) );
+            VERIFY_RTE( bResult );
+        }
     }
     
     Factory factory;
     factory.save( pBlueprint, strFilePath );
 }
-
+    
 void Edit::setViewMode( bool bBitmap, bool bCellComplex, bool bClearance )
 {
     m_bViewBitmap = bBitmap;

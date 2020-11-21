@@ -108,9 +108,6 @@ public:
     
     virtual bool add( Node::Ptr pNewNode );
     virtual void remove( Node::Ptr pNode );
-    
-    virtual void getAbsoluteContour( FloatPairVector& contour ) { ASSERT( false ); }
-    void getAbsoluteContours( std::vector< FloatPairVector >& contour );
 
 private:
     void computePairings( ConnectionPairingSet& pairings ) const;

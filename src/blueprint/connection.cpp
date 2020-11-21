@@ -173,43 +173,4 @@ Site::EvaluationResult Connection::evaluate( const EvaluationMode& mode, DataBit
     return result;
 }
 
-void Connection::getAbsoluteContour( FloatPairVector& contourResult ) 
-{
-    Matrix absTransform;
-    getAbsoluteTransform( absTransform );
-
-    ASSERT( m_pSourceRef && m_pTargetRef );
-    
-    RefPtr pSource( shared_from_this(), m_pSourceRef->getValue() );
-    RefPtr pTarget( shared_from_this(), m_pTargetRef->getValue() );
-
-    Feature_ContourSegment::Ptr pSourceSegment = pSource.get< Feature_ContourSegment >();
-    Feature_ContourSegment::Ptr pTargetSegment = pTarget.get< Feature_ContourSegment >();
-    if( pSourceSegment && pTargetSegment )
-    {
-        std::vector< wykobi::point2d< float > > points, convexHullPoints;
-        points.push_back( getContourSegmentPointAbsolute( pSourceSegment, Feature_ContourSegment::eLeft ) );
-        points.push_back( getContourSegmentPointAbsolute( pSourceSegment, Feature_ContourSegment::eRight ) );
-        points.push_back( getContourSegmentPointAbsolute( pTargetSegment, Feature_ContourSegment::eLeft ) );
-        points.push_back( getContourSegmentPointAbsolute( pTargetSegment, Feature_ContourSegment::eRight ) );
-
-        wykobi::algorithm::convex_hull_graham_scan< wykobi::point2d< float > >( 
-            points.begin(), points.end(), std::back_inserter( convexHullPoints ) );
-        
-        wykobi::polygon< float, 2u > contour( convexHullPoints.size() );
-        std::copy( convexHullPoints.rbegin(), convexHullPoints.rend(), contour.begin() );
-
-        wykobi::polygon< float, 2u > outerContour;
-        offsetSimplePolygon( contour, outerContour, 0.1f );
-    
-        for( wykobi::polygon< float, 2u >::const_iterator 
-            i = outerContour.begin(), iEnd = outerContour.end(); i!=iEnd; ++i )
-        {
-            float x = i->x, y = i->y;
-            absTransform.transform( x, y );
-            contourResult.push_back( FloatPair( x, y ) );
-        }
-    }
-}
-
 }

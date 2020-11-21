@@ -272,27 +272,6 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
     return result;
 }
 
-
-void Area::getAbsoluteContour( FloatPairVector& contour ) 
-{ 
-    ASSERT( m_pContour );
-    if( m_pContour )
-    {
-        Matrix absTransform;
-        getAbsoluteTransform( absTransform );
-
-        const wykobi::polygon< float, 2u >& polygon = m_pContour->get();
-        for( wykobi::polygon< float, 2u >::const_iterator 
-            i = polygon.begin(),
-            iEnd = polygon.end(); i!=iEnd; ++i )
-        {
-            float x = i->x, y = i->y;
-            absTransform.transform( x, y );
-            contour.push_back( FloatPair( x, y ) );
-        }
-    }
-}
-
 void Area::setTransform( const Transform& transform )
 { 
     m_transform = transform; 

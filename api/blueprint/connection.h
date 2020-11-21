@@ -64,18 +64,14 @@ public:
         ASSERT( false );
     }
     virtual const MarkupPath* getPolygon()  const { return m_pPath.get(); }
-    
-    //virtual float getOffsetX()              const { return m_ptOffset.x; }
-    //virtual float getOffsetY()              const { return m_ptOffset.y; }
-    //virtual NavBitmap::Ptr getBuffer()      const { return m_pBuffer; }
+	
     virtual void set( float fX, float fY ) {  }
     virtual bool canEdit()                  const { return false; }
 
     //Site
     virtual bool canEvaluate( const Site::PtrVector& evaluated ) const { return true; }
     virtual EvaluationResult evaluate( const EvaluationMode& mode, DataBitmap& data );
-    
-    virtual void getAbsoluteContour( FloatPairVector& contour );
+	
     virtual bool isConnection() { return true; }
 
 private:
@@ -86,9 +82,6 @@ private:
     Site::WeakPtr m_pSiteParent;
     Transform m_transform;
     boost::optional< wykobi::polygon< float, 2u > > m_polygonCache;
-    
-    //NavBitmap::Ptr m_pBuffer;
-    //wykobi::point2d< float > m_ptOffset;
 };
 
 }

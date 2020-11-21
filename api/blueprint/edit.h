@@ -13,6 +13,16 @@
 
 namespace Blueprint
 {
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+class IInteraction : public boost::enable_shared_from_this< IInteraction >
+{
+public:
+    typedef boost::shared_ptr< IInteraction > Ptr;
+    virtual ~IInteraction(){}
+    virtual void OnMove( float x, float y ) = 0;
+    virtual boost::shared_ptr< Site > GetInteractionSite() const = 0;
+};
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -102,7 +112,8 @@ public:
     
     Site::Ptr getSite() const { return m_pSite; }
     
-    void generateExtrusion( const std::string& strFilePath, float fAmount, bool bConvexHull ) const;
+    std::set< IGlyph* > generateExtrusion( float fAmount, bool bConvexHull );
+    void save( const std::set< IGlyph* >& selection, const std::string& strFilePath );
     
     void setViewMode( bool bBitmap, bool bCellComplex, bool bClearance );
 protected:

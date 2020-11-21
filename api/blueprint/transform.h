@@ -171,14 +171,19 @@ namespace Ed
         {
             std::string strAngle;
             is >> x >> y >> strAngle >> bMirrorX >> bMirrorY;  
+
+            if( strAngle.empty() || strAngle.back() != ';' )
+                throw std::runtime_error( "Invalid angle" );
+            strAngle.pop_back();
+
             {
                 const std::string* pFind =
                     std::find( szAngles, szAngles + 8, strAngle );
                 const std::size_t szDistance = std::distance( szAngles, pFind );
                 if( szDistance >= 8 )
-                    angle = Math::Angle< 8 >::eEast;
-                else
-                    angle = static_cast< Math::Angle< 8 >::Value >( szDistance );
+                    throw std::runtime_error( "Invalid angle" );
+                
+                angle = static_cast< Math::Angle< 8 >::Value >( szDistance );
             }
         }
         

@@ -21,16 +21,6 @@ class DataBitmap;
 
 class Factory;
 class Site;
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-class IInteraction : public boost::enable_shared_from_this< IInteraction >
-{
-public:
-    typedef boost::shared_ptr< IInteraction > Ptr;
-    virtual ~IInteraction(){}
-    virtual void OnMove( float x, float y ) = 0;
-    virtual boost::shared_ptr< Site > GetInteractionSite() const = 0;
-};
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -74,10 +64,6 @@ public:
 
     //generator
     void getAbsoluteTransform( Matrix& transform );
-    
-    typedef std::pair< float, float > FloatPair;
-    typedef std::vector< FloatPair> FloatPairVector;
-    virtual void getAbsoluteContour( FloatPairVector& contour ) = 0;
     
     virtual bool isConnection() { return false; }
 
