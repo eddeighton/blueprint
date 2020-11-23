@@ -48,7 +48,7 @@ Node::Ptr Blueprint::copy( Node::Ptr pParent, const std::string& strName ) const
 void Blueprint::init()
 {
     Site::init();
-
+/*
     Connection::PtrVector connections, dudConnections;
     for_each( generics::collectIfConvert( connections, 
         Node::ConvertPtrType< Connection >(), Node::ConvertPtrType< Connection >() ) );
@@ -93,7 +93,7 @@ void Blueprint::init()
     for( Connection::Ptr pConnection : dudConnections )
     {
         remove( pConnection );
-    }
+    }*/
 }
 
 
@@ -104,8 +104,8 @@ bool Blueprint::add( Node::Ptr pNewNode )
 
 void Blueprint::remove( Node::Ptr pNode )
 {
-    if( Connection::Ptr pConnection = boost::dynamic_pointer_cast< Connection >( pNode ) )
-        generics::eraseAllSecond( m_connections, pConnection );
+    //if( Connection::Ptr pConnection = boost::dynamic_pointer_cast< Connection >( pNode ) )
+    //    generics::eraseAllSecond( m_connections, pConnection );
     Site::remove( pNode );
 }
 
@@ -120,7 +120,7 @@ void Blueprint::save( Ed::Node& node ) const
 
     Site::save( node );
 }
-
+/*
 bool detectConnection( Feature_ContourSegment::Ptr p1, Feature_ContourSegment::Ptr p2, float& fDist )
 {
     bool bValid = false;
@@ -133,8 +133,8 @@ bool detectConnection( Feature_ContourSegment::Ptr p1, Feature_ContourSegment::P
         bValid = true;
 
     return bValid;
-}
-
+}*/
+/*
 void Blueprint::computePairings( ConnectionPairingSet& pairings ) const
 {
     //LOG_PROFILE_BEGIN( BlueprintPairingCalc );
@@ -194,9 +194,10 @@ void Blueprint::computePairings( ConnectionPairingSet& pairings ) const
 
     //LOG_PROFILE_END( BlueprintPairingCalc );
 }
-
+*/
 Blueprint::EvaluationResult Blueprint::evaluate( const EvaluationMode& mode, DataBitmap& data )
 {
+    /*
     ConnectionPairingSet pairings;
     computePairings( pairings );
     
@@ -268,7 +269,12 @@ Blueprint::EvaluationResult Blueprint::evaluate( const EvaluationMode& mode, Dat
         result.bSuccess = true;
 
     //LOG_PROFILE_END( blueprint_evaluation );
-
+*/
+    EvaluationResult result;
+    
+    for( Site::PtrVector::iterator i = m_spaces.begin(),
+        iEnd = m_spaces.end(); i!=iEnd; ++i )
+        (*i)->evaluate( mode, data );
 
     return result;
 }

@@ -45,6 +45,7 @@ public:
     typedef std::set< PtrCst > PtrCstSet;
     typedef std::list< Ptr > PtrList;
     typedef std::vector< Ptr > PtrVector;
+    typedef std::vector< PtrCst > PtrCstVector;
     
     template< class T >
     struct ConvertPtrType

@@ -106,6 +106,10 @@ public:
     virtual void cmd_rotateRight( const std::set< IGlyph* >& selection );
     virtual void cmd_flipHorizontally( const std::set< IGlyph* >& selection );
     virtual void cmd_flipVertically( const std::set< IGlyph* >& selection );
+    
+    void cmd_deleteProperties( const Node::PtrCstVector& nodes );
+    void cmd_addProperties( const Node::PtrCstVector& nodes, const std::string& strName, const std::string& strStatement );
+    void cmd_editProperties( const Node::PtrCstVector& nodes, const std::string& strName, const std::string& strStatement );
 
     const std::string getFilePath() const { return m_strFilePath; }
     void setFilePath( const std::string& strFilePath ) { m_strFilePath = strFilePath; }

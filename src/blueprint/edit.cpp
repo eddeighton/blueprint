@@ -884,9 +884,70 @@ void Edit::cmd_flipVertically( const std::set< IGlyph* >& selection )
         pArea->cmd_flipVertically();
     }
 
+    m_pSite->init();
     interaction_evaluate();
 }
 
+void Edit::cmd_deleteProperties( const Node::PtrCstVector& nodes )
+{
+    std::set< Property::Ptr > uniqueProperties;
+    for( Node::PtrCst pNodeCst : nodes )
+    {
+        if( Node::Ptr pNode = boost::const_pointer_cast< Node >( pNodeCst ) )
+        {
+            if( Property::Ptr pProperty = boost::dynamic_pointer_cast< Property >( pNode ) )
+            {
+                uniqueProperties.insert( pProperty );
+            }
+        }
+    }
+    
+    for( Property::Ptr pProperty : uniqueProperties )
+    {
+        if( Node::Ptr pParent = pProperty->getParent() )
+        {
+            pParent->remove( pProperty );
+        }
+    }
+    
+    m_pSite->init();
+    interaction_evaluate();
+}
+
+void Edit::cmd_addProperties( const Node::PtrCstVector& nodes, const std::string& strName, const std::string& strStatement )
+{
+    for( Node::PtrCst pNodeCst : nodes )
+    {
+        if( Node::Ptr pNode = boost::const_pointer_cast< Node >( pNodeCst ) )
+        {
+            Property::Ptr pProperty( new Property( pNode, strName ) );
+            pProperty->setStatement( strStatement );
+            pProperty->init();
+            pNode->add( pProperty );
+        }
+    }
+    
+    m_pSite->init();
+    interaction_evaluate();
+}
+
+void Edit::cmd_editProperties( const Node::PtrCstVector& nodes, const std::string& strName, const std::string& strStatement )
+{
+    for( Node::PtrCst pNodeCst : nodes )
+    {
+        if( Node::Ptr pNode = boost::const_pointer_cast< Node >( pNodeCst ) )
+        {
+            if( Property::Ptr pProperty = boost::dynamic_pointer_cast< Property >( pNode ) )
+            {
+                pProperty->setStatement( strStatement );
+            }
+        }
+    }
+    
+    m_pSite->init();
+    interaction_evaluate();
+}
+    
 std::set< IGlyph* > Edit::generateExtrusion( float fAmount, bool bConvexHull )
 {
     Blueprint::Ptr pBlueprint = boost::dynamic_pointer_cast< Blueprint >( m_pSite );
@@ -953,6 +1014,13 @@ std::set< IGlyph* > Edit::generateExtrusion( float fAmount, bool bConvexHull )
             
             Polygon2D extrudedContour;
             offsetSimplePolygon( convexPoly, extrudedContour, fAmount );
+            
+            {
+                const int polyOrientation = wykobi::polygon_orientation( extrudedContour );
+                if( polyOrientation == wykobi::Clockwise )
+                    std::reverse( extrudedContour.begin(), extrudedContour.end() );
+            }
+        
             extrudedContours.push_back( extrudedContour );
         }
         else
@@ -964,6 +1032,11 @@ std::set< IGlyph* > Edit::generateExtrusion( float fAmount, bool bConvexHull )
                 
                 Polygon2D extrudedContour;
                 offsetSimplePolygon( contourPolygon, extrudedContour, fAmount );
+                {
+                    const int polyOrientation = wykobi::polygon_orientation( extrudedContour );
+                    if( polyOrientation == wykobi::Clockwise )
+                        std::reverse( extrudedContour.begin(), extrudedContour.end() );
+                }
                 extrudedContours.push_back( extrudedContour );
             }
         }

@@ -47,6 +47,7 @@ public:
     virtual void load( Factory& factory, const Ed::Node& node );
     virtual void save( Ed::Node& node ) const;
     virtual std::string getStatement() const;
+    void setStatement( const std::string& strStatement );
     const std::string& getValue() const { return m_strValue; }
 
 private:

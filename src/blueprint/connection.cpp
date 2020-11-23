@@ -21,6 +21,7 @@ namespace Blueprint
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
+/*
 const std::string& Connection::TypeName()
 {
     static const std::string strTypeName( "connection" );
@@ -172,5 +173,5 @@ Site::EvaluationResult Connection::evaluate( const EvaluationMode& mode, DataBit
 
     return result;
 }
-
+*/
 }

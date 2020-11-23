@@ -26,6 +26,7 @@ wykobi::point2d< float > getContourSegmentPointAbsolute( Feature_ContourSegment:
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
+/*
 class Connection : public Site, public boost::enable_shared_from_this< Connection >
 {
     Connection& operator=( const Connection& );
@@ -83,7 +84,7 @@ private:
     Transform m_transform;
     boost::optional< wykobi::polygon< float, 2u > > m_polygonCache;
 };
-
+*/
 }
 
 #endif //CONNECTION_07_NOV_2020

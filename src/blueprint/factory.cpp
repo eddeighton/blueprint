@@ -52,12 +52,12 @@ Node::Ptr Factory::load( Node::Ptr pParent, const Ed::Node& node )
                 {
                     pResult = Clip::Ptr( new Clip( pParent, identity ) );
                 }
-                else if( id == Connection::TypeName() )
+                /*else if( id == Connection::TypeName() )
                 {
                     Site::Ptr pSiteParent = boost::dynamic_pointer_cast< Site >( pParent );
                     ASSERT( !pParent || pSiteParent );
                     pResult = Connection::Ptr( new Connection( pSiteParent, identity ) );
-                }
+                }*/
                 else if( id == Blueprint::TypeName() )
                 {
                     ASSERT( !pParent );

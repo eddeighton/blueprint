@@ -28,7 +28,7 @@ namespace Blueprint
 class Blueprint : public Site, public boost::enable_shared_from_this< Blueprint >
 {
     Blueprint& operator=( const Blueprint& );
-
+/*
     typedef std::pair< Area::Ptr, Feature_ContourSegment::Ptr > AreaBoundaryPair;
 
     struct ConnectionPairing
@@ -61,7 +61,7 @@ class Blueprint : public Site, public boost::enable_shared_from_this< Blueprint 
             return (*i2) < i1->first;
         }
     };
-
+*/
 public:
     typedef boost::shared_ptr< Blueprint > Ptr;
     typedef boost::shared_ptr< const Blueprint > PtrCst;
@@ -110,9 +110,9 @@ public:
     virtual void remove( Node::Ptr pNode );
 
 private:
-    void computePairings( ConnectionPairingSet& pairings ) const;
+    //void computePairings( ConnectionPairingSet& pairings ) const;
 private:
-    ConnectionMap m_connections;
+    //ConnectionMap m_connections;
 };
 
 

@@ -13,7 +13,7 @@ ConnectionAnalysis::ConnectionAnalysis( Blueprint::Ptr pBlueprint )
         ib = childNodes.begin(),
         ibEnd = childNodes.end(); ib!=ibEnd; ++ib )
     {
-        if( Connection::Ptr pConnection = boost::dynamic_pointer_cast< Connection >( *ib ) )
+        /*if( Connection::Ptr pConnection = boost::dynamic_pointer_cast< Connection >( *ib ) )
         {
             RefPtr pSource( pConnection, pConnection->getSource()->getValue() );
             RefPtr pTarget( pConnection, pConnection->getTarget()->getValue() );
@@ -21,7 +21,7 @@ ConnectionAnalysis::ConnectionAnalysis( Blueprint::Ptr pBlueprint )
             Feature_ContourSegment::Ptr pTargetSegment = pTarget.get< Feature_ContourSegment >();
             
             m_segmentPairs.push_back( std::make_pair( pSourceSegment, pTargetSegment ) );
-        }
+        }*/
     }
 }
 

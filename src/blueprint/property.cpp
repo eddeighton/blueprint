@@ -76,6 +76,14 @@ std::string Property::getStatement() const
     return os.str();
 }
 
+void Property::setStatement( const std::string& strStatement ) 
+{ 
+    if( m_strValue != strStatement )
+    {
+        m_strValue = strStatement; 
+        setModified();
+    }
+}
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
