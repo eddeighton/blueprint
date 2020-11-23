@@ -63,22 +63,6 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
-
-/*
-class GlyphImage : public IGlyph
-{
-    friend class SpaceGlyphs;
-    friend class Interaction;
-public:
-    GlyphImage( ImageSpec* pImageSpec, IGlyph::Ptr pParent )
-        :   IGlyph( pImageSpec, pParent )
-    {}
-    
-    const ImageSpec* getImageSpec() const { return dynamic_cast< const ImageSpec* >( m_pGlyphSpec ); }
-};*/
-
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
 class GlyphPath : public IGlyph
 {
 public:
@@ -86,6 +70,17 @@ public:
         :   IGlyph( pMarkupPath, pParent )
     {}
     const MarkupPath* getMarkupPath() const { return dynamic_cast< const MarkupPath* >( m_pGlyphSpec ); }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+class GlyphPolygonGroup : public IGlyph
+{
+public:
+    GlyphPolygonGroup( MarkupPolygonGroup* pMarkupPolygonGroup, IGlyph::Ptr pParent )
+        :   IGlyph( pMarkupPolygonGroup, pParent )
+    {}
+    const MarkupPolygonGroup* getMarkupPolygonGroup() const { return dynamic_cast< const MarkupPolygonGroup* >( m_pGlyphSpec ); }
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -105,9 +100,9 @@ class GlyphFactory
 {
 public:
     virtual IGlyph::Ptr createControlPoint( ControlPoint* pControlPoint, IGlyph::Ptr pParent ) = 0;
-    //virtual IGlyph::Ptr createImage( ImageSpec* pImageSpec, IGlyph::Ptr pParent ) = 0;
     virtual IGlyph::Ptr createOrigin( Origin* pOrigin, IGlyph::Ptr pParent ) = 0;
     virtual IGlyph::Ptr createMarkupPath( MarkupPath* pMarkupPath, IGlyph::Ptr pParent ) = 0;
+    virtual IGlyph::Ptr createMarkupPolygonGroup( MarkupPolygonGroup* pMarkupPolygonGroup, IGlyph::Ptr pParent ) = 0;
     virtual IGlyph::Ptr createMarkupText( MarkupText* pMarkupText, IGlyph::Ptr pParent ) = 0;
 };
 

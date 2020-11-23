@@ -570,6 +570,43 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
+template< typename KeyType >
+class MarkupPolygonGroupImpl : public MarkupPolygonGroup
+{
+public:
+    using PolygonType = wykobi::polygon< float, 2 >;
+    using PolyMap = std::map< KeyType, PolygonType >;
+    
+    MarkupPolygonGroupImpl( const GlyphSpec* pParent, PolyMap& polygons )
+        :   m_pParent( pParent ),
+            m_polygons( polygons )
+    {
+    }
+    virtual const std::string& getName() const { return m_strText; }
+    virtual const GlyphSpec* getParent() const { return m_pParent; }
+    
+    virtual std::size_t getTotalPolygons() const { return m_polygons.size(); }
+    virtual void getPolygon( std::size_t szIndex, Polygon& polygon ) const
+    {
+        if( szIndex < m_polygons.size() )
+        {
+            PolyMap::iterator i = m_polygons.begin();
+            std::advance( i, szIndex );
+            polygon.clear();
+            for( auto p : i->second )
+            {
+                polygon.push_back( std::make_pair( p.x, p.y ) );
+            }
+        }
+    }
+private:
+    const GlyphSpec* m_pParent;
+    std::string m_strText;
+    PolyMap& m_polygons;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 /*
 struct PerimeterVisitor
 {

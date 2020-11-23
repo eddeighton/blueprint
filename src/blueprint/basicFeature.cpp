@@ -133,6 +133,20 @@ Feature_Contour::Feature_Contour( PtrCst pOriginal, Node::Ptr pParent, const std
     recalculateControlPoints();
 }
 
+void Feature_Contour::init()
+{
+    Feature::init();
+    
+    m_pAutoCalc = get< Property >( "auto" );
+    if( !m_pAutoCalc )
+    {
+        m_pAutoCalc = Property::Ptr( new Property( shared_from_this(), "auto" ) );
+        m_pAutoCalc->init();
+        m_pAutoCalc->setStatement( "false" );
+        add( m_pAutoCalc );
+    }
+}
+
 Node::Ptr Feature_Contour::copy( Node::Ptr pParent, const std::string& strName ) const
 {   
     return Node::copy< Feature_Contour >( 
@@ -180,6 +194,14 @@ std::string Feature_Contour::getStatement() const
         os << sh;
     }
     return os.str();
+}
+
+bool Feature_Contour::isAutoCalculate() const
+{
+    if( m_pAutoCalc && m_pAutoCalc->getValue() == "true" )
+        return true;
+    else
+        return false;
 }
 
 const GlyphSpec* Feature_Contour::getParent( int id ) const 
@@ -281,7 +303,7 @@ float Feature_ContourPoint::getX( int id ) const
     Feature_Contour::PtrCst pParent = m_pContour.lock();
     ASSERT( pParent );
     float fX = 0.0f;
-    const wykobi::polygon< float, 2 >& contour = pParent->get();
+    const wykobi::polygon< float, 2 >& contour = pParent->getPolygon();
     if( contour.size() )
     {
         unsigned int uiIndex        = m_uiContourPointIndex % contour.size();
@@ -297,7 +319,7 @@ float Feature_ContourPoint::getY( int id ) const
     Feature_Contour::PtrCst pParent = m_pContour.lock();
     ASSERT( pParent );
     float fY = 0.0f;
-    const wykobi::polygon< float, 2 >& contour = pParent->get();
+    const wykobi::polygon< float, 2 >& contour = pParent->getPolygon();
     if( contour.size() )
     {
         unsigned int uiIndex        = m_uiContourPointIndex % contour.size();
@@ -312,12 +334,12 @@ void Feature_ContourPoint::set( int id, float fX, float fY )
 {
     Feature_Contour::PtrCst pParent = m_pContour.lock();
     ASSERT( pParent );
-    const wykobi::point2d< float >& origin = pParent->get()[0];
+    const wykobi::point2d< float >& origin = pParent->getPolygon()[0];
 
     const wykobi::point2d< float > ptInteractPos = 
         wykobi::make_point( fX + origin.x, fY + origin.y );
     SegmentIDRatioPointTuple result = 
-        findClosestPointOnContour( pParent->get(), ptInteractPos );
+        findClosestPointOnContour( pParent->getPolygon(), ptInteractPos );
     if( m_fRatio != std::get< 1 >( result ) ||  m_uiContourPointIndex != std::get< 0 >( result ) )
     {
         m_fRatio = std::get< 1 >( result );
@@ -404,15 +426,15 @@ void Feature_ContourSegment::getBoundaryPoint( Points type, unsigned int& polyIn
     {
         Feature_Contour::PtrCst pParent = m_pContour.lock();
         ASSERT( pParent );   
-        ASSERT( pParent->get().size() > 0u );     
-        polyIndex = calculateIndexOnPolygon( pParent->get(), m_uiContourPointIndex, m_fRatio, m_fWidth, fDistance );
+        ASSERT( pParent->getPolygon().size() > 0u );     
+        polyIndex = calculateIndexOnPolygon( pParent->getPolygon(), m_uiContourPointIndex, m_fRatio, m_fWidth, fDistance );
     }
     else if( type == eRight )
     {
         Feature_Contour::PtrCst pParent = m_pContour.lock();
         ASSERT( pParent );   
-        ASSERT( pParent->get().size() > 0u );     
-        polyIndex = calculateIndexOnPolygon( pParent->get(), m_uiContourPointIndex, m_fRatio, -m_fWidth, fDistance );
+        ASSERT( pParent->getPolygon().size() > 0u );     
+        polyIndex = calculateIndexOnPolygon( pParent->getPolygon(), m_uiContourPointIndex, m_fRatio, -m_fWidth, fDistance );
     }
     else
     {
@@ -430,15 +452,15 @@ float Feature_ContourSegment::getX( int id ) const
     {
         Feature_Contour::PtrCst pParent = m_pContour.lock();
         ASSERT( pParent );   
-        ASSERT( pParent->get().size() > 0u );     
-        return calculatePointOnPolygon( pParent->get(), m_uiContourPointIndex, m_fRatio, m_fWidth ).x - pParent->get()[0u].x; 
+        ASSERT( pParent->getPolygon().size() > 0u );     
+        return calculatePointOnPolygon( pParent->getPolygon(), m_uiContourPointIndex, m_fRatio, m_fWidth ).x - pParent->getPolygon()[0u].x; 
     }
     else if( id == eRight )
     {
         Feature_Contour::PtrCst pParent = m_pContour.lock();
         ASSERT( pParent );   
-        ASSERT( pParent->get().size() > 0u );     
-        return calculatePointOnPolygon( pParent->get(), m_uiContourPointIndex, m_fRatio, -m_fWidth ).x - pParent->get()[0u].x; 
+        ASSERT( pParent->getPolygon().size() > 0u );     
+        return calculatePointOnPolygon( pParent->getPolygon(), m_uiContourPointIndex, m_fRatio, -m_fWidth ).x - pParent->getPolygon()[0u].x; 
     }
     ASSERT( false );
     return 0.0f;
@@ -454,15 +476,15 @@ float Feature_ContourSegment::getY( int id ) const
     {
         Feature_Contour::PtrCst pParent = m_pContour.lock();
         ASSERT( pParent );        
-        ASSERT( pParent->get().size() > 0u );
-        return calculatePointOnPolygon( pParent->get(), m_uiContourPointIndex, m_fRatio, m_fWidth ).y - pParent->get()[0u].y; 
+        ASSERT( pParent->getPolygon().size() > 0u );
+        return calculatePointOnPolygon( pParent->getPolygon(), m_uiContourPointIndex, m_fRatio, m_fWidth ).y - pParent->getPolygon()[0u].y; 
     }
     else if( id == 2 )
     {
         Feature_Contour::PtrCst pParent = m_pContour.lock();
         ASSERT( pParent );     
-        ASSERT( pParent->get().size() > 0u );   
-        return calculatePointOnPolygon( pParent->get(), m_uiContourPointIndex, m_fRatio, -m_fWidth ).y - pParent->get()[0u].y; 
+        ASSERT( pParent->getPolygon().size() > 0u );   
+        return calculatePointOnPolygon( pParent->getPolygon(), m_uiContourPointIndex, m_fRatio, -m_fWidth ).y - pParent->getPolygon()[0u].y; 
     }
     ASSERT( false );
     return 0.0f;
@@ -478,11 +500,11 @@ void Feature_ContourSegment::set( int id, float fX, float fY )
     {
         Feature_Contour::PtrCst pParent = m_pContour.lock();
         ASSERT( pParent );
-        const wykobi::point2d< float >& origin = pParent->get()[0];
+        const wykobi::point2d< float >& origin = pParent->getPolygon()[0];
         const wykobi::point2d< float > ptInteractPos = 
             wykobi::make_point( fX + origin.x, fY + origin.y );
-        SegmentIDRatioPointTuple result = findClosestPointOnContour( pParent->get(), ptInteractPos );
-        const float fNewWidth = calculateDistanceAroundContour( pParent->get(),
+        SegmentIDRatioPointTuple result = findClosestPointOnContour( pParent->getPolygon(), ptInteractPos );
+        const float fNewWidth = calculateDistanceAroundContour( pParent->getPolygon(),
             m_uiContourPointIndex, m_fRatio, std::get< 0 >( result ), std::get< 1 >( result ) );
         if( fNewWidth != m_fWidth )
         {
@@ -494,11 +516,11 @@ void Feature_ContourSegment::set( int id, float fX, float fY )
     {
         Feature_Contour::PtrCst pParent = m_pContour.lock();
         ASSERT( pParent );
-        const wykobi::point2d< float >& origin = pParent->get()[0];
+        const wykobi::point2d< float >& origin = pParent->getPolygon()[0];
         const wykobi::point2d< float > ptInteractPos = 
             wykobi::make_point( fX + origin.x, fY + origin.y );
-        SegmentIDRatioPointTuple result = findClosestPointOnContour( pParent->get(), ptInteractPos );
-        const float fNewWidth = calculateDistanceAroundContour( pParent->get(),
+        SegmentIDRatioPointTuple result = findClosestPointOnContour( pParent->getPolygon(), ptInteractPos );
+        const float fNewWidth = calculateDistanceAroundContour( pParent->getPolygon(),
             std::get< 0 >( result ), std::get< 1 >( result ), m_uiContourPointIndex, m_fRatio );
         if( fNewWidth != m_fWidth )
         {

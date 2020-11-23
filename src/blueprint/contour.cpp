@@ -113,7 +113,7 @@ void getAreaPoints( const boost::filesystem::path& errorPath,
     }
     
     {
-        const wykobi::polygon< float, 2 >& areaPolygon = pArea->getContour()->get();
+        const wykobi::polygon< float, 2 >& areaPolygon = pArea->getContour()->getPolygon();
         
         {
             const int polyOrientation = wykobi::polygon_orientation( areaPolygon );

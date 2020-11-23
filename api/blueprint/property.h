@@ -25,8 +25,6 @@ namespace Blueprint
 {
 
 class Factory;
-class Property;
-
 
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
@@ -53,65 +51,6 @@ public:
 private:
     std::string m_strValue;
 };
-/*
-template< class T >
-class PropertyT : public Node, public boost::enable_shared_from_this< PropertyT< T > >
-{
-public:
-    typedef boost::shared_ptr< PropertyT > Ptr;
-    typedef boost::shared_ptr< const PropertyT > PtrCst;
-    typedef std::map< std::string, Ptr > PtrMap;
-    
-    PropertyT( Node::Ptr pParent, const std::string& strName )
-    :   Node( pParent, strName )
-    {
-    }
-    PropertyT( PtrCst pOriginal, Node::Ptr pParent, const std::string& strName )
-    :   Node( pOriginal, pParent, strName ),
-        m_value( pOriginal->m_value )
-    {
-    }
-    virtual Node::PtrCst getPtr() const { return shared_from_this(); }
-    virtual Node::Ptr getPtr() { return shared_from_this(); }
-    virtual void init()
-    {
-        Node::init();
-    }
-    virtual Node::Ptr copy( Node::Ptr pParent, const std::string& strName ) const
-    {
-        return Node::copy< PropertyT >( shared_from_this(), pParent, strName );
-    }
-    virtual void load( Factory& factory, const Ed::Node& node )
-    {
-        if( boost::optional< const Ed::Expression& > expression = 
-            Ed::getFirstArgument< Ed::Expression >( node.statement ) )
-        {
-            std::istringstream is( expression.get() );
-            is >> m_value;
-        }
-        Node::load( shared_from_this(), factory, node );
-    }
-    virtual void save( Ed::Node& node ) const
-    {
-        Node::save( node );
-        node.statement.declarator.typeDeclaration =
-            Ed::TypeDeclaration( std::string( "PropertyT" ) );
-        node.statement.shortHand = Ed::ShortHand( getStatement() );
-    }
-    virtual std::string getStatement() const
-    {
-        std::istringstream os;
-        os << m_value;
-        return os.str();
-    }
-
-    const T& getValue() const 
-    { 
-        return m_value; 
-    }
-private:
-    T m_value;
-};*/
 
 class RefPtr
 {

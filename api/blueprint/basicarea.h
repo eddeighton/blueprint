@@ -9,6 +9,8 @@
 
 #include "wykobi.hpp"
 
+#include "common/angle.hpp"
+
 #include <boost/optional.hpp>
 
 #include <string>
@@ -17,58 +19,6 @@
 
 namespace Blueprint
 {
-    
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-class Clip : public Site, public boost::enable_shared_from_this< Clip >
-{
-public:
-    typedef boost::shared_ptr< Clip > Ptr;
-    typedef boost::shared_ptr< const Clip > PtrCst;
-
-    static const std::string& TypeName();
-    Clip( Node::Ptr pParent, const std::string& strName );
-    Clip( PtrCst pOriginal, Node::Ptr pParent, const std::string& strName );
-    ~Clip(){};
-    virtual Node::PtrCst getPtr() const { return shared_from_this(); }
-    virtual Node::Ptr getPtr() { return shared_from_this(); }
-    
-    virtual void init() { Site::init(); }
-    virtual Node::Ptr copy( Node::Ptr pParent, const std::string& strName ) const { return Node::copy( shared_from_this(), pParent, strName ); }
-    virtual void load( Factory& factory, const Ed::Node& node ) { return Node::load( shared_from_this(), factory, node ); }
-    virtual void save( Ed::Node& node ) const { return Node::save( node ); }
-    virtual std::string getStatement() const { return getName(); }
-    
-    virtual bool canEvaluate( const Site::PtrVector& evaluated ) const { ASSERT( false ); return true; }
-    virtual EvaluationResult evaluate( const EvaluationMode& mode, DataBitmap& data ) 
-    { 
-        EvaluationResult result; 
-        return result; 
-    }
-    
-    //GlyphSpec
-    virtual const std::string& getName() const { return Node::getName(); }
-    virtual const GlyphSpec* getParent() const { return 0u; }
-
-    //Origin
-    virtual const Transform& getTransform() const 
-    { 
-        static const Transform m_transform;
-        return m_transform; 
-    }
-    virtual void setTransform( const Transform& transform ) 
-    { 
-        ASSERT( false );
-    }
-    virtual const MarkupPath* getPolygon()  const { return nullptr; }
-    
-    //virtual float getOffsetX()              const { return 0.0f; }
-    //virtual float getOffsetY()              const { return 0.0f; }
-    //virtual NavBitmap::Ptr getBuffer()      const { return NavBitmap::Ptr(); }
-    
-    virtual void set( float fX, float fY ){}
-    virtual bool canEdit() const { return false; }
-};
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -78,7 +28,33 @@ class Area : public Site, public boost::enable_shared_from_this< Area >
     friend class Brush_Interaction;
     friend class Boundary_Interaction;
     friend class Polygon_Interaction;
+    
+public:
+    class ConnectionAnalysis
+    {
+    public:
+        ConnectionAnalysis( const Area& area )
+            :   m_area( area )
+        {}
+        
+        struct Connection
+        {
+            using Ptr = std::shared_ptr< Connection >;
+            wykobi::polygon< float, 2u > polygon;
+        };
+        
+        using ConnectionPair = std::pair< const Feature_ContourSegment*, const Feature_ContourSegment* >;
+        using ConnectionPairMap = std::map< ConnectionPair, Connection::Ptr >;
+        
+        const ConnectionPairMap& getConnections() const { return m_connections; }
 
+        void calculate();
+        
+    private:
+        const Area& m_area;
+        ConnectionPairMap m_connections;
+    };
+    
 public:
     typedef ControlPointCallback< Area > PointType;
     typedef std::vector< Feature_ContourSegment::Ptr > ContourPointVector;
@@ -115,9 +91,6 @@ public:
     virtual void setTransform( const Transform& transform );
     virtual const MarkupPath* getPolygon()  const { return m_pPath.get(); }
     
-    //virtual float getOffsetX()              const { return m_ptOffset.x; }
-    //virtual float getOffsetY()              const { return m_ptOffset.y; }
-    //virtual NavBitmap::Ptr getBuffer()      const { return m_pBuffer; }
     virtual bool canEdit()                  const { return true; }
 
     virtual void set( float fX, float fY )
@@ -142,6 +115,13 @@ public:
     { 
         if( m_pPath.get() ) 
             paths.push_back( m_pPath.get() ); 
+        
+    }
+    
+    virtual void getMarkupPolygonGroups( MarkupPolygonGroup::List& polyGroups )
+    {
+        if( m_pPolygonGroup.get() )
+            polyGroups.push_back( m_pPolygonGroup.get() );
     }
     
     //cmds
@@ -153,15 +133,20 @@ public:
     const ContourPointVector& getBoundaries() const { return m_boundaryPoints; }
     const PropertyVector& getProperties() const { return m_properties; }
 private:
+    ConnectionAnalysis m_connections;
+    
     Site::WeakPtr m_pSiteParent;
     Transform m_transform;
     MarkupPath::PathCmdVector m_path;
 
-    //NavBitmap::Ptr m_pBuffer;
+    using MarkupGroupImpl = MarkupPolygonGroupImpl< ConnectionAnalysis::ConnectionPair >;
+    
     std::unique_ptr< TextImpl > m_pLabel;
     std::unique_ptr< PathImpl > m_pPath;
+    std::unique_ptr< MarkupGroupImpl > m_pPolygonGroup;
     Feature_Contour::Ptr m_pContour;
-
+    
+    MarkupGroupImpl::PolyMap m_polygonMap;
     ContourPointVector m_boundaryPoints;
     PropertyVector m_properties;
     std::string m_strLabelText;

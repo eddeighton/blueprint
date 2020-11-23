@@ -71,6 +71,20 @@ public:
     virtual bool canEdit() const { return false; }
 };
 
+class MarkupPolygonGroup : public GlyphSpec
+{
+public:
+    typedef std::list< MarkupPolygonGroup* > List;
+    
+    using Point = std::pair< float, float >;
+    using Polygon = std::vector< Point >;
+    
+    virtual std::size_t getTotalPolygons() const = 0;
+    virtual void getPolygon( std::size_t szIndex, Polygon& polygon ) const = 0;
+    
+    virtual bool canEdit() const { return false; }
+};
+
 class MarkupText : public GlyphSpec
 {
 public:

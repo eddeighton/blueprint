@@ -4,6 +4,7 @@
 #include "blueprint/basicFeature.h"
 #include "blueprint/blueprint.h"
 #include "blueprint/basicarea.h"
+#include "blueprint/clip.h"
 
 #include "ed/node.hpp"
 

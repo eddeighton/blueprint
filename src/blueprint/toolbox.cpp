@@ -2,6 +2,7 @@
 #include "blueprint/factory.h"
 
 #include "blueprint/basicarea.h"
+#include "blueprint/clip.h"
 
 #include "common/file.hpp"
 #include "common/assert_verify.hpp"

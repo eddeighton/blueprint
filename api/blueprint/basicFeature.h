@@ -116,10 +116,12 @@ public:
     Feature_Contour( Node::Ptr pParent, const std::string& strName );
     Feature_Contour( PtrCst pOriginal, Node::Ptr pParent, const std::string& strName );
     virtual ~Feature_Contour();
+    virtual void init();
     virtual Node::Ptr copy( Node::Ptr pParent, const std::string& strName ) const;
     virtual void load( Factory& factory, const Ed::Node& node );
     virtual void save( Ed::Node& node ) const;
     virtual std::string getStatement() const;
+    bool isAutoCalculate() const;
 
     const wykobi::polygon< float, 2 >& getPolygon() const { return m_polygon; }
     
@@ -160,11 +162,15 @@ public:
     }
     void set( const wykobi::polygon< float, 2 >& shape )
     {
-        m_polygon = shape;
-        for( wykobi::polygon< float, 2 >::iterator i = m_polygon.begin(),
-            iEnd = m_polygon.end(); i!=iEnd; ++i )
-            *i = wykobi::make_point< float >( Map_FloorAverage()( i->x ), Map_FloorAverage()( i->y ) );
-        recalculateControlPoints();
+        if( !( m_polygon.size() == shape.size() ) || 
+            !std::equal( m_polygon.begin(), m_polygon.end(), shape.begin() ) )
+        {
+            m_polygon = shape;
+            for( wykobi::polygon< float, 2 >::iterator i = m_polygon.begin(),
+                iEnd = m_polygon.end(); i!=iEnd; ++i )
+                *i = wykobi::make_point< float >( Map_FloorAverage()( i->x ), Map_FloorAverage()( i->y ) );
+            recalculateControlPoints();
+        }
     }
     template< class T >
     void set( const T& shape )
@@ -174,22 +180,27 @@ public:
     void recalculateControlPoints()
     {
         generics::deleteAndClear( m_points );
-        int id = 0;
-        for( wykobi::polygon< float, 2 >::const_iterator 
-            i = m_polygon.begin(), iEnd = m_polygon.end(); i!=iEnd; ++i, ++id )
-            m_points.push_back( new PointType( *this, id ) );
+        if( !isAutoCalculate() )
+        {
+            int id = 0;
+            for( wykobi::polygon< float, 2 >::const_iterator 
+                i = m_polygon.begin(), iEnd = m_polygon.end(); i!=iEnd; ++i, ++id )
+            {
+                m_points.push_back( new PointType( *this, id ) );
+            }
+        }
     }
-    virtual int getControlPointCount() { return m_points.size(); }
+    virtual int getControlPointCount() 
+    { 
+        return m_points.size(); 
+    }
     virtual void getControlPoints( ControlPoint::List& controlPoints )
     {
         std::copy( m_points.begin(), m_points.end(), std::back_inserter( controlPoints ) );
     }
 
-    const wykobi::polygon< float, 2 >& get() const { return m_polygon; }
-
     const PointType* getRootControlPoint() const { return m_points.empty() ? 0u : m_points[ 0u ]; }
 
-    
     virtual bool cmd_delete( const GlyphSpec* pGlyphSpec ) 
     { 
         bool bFound = false;
@@ -198,7 +209,7 @@ public:
         for( auto i = m_points.begin(),
             iEnd = m_points.end(); i!=iEnd; ++i, ++iCounter )
         {
-            if( pGlyphSpec == *i && i != m_points.begin() )
+            if( ( pGlyphSpec == *i ) && ( i != m_points.begin() ) )
             {
                 //erase the point
                 //delete *i;
@@ -217,7 +228,7 @@ public:
 private:
     wykobi::polygon< float, 2 > m_polygon;
     PointVector m_points;
-
+    Property::Ptr m_pAutoCalc;
 };
 
 /////////////////////////////////////////////////////////////////

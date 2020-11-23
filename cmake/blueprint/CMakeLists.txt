@@ -39,6 +39,7 @@ set( BLUEPRINT_API
     ${BLUEPRINT_API_DIR}/blueprint/blueprint.h
     ${BLUEPRINT_API_DIR}/blueprint/spaceUtils.h
     ${BLUEPRINT_API_DIR}/blueprint/contour.h
+    ${BLUEPRINT_API_DIR}/blueprint/clip.h
     )
     
     
@@ -63,6 +64,7 @@ set( BLUEPRINT_SOURCES_SRC
     ${BLUEPRINT_SRC_DIR}/blueprint/factory.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/spaceUtils.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/contour.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/clip.cpp
     )
 
 set( BLUEPRINT_SOURCES ${BLUEPRINT_SOURCES_API} ${BLUEPRINT_SOURCES_SRC} )

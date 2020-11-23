@@ -43,12 +43,10 @@ public:
     }
     virtual int getControlPointCount() { return 0; }
     virtual void getControlPoints( ControlPoint::List& ) {}
-    //virtual void getPorts( Port::List& ) {}
-    //virtual void getConnections( Connection::List& ) {}
-    virtual void getMarkupPaths( MarkupPath::List& ) {}
-    virtual void getMarkupTexts( MarkupText::List& ) {}
     
-    //virtual ImageSpec* getImageSpec() { return nullptr; }
+    virtual void getMarkupPaths( MarkupPath::List& ) {}
+    virtual void getMarkupPolygonGroups( MarkupPolygonGroup::List& ) {}
+    virtual void getMarkupTexts( MarkupText::List& ) {}
 
     virtual bool cmd_delete( const GlyphSpec* ) { return false; }
 };

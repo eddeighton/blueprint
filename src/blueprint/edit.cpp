@@ -1,6 +1,7 @@
 #include "blueprint/edit.h"
 
 #include "blueprint/basicarea.h"
+#include "blueprint/clip.h"
 #include "blueprint/blueprint.h"
 
 #include "blueprint/property.h"
@@ -172,7 +173,7 @@ private:
         VERIFY_RTE( area.m_pContour->add( m_pBoundaryPoint ) );
         m_area.m_boundaryPoints.push_back( m_pBoundaryPoint );
         
-        const wykobi::point2d< float >& origin = m_area.m_pContour->get()[0];
+        const wykobi::point2d< float >& origin = m_area.m_pContour->getPolygon()[0];
         OnMove( x, y );
     }
     
@@ -182,7 +183,7 @@ public:
         float fDeltaX = Math::quantize_roundUp( x, m_qX );
         float fDeltaY = Math::quantize_roundUp( y, m_qY );
 
-        const wykobi::point2d< float >& origin = m_area.m_pContour->get()[0];
+        const wykobi::point2d< float >& origin = m_area.m_pContour->getPolygon()[0];
         m_pBoundaryPoint->set( 0, fDeltaX - origin.x, fDeltaY - origin.y );
     }
     virtual Site::Ptr GetInteractionSite() const
@@ -212,7 +213,7 @@ private:
 
         Feature_Contour::Ptr pContour = area.m_pContour;
 
-        Polygon2D poly = pContour->get();
+        Polygon2D poly = pContour->getPolygon();
         m_iPointIndex = poly.size();
         poly.push_back( wykobi::make_point< float >( m_startX, m_startY ) );
         area.m_pContour->set( poly );
@@ -582,7 +583,15 @@ void Edit::interaction_evaluate()
     const Site::EvaluationMode mode = { m_bViewBitmap, m_bViewCellComplex, m_bViewClearance };
 
     DataBitmap data;
+    
+    //{
+    //    Site::Ptr pIter = m_pSite;
+    //    while( Site::Ptr pParent = boost::dynamic_pointer_cast< Site >( pIter->Node::getParent() ) )
+    //        pIter = pParent;
+    //    pIter->evaluate( mode, data );
+    //}
     m_pSite->evaluate( mode, data );
+    
     interaction_update();
 
     //LOG_PROFILE_END( edit_interaction_evaluate );
@@ -1151,6 +1160,16 @@ SpaceGlyphs::SpaceGlyphs( IEditContext& parentContext, Site::Ptr pSpace, GlyphFa
         if( IGlyph::Ptr pMarkupGlyph = m_glyphFactory.createMarkupPath( *i, m_pMainGlyph ) )
             m_markup.insert( std::make_pair( *i, pMarkupGlyph ) );
     }
+    
+    MarkupPolygonGroup::List polyGroups;
+    m_pSite->getMarkupPolygonGroups( polyGroups );
+    for( MarkupPolygonGroup::List::const_iterator i = polyGroups.begin(),
+        iEnd = polyGroups.end(); i!=iEnd; ++i )
+    {
+        if( IGlyph::Ptr pMarkupGlyph = m_glyphFactory.createMarkupPolygonGroup( *i, m_pMainGlyph ) )
+            m_markup.insert( std::make_pair( *i, pMarkupGlyph ) );
+    }
+    
     
 }
 
