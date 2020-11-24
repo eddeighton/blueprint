@@ -6,6 +6,7 @@
 
 #include "blueprint/buffer.h"
 #include "blueprint/site.h"
+#include "blueprint/connection.h"
 
 #include "wykobi.hpp"
 
@@ -30,30 +31,6 @@ class Area : public Site, public boost::enable_shared_from_this< Area >
     friend class Polygon_Interaction;
     
 public:
-    class ConnectionAnalysis
-    {
-    public:
-        ConnectionAnalysis( const Area& area )
-            :   m_area( area )
-        {}
-        
-        struct Connection
-        {
-            using Ptr = std::shared_ptr< Connection >;
-            wykobi::polygon< float, 2u > polygon;
-        };
-        
-        using ConnectionPair = std::pair< const Feature_ContourSegment*, const Feature_ContourSegment* >;
-        using ConnectionPairMap = std::map< ConnectionPair, Connection::Ptr >;
-        
-        const ConnectionPairMap& getConnections() const { return m_connections; }
-
-        void calculate();
-        
-    private:
-        const Area& m_area;
-        ConnectionPairMap m_connections;
-    };
     
 public:
     typedef ControlPointCallback< Area > PointType;
@@ -81,6 +58,7 @@ public:
     virtual std::string getStatement() const;
 
     Feature_Contour::Ptr getContour() const { return m_pContour; }
+    const ConnectionAnalysis& getConnections() const { return m_connections; }
     
     //GlyphSpec
     virtual const std::string& getName() const { return Node::getName(); }

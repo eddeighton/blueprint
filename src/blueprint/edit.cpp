@@ -959,12 +959,12 @@ void Edit::cmd_editProperties( const Node::PtrCstVector& nodes, const std::strin
     
 std::set< IGlyph* > Edit::generateExtrusion( float fAmount, bool bConvexHull )
 {
-    Blueprint::Ptr pBlueprint = boost::dynamic_pointer_cast< Blueprint >( m_pSite );
-    VERIFY_RTE_MSG( pBlueprint, "Can only extrue blueprint" );
+    Area::Ptr pParentArea = boost::dynamic_pointer_cast< Area >( m_pSite );
+    VERIFY_RTE_MSG( pParentArea, "Can only extrude area" );
     
     std::vector< Polygon2D > extrudedContours;
     {
-        ConnectionAnalysis connectionAnalysis( pBlueprint );
+        const ConnectionAnalysis& connectionAnalysis = pParentArea->getConnections();
         
         struct AreaPoints
         {
@@ -975,7 +975,7 @@ std::set< IGlyph* > Edit::generateExtrusion( float fAmount, bool bConvexHull )
         std::vector< AreaPoints > areaPointsArray;
         std::vector< WallSection > wallSections;
         
-        for( Site::Ptr pSite : pBlueprint->getSpaces() )
+        for( Site::Ptr pSite : pParentArea->getSpaces() )
         {
             if( Area::Ptr pArea = boost::dynamic_pointer_cast< Area >( pSite ) )
             {
@@ -1054,9 +1054,9 @@ std::set< IGlyph* > Edit::generateExtrusion( float fAmount, bool bConvexHull )
     Site::PtrVector newSites;
     for( const Polygon2D& extrudedContour : extrudedContours )
     {
-        Area::Ptr pContourArea( new Area( pBlueprint, pBlueprint->generateNewNodeName( "area" ) ) );
+        Area::Ptr pContourArea( new Area( pParentArea, pParentArea->generateNewNodeName( "area" ) ) );
         pContourArea->init();
-        pBlueprint->add( pContourArea );
+        pParentArea->add( pContourArea );
         Feature_Contour::Ptr pContour = pContourArea->getContour();
         pContour->set( extrudedContour );
         

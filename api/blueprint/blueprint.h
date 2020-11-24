@@ -28,40 +28,7 @@ namespace Blueprint
 class Blueprint : public Site, public boost::enable_shared_from_this< Blueprint >
 {
     Blueprint& operator=( const Blueprint& );
-/*
-    typedef std::pair< Area::Ptr, Feature_ContourSegment::Ptr > AreaBoundaryPair;
-
-    struct ConnectionPairing
-    {
-        AreaBoundaryPair first, second;
-        ConnectionPairing( const AreaBoundaryPair& _p1, const AreaBoundaryPair& _p2 )
-            :   first( ( _p1 < _p2 ) ?_p1 : _p2 ), second( ( _p1 < _p2 ) ? _p2 : _p1 )
-        {}
-        ConnectionPairing( const ConnectionPairing& cpy )
-            :   first( cpy.first ), second( cpy.second )
-        {}
-        bool operator<( const ConnectionPairing& cmp ) const
-        {
-            return ( first != cmp.first ) ? first < cmp.first : second < cmp.second;
-        }
-    };
-
-    typedef std::vector< ConnectionPairing > ConnectionPairingVector;
-    typedef std::set< ConnectionPairing > ConnectionPairingSet;
-    typedef std::map< ConnectionPairing, Connection::Ptr > ConnectionMap;
     
-    struct CompareConnectionIters
-    {
-        bool operator()( ConnectionMap::const_iterator i1, ConnectionPairingSet::const_iterator i2 ) const
-        {
-            return i1->first < (*i2);
-        }
-        bool opposite( ConnectionMap::const_iterator i1, ConnectionPairingSet::const_iterator i2 ) const
-        {
-            return (*i2) < i1->first;
-        }
-    };
-*/
 public:
     typedef boost::shared_ptr< Blueprint > Ptr;
     typedef boost::shared_ptr< const Blueprint > PtrCst;
@@ -109,10 +76,6 @@ public:
     virtual bool add( Node::Ptr pNewNode );
     virtual void remove( Node::Ptr pNode );
 
-private:
-    //void computePairings( ConnectionPairingSet& pairings ) const;
-private:
-    //ConnectionMap m_connections;
 };
 
 

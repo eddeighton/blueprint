@@ -5,6 +5,7 @@
 
 #include "blueprint/blueprint.h"
 #include "blueprint/basicarea.h"
+#include "blueprint/connection.h"
 
 #include "wykobi.hpp"
 
@@ -21,22 +22,11 @@ namespace Blueprint
     using Angle8 = Angle8Traits::Value;
     using Point2D = wykobi::point2d< float >;
     using Polygon2D = wykobi::polygon< float, 2 >;
+    using Rect2D = wykobi::rectangle< float >;
     
     const float fMaxConnectionLength = 4.5f;
     const float fWallLength = 10.0f;
     const float fWallLengthBy2 = 5.0f;
-    
-    struct ConnectionAnalysis
-    {
-        using FeatureContourSegmentPair = std::pair< Feature_ContourSegment::Ptr, Feature_ContourSegment::Ptr >;
-        using FeatureContourSegmentPairVector = std::vector< FeatureContourSegmentPair >;
-        
-        ConnectionAnalysis( Blueprint::Ptr pBlueprint );
-        
-        bool isFeatureContourSegmentConnected( Feature_ContourSegment::Ptr pFeatureContourSegment ) const;
-    private:
-        FeatureContourSegmentPairVector m_segmentPairs;
-    };
     
     struct Point
     {

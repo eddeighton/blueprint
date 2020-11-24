@@ -5,38 +5,6 @@
 
 namespace Blueprint
 {
-ConnectionAnalysis::ConnectionAnalysis( Blueprint::Ptr pBlueprint )
-{
-    const Node::PtrVector& childNodes = pBlueprint->getChildren();
-    
-    for( Node::PtrVector::const_iterator 
-        ib = childNodes.begin(),
-        ibEnd = childNodes.end(); ib!=ibEnd; ++ib )
-    {
-        /*if( Connection::Ptr pConnection = boost::dynamic_pointer_cast< Connection >( *ib ) )
-        {
-            RefPtr pSource( pConnection, pConnection->getSource()->getValue() );
-            RefPtr pTarget( pConnection, pConnection->getTarget()->getValue() );
-            Feature_ContourSegment::Ptr pSourceSegment = pSource.get< Feature_ContourSegment >();
-            Feature_ContourSegment::Ptr pTargetSegment = pTarget.get< Feature_ContourSegment >();
-            
-            m_segmentPairs.push_back( std::make_pair( pSourceSegment, pTargetSegment ) );
-        }*/
-    }
-}
-
-bool ConnectionAnalysis::isFeatureContourSegmentConnected( Feature_ContourSegment::Ptr pFeatureContourSegment ) const
-{
-    for( const FeatureContourSegmentPair& p : m_segmentPairs )
-    {
-        if( p.first == pFeatureContourSegment ||
-            p.second == pFeatureContourSegment )
-        {
-            return true;
-        }
-    }
-    return false;
-}
 
 
 
@@ -67,7 +35,7 @@ void getAreaPoints( const boost::filesystem::path& errorPath,
     
     for( Feature_ContourSegment::Ptr pBoundaryPtr : pArea->getBoundaries() )
     {
-        if( connectionAnalysis.isFeatureContourSegmentConnected( pBoundaryPtr ) )
+        if( connectionAnalysis.isFeatureContourSegmentConnected( pBoundaryPtr.get() ) )
         {
             unsigned int polyIndex = 0; 
             {
