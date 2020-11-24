@@ -76,6 +76,7 @@ public:
     inline Math::Angle< 8 >::Value Angle() const { return m_angle; }
     inline bool MirrorX() const { return m_bMirrorX; }
     inline bool MirrorY() const { return m_bMirrorY; }
+    inline bool isWindingInverted() const { return ( m_bMirrorX && !m_bMirrorY ) || ( !m_bMirrorX && m_bMirrorY ); }
     
     void setTranslation( float x, float y )
     {

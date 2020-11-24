@@ -2,6 +2,7 @@
 
 #include "blueprint/connection.h"
 #include "blueprint/basicArea.h"
+#include "blueprint/contour.h"
 
 #include "common/assert_verify.hpp"
 
@@ -12,6 +13,71 @@
 namespace Blueprint
 {
 
+void getSegmentPoints( const Feature_ContourSegment* pFCS, Point2D& pLeft, Point2D& pRight )
+{
+    Feature_Contour::Ptr pContour = boost::dynamic_pointer_cast< Feature_Contour >(
+        pFCS->Node::getParent() );
+    Area::Ptr pArea = boost::dynamic_pointer_cast< Area >( 
+        pContour->Node::getParent() );
+    if( pArea->getTransform().isWindingInverted() )
+    {
+        pLeft = wykobi::make_point< float >
+        (
+            pFCS->getX( Feature_ContourSegment::eRight ),
+            pFCS->getY( Feature_ContourSegment::eRight )
+        );
+        pRight = wykobi::make_point< float >
+        (
+            pFCS->getX( Feature_ContourSegment::eLeft ),
+            pFCS->getY( Feature_ContourSegment::eLeft )
+        );
+    }
+    else
+    {
+        pLeft = wykobi::make_point< float >
+        (
+            pFCS->getX( Feature_ContourSegment::eLeft ),
+            pFCS->getY( Feature_ContourSegment::eLeft )
+        );
+        pRight = wykobi::make_point< float >
+        (
+            pFCS->getX( Feature_ContourSegment::eRight ),
+            pFCS->getY( Feature_ContourSegment::eRight )
+        );
+    }
+    {
+        pLeft.x    += pContour->getX( 0 );
+        pLeft.y    += pContour->getY( 0 );
+        pRight.x   += pContour->getX( 0 );
+        pRight.y   += pContour->getY( 0 );
+        {
+            pArea->getTransform().transform( pLeft.x,  pLeft.y );
+            pArea->getTransform().transform( pRight.x, pRight.y );
+        }
+    }
+}
+
+ConnectionAnalysis::Connection::Connection( const ConnectionAnalysis::ConnectionPair& cp )
+{
+    m_polygon.reserve( 4 );
+    
+    {
+        Point2D pLeft, pRight;
+        getSegmentPoints( cp.first, pLeft, pRight );
+        
+        m_polygon.push_back( pLeft );
+        m_polygon.push_back( pRight );
+    }
+        
+    {
+        Point2D pLeft, pRight;
+        getSegmentPoints( cp.second, pLeft, pRight );
+        
+        m_polygon.push_back( pLeft );
+        m_polygon.push_back( pRight );
+    }
+    
+}
         
 void ConnectionAnalysis::calculate()
 {
@@ -57,33 +123,48 @@ void ConnectionAnalysis::calculate()
             
             for( Feature_ContourSegment::Ptr pContourSegment : pChildArea->getBoundaries() )
             {
-                float x = pContourSegment->getX( Feature_ContourSegment::eMidPoint );
-                float y = pContourSegment->getY( Feature_ContourSegment::eMidPoint );
-                
-                const float xe = pContourSegment->getX( Feature_ContourSegment::eRight );
-                const float ye = pContourSegment->getY( Feature_ContourSegment::eRight );
-                
-                const Math::Angle< 8 >::Value angle = 
-                    Math::fromVector< Math::Angle< 8 > >( xe - x, ye - y );
-                    
-                //transform point relative to parent area
+                Point2D ptContourBase;
                 {
                     Feature_Contour::Ptr pContour = 
                         boost::dynamic_pointer_cast< Feature_Contour >( pContourSegment->Node::getParent() );
-                    x    += pContour->getX( 0 );
-                    y    += pContour->getY( 0 );
-
-                    pChildArea->getTransform().transform( x, y );
+                    ptContourBase.x = pContour->getX( 0 );
+                    ptContourBase.y = pContour->getY( 0 );
                 }
                 
+                Point2D ptMid;
+                {
+                    ptMid.x = ptContourBase.x + pContourSegment->getX( Feature_ContourSegment::eMidPoint );
+                    ptMid.y = ptContourBase.y + pContourSegment->getY( Feature_ContourSegment::eMidPoint );
+                    pChildArea->getTransform().transform( ptMid.x, ptMid.y );
+                }
+                
+                Math::Angle< 8 >::Value angle;
+                {
+                    Point2D ptEdge;
+                    {
+                        if( pChildArea->getTransform().isWindingInverted() )
+                        {
+                            ptEdge.x = ptContourBase.x + pContourSegment->getX( Feature_ContourSegment::eLeft );
+                            ptEdge.y = ptContourBase.y + pContourSegment->getY( Feature_ContourSegment::eLeft );
+                        }
+                        else
+                        {
+                            ptEdge.x = ptContourBase.x + pContourSegment->getX( Feature_ContourSegment::eRight );
+                            ptEdge.y = ptContourBase.y + pContourSegment->getY( Feature_ContourSegment::eRight );
+                        }
+                        pChildArea->getTransform().transform( ptEdge.x, ptEdge.y );
+                    }
+                    angle = Math::fromVector< Math::Angle< 8 > >( ptEdge.x - ptMid.x, ptEdge.y - ptMid.y );
+                }
+                    
                 const FCSID id
                 { 
                     static_cast< Math::Angle< 8 >::Value >( ( angle + 2 ) % 8 ),
-                    static_cast< int >( Math::quantize( x, fQuantisation ) ),
-                    static_cast< int >( Math::quantize( y, fQuantisation ) ) 
+                    static_cast< int >( Math::quantize( ptMid.x, fQuantisation ) ),
+                    static_cast< int >( Math::quantize( ptMid.y, fQuantisation ) ) 
                 };
                 
-                const FCSValue value{ id, pContourSegment.get(), x, y };
+                const FCSValue value{ id, pContourSegment.get(), ptMid.x, ptMid.y };
                 
                 values.push_back( value );
             }
@@ -125,68 +206,11 @@ void ConnectionAnalysis::calculate()
                             {
                                 ConnectionPair cp{ pValue->pFCS, pCompare->pFCS };
                                 
-                                wykobi::point2d< float > p1Left = wykobi::make_point< float >
-                                (
-                                    cp.first->getX( Feature_ContourSegment::eLeft ),
-                                    cp.first->getY( Feature_ContourSegment::eLeft )
-                                );
-                                wykobi::point2d< float > p1Right = wykobi::make_point< float >
-                                (
-                                    cp.first->getX( Feature_ContourSegment::eRight ),
-                                    cp.first->getY( Feature_ContourSegment::eRight )
-                                );
-                                
-                                {
-                                    Feature_Contour::Ptr pContour = boost::dynamic_pointer_cast< Feature_Contour >(
-                                        cp.first->Node::getParent() );
-                                    p1Left.x    += pContour->getX( 0 );
-                                    p1Left.y    += pContour->getY( 0 );
-                                    p1Right.x   += pContour->getX( 0 );
-                                    p1Right.y   += pContour->getY( 0 );
-                                    {
-                                        Area::Ptr pChildOne = boost::dynamic_pointer_cast< Area >( 
-                                            pContour->Node::getParent() );
-                                        pChildOne->getTransform().transform( p1Left.x,  p1Left.y );
-                                        pChildOne->getTransform().transform( p1Right.x, p1Right.y );
-                                    }
-                                }
-                            
-                                wykobi::point2d< float > p2Left = wykobi::make_point< float >
-                                (
-                                    cp.second->getX( Feature_ContourSegment::eLeft ),
-                                    cp.second->getY( Feature_ContourSegment::eLeft )
-                                );
-                                wykobi::point2d< float > p2Right = wykobi::make_point< float >
-                                (
-                                    cp.second->getX( Feature_ContourSegment::eRight ),
-                                    cp.second->getY( Feature_ContourSegment::eRight )
-                                );
-                                
-                                {
-                                    Feature_Contour::Ptr pContour = boost::dynamic_pointer_cast< Feature_Contour >(
-                                        cp.second->Node::getParent() );
-                                    p2Left.x    += pContour->getX( 0 );
-                                    p2Left.y    += pContour->getY( 0 );
-                                    p2Right.x   += pContour->getX( 0 );
-                                    p2Right.y   += pContour->getY( 0 );
-                                    {
-                                        Area::Ptr pChildTwo = boost::dynamic_pointer_cast< Area >( 
-                                            pContour->Node::getParent() );
-                                        pChildTwo->getTransform().transform( p2Left.x,  p2Left.y );
-                                        pChildTwo->getTransform().transform( p2Right.x, p2Right.y );
-                                    }
-                                }
-                                
-                                Connection::Ptr pConnection( new Connection );
-                                {
-                                    pConnection->polygon.push_back( p1Left );
-                                    pConnection->polygon.push_back( p1Right );
-                                    pConnection->polygon.push_back( p2Left );
-                                    pConnection->polygon.push_back( p2Right );
-                                }
+                                Connection::Ptr pConnection( new Connection( cp ) );
                                 
                                 auto r = m_connections.insert( std::make_pair( cp, pConnection ) );
                                 VERIFY_RTE( r.second );
+                                
                                 openList.erase( pValue );
                                 openList.erase( pCompare );
                                 bFound = true;

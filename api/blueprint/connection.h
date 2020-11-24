@@ -20,14 +20,19 @@ namespace Blueprint
             :   m_area( area )
         {}
         
+        using ConnectionPair = std::pair< const Feature_ContourSegment*, const Feature_ContourSegment* >;
+        
         struct Connection
         {
             using Ptr = std::shared_ptr< Connection >;
             
-            wykobi::polygon< float, 2u > polygon;
+            Connection( const ConnectionPair& cp );
+            
+            const wykobi::polygon< float, 2u >& getPolygon() const { return m_polygon; }
+        private:
+            wykobi::polygon< float, 2u > m_polygon;
         };
         
-        using ConnectionPair = std::pair< const Feature_ContourSegment*, const Feature_ContourSegment* >;
         using ConnectionPairMap = std::map< ConnectionPair, Connection::Ptr >;
         
         const ConnectionPairMap& getConnections() const { return m_connections; }

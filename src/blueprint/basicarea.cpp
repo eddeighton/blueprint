@@ -167,7 +167,7 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
         (*i)->evaluate( mode, data );
     }
     
-    typedef PathImpl::AGGContainerAdaptor< wykobi::polygon< float, 2 > > WykobiPolygonAdaptor;
+    typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
     typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
     
     if( m_pContour && m_pContour->isAutoCalculate() )
@@ -205,7 +205,7 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
             }
             if( !bFirst )
             {
-                wykobi::polygon< float, 2 > aabbPoly = wykobi::make_polygon( totalAABB );
+                Polygon2D aabbPoly = wykobi::make_polygon( totalAABB );
                 if( wykobi::polygon_orientation( aabbPoly ) == wykobi::Clockwise )
                     std::reverse( aabbPoly.begin(), aabbPoly.end() );
                 m_pContour->set( aabbPoly );
@@ -213,7 +213,7 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
         }
     }
 
-    const wykobi::polygon< float, 2u >& polygon = m_pContour->getPolygon();
+    const Polygon2D& polygon = m_pContour->getPolygon();
 
     if( !m_polygonCache || 
         !( m_polygonCache.get().size() == polygon.size() ) || 
@@ -270,8 +270,8 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
                 [ &updates ]( MarkupGroupImpl::PolyMap::iterator i,
                     ConnectionAnalysis::ConnectionPairMap::const_iterator j)
                 {
-                    if( ( j->second->polygon.size() != i->second.size() ) || 
-                        !std::equal( j->second->polygon.begin(), j->second->polygon.end(), i->second.begin() ) )
+                    if( ( j->second->getPolygon().size() != i->second.size() ) || 
+                        !std::equal( j->second->getPolygon().begin(), j->second->getPolygon().end(), i->second.begin() ) )
                     {
                         updates.push_back( std::make_pair( i, j ) );
                         return true;
@@ -304,14 +304,14 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
         }    
         for( ConnectionAnalysis::ConnectionPairMap::const_iterator i : additions )
         {
-            m_polygonMap[ i->first ] = i->second->polygon;
+            m_polygonMap[ i->first ] = i->second->getPolygon();
         }    
         for( const std::pair< MarkupGroupImpl::PolyMap::iterator,
                         ConnectionAnalysis::ConnectionPairMap::const_iterator >& iterPair : updates )
         {
             MarkupGroupImpl::PolyMap::iterator markupIter = iterPair.first;
             ConnectionAnalysis::ConnectionPairMap::const_iterator connectionIter = iterPair.second;
-            markupIter->second = connectionIter->second->polygon;
+            markupIter->second = connectionIter->second->getPolygon();
         }    
                 
     }
