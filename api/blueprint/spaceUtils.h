@@ -577,14 +577,16 @@ public:
     using PolygonType = wykobi::polygon< float, 2 >;
     using PolyMap = std::map< KeyType, PolygonType >;
     
-    MarkupPolygonGroupImpl( const GlyphSpec* pParent, PolyMap& polygons )
+    MarkupPolygonGroupImpl( const GlyphSpec* pParent, PolyMap& polygons, bool bFill )
         :   m_pParent( pParent ),
-            m_polygons( polygons )
+            m_polygons( polygons ),
+            m_bFill( bFill )
     {
     }
     virtual const std::string& getName() const { return m_strText; }
     virtual const GlyphSpec* getParent() const { return m_pParent; }
     
+    virtual bool isPolygonsFilled() const { return m_bFill; }
     virtual std::size_t getTotalPolygons() const { return m_polygons.size(); }
     virtual void getPolygon( std::size_t szIndex, Polygon& polygon ) const
     {
@@ -603,6 +605,7 @@ private:
     const GlyphSpec* m_pParent;
     std::string m_strText;
     PolyMap& m_polygons;
+    bool m_bFill;
 };
 
 //////////////////////////////////////////////////////////////////////////////

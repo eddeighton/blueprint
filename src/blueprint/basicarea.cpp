@@ -23,6 +23,7 @@ const std::string& Area::TypeName()
 Area::Area( Site::Ptr pParent, const std::string& strName )
     :   Site( pParent, strName ),
         m_connections( *this ),
+        m_exteriors( *this, m_connections ),
         m_pSiteParent( pParent )
 {
 }
@@ -30,6 +31,7 @@ Area::Area( Site::Ptr pParent, const std::string& strName )
 Area::Area( PtrCst pOriginal, Site::Ptr pParent, const std::string& strName )
     :   Site( pOriginal, pParent, strName ),
         m_connections( *this ),
+        m_exteriors( *this, m_connections ),
         m_pSiteParent( pParent ),
         m_transform( pOriginal->m_transform )
 {
@@ -106,8 +108,11 @@ void Area::init()
     if( !m_pLabel.get() )
         m_pLabel.reset( new TextImpl( this, m_strLabelText, 0.0f, 0.0f ) ); 
     
-    if( !m_pPolygonGroup.get() )
-        m_pPolygonGroup.reset( new MarkupGroupImpl( this, m_polygonMap ) );
+    if( !m_pConnectionPolygons.get() )
+        m_pConnectionPolygons.reset( new ConnectionGroupImpl( this, m_connectionPolyMap, true ) );
+    if( !m_pExteriorPolygons.get() )
+        m_pExteriorPolygons.reset( new ExteriorGroupImpl( this, m_exteriorPolyMap, false ) );
+    
 }
 
 void Area::load( Factory& factory, const Ed::Node& node )
@@ -229,13 +234,13 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
         
         const ConnectionAnalysis::ConnectionPairMap& connections = m_connections.getConnections();
         
-        //match the ConnectionAnalysis::ConnectionPairMap to the MarkupGroupImpl::PolyMap
+        //match the ConnectionAnalysis::ConnectionPairMap to the ConnectionGroupImpl::PolyMap
         //both use the ConnectionAnalysis::ConnectionPair as a key
         
         struct Comparison
         {
             inline bool operator()( 
-                    MarkupGroupImpl::PolyMap::iterator i,
+                    ConnectionGroupImpl::PolyMap::iterator i,
                     ConnectionAnalysis::ConnectionPairMap::const_iterator j ) const
             {
                 const ConnectionAnalysis::ConnectionPair& cp1 = i->first;
@@ -246,7 +251,7 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
                 
             }
             inline bool opposite(
-                    MarkupGroupImpl::PolyMap::iterator i,
+                    ConnectionGroupImpl::PolyMap::iterator i,
                     ConnectionAnalysis::ConnectionPairMap::const_iterator j ) const
             {
                 const ConnectionAnalysis::ConnectionPair& cp1 = i->first;
@@ -258,16 +263,18 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
         };
         
         Comparison comparison;
-        std::vector< MarkupGroupImpl::PolyMap::iterator > removals;
+        std::vector< ConnectionGroupImpl::PolyMap::iterator > removals;
         std::vector< ConnectionAnalysis::ConnectionPairMap::const_iterator > additions;
-        std::vector< std::pair< MarkupGroupImpl::PolyMap::iterator,
+        std::vector< std::pair< ConnectionGroupImpl::PolyMap::iterator,
             ConnectionAnalysis::ConnectionPairMap::const_iterator > > updates;
         
-        generics::matchGetUpdates( m_polygonMap.begin(), m_polygonMap.end(), connections.begin(), connections.end(),
+        generics::matchGetUpdates( 
+                m_connectionPolyMap.begin(), m_connectionPolyMap.end(), 
+                connections.begin(), connections.end(),
                 comparison,
                 
                 //should update
-                [ &updates ]( MarkupGroupImpl::PolyMap::iterator i,
+                [ &updates ]( ConnectionGroupImpl::PolyMap::iterator i,
                     ConnectionAnalysis::ConnectionPairMap::const_iterator j)
                 {
                     if( ( j->second->getPolygon().size() != i->second.size() ) || 
@@ -280,7 +287,7 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
                 },
                 
                 //remove
-                [ &removals ]( MarkupGroupImpl::PolyMap::iterator i )
+                [ &removals ]( ConnectionGroupImpl::PolyMap::iterator i )
                 {
                     removals.push_back( i );
                 },
@@ -292,30 +299,45 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
                 },
                 
                 //update
-                []( MarkupGroupImpl::PolyMap::const_iterator i )
+                []( ConnectionGroupImpl::PolyMap::const_iterator i )
                 {
                     //do nothing.. handled by "should update" above
                 }
             );
         
-        for( MarkupGroupImpl::PolyMap::iterator i : removals )
+        for( ConnectionGroupImpl::PolyMap::iterator i : removals )
         {
-            m_polygonMap.erase( i );
+            m_connectionPolyMap.erase( i );
         }    
         for( ConnectionAnalysis::ConnectionPairMap::const_iterator i : additions )
         {
-            m_polygonMap[ i->first ] = i->second->getPolygon();
+            m_connectionPolyMap[ i->first ] = i->second->getPolygon();
         }    
-        for( const std::pair< MarkupGroupImpl::PolyMap::iterator,
+        for( const std::pair< ConnectionGroupImpl::PolyMap::iterator,
                         ConnectionAnalysis::ConnectionPairMap::const_iterator >& iterPair : updates )
         {
-            MarkupGroupImpl::PolyMap::iterator markupIter = iterPair.first;
+            ConnectionGroupImpl::PolyMap::iterator markupIter = iterPair.first;
             ConnectionAnalysis::ConnectionPairMap::const_iterator connectionIter = iterPair.second;
             markupIter->second = connectionIter->second->getPolygon();
         }    
                 
     }
     
+    
+    //exteriors
+    {
+        m_exteriors.calculate();
+        
+        m_exteriorPolyMap.clear();
+        const ExteriorAnalysis::Exterior::PtrVector& exteriors = m_exteriors.getExteriors();
+        int iCounter = 0;
+        for( const ExteriorAnalysis::Exterior::Ptr pExterior : exteriors )
+        {
+            m_exteriorPolyMap.insert( std::make_pair( iCounter++, pExterior->getPolygon() ) );
+        }
+        
+        
+    }
         
     Site::EvaluationResult result;
     return result;

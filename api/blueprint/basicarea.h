@@ -98,8 +98,10 @@ public:
     
     virtual void getMarkupPolygonGroups( MarkupPolygonGroup::List& polyGroups )
     {
-        if( m_pPolygonGroup.get() )
-            polyGroups.push_back( m_pPolygonGroup.get() );
+        if( m_pConnectionPolygons.get() )
+            polyGroups.push_back( m_pConnectionPolygons.get() );
+        if( m_pExteriorPolygons.get() )
+            polyGroups.push_back( m_pExteriorPolygons.get() );
     }
     
     //cmds
@@ -112,19 +114,23 @@ public:
     const PropertyVector& getProperties() const { return m_properties; }
 private:
     ConnectionAnalysis m_connections;
+    ExteriorAnalysis m_exteriors;
     
     Site::WeakPtr m_pSiteParent;
     Transform m_transform;
     MarkupPath::PathCmdVector m_path;
 
-    using MarkupGroupImpl = MarkupPolygonGroupImpl< ConnectionAnalysis::ConnectionPair >;
+    using ConnectionGroupImpl = MarkupPolygonGroupImpl< ConnectionAnalysis::ConnectionPair >;
+    using ExteriorGroupImpl = MarkupPolygonGroupImpl< int >;
     
     std::unique_ptr< TextImpl > m_pLabel;
     std::unique_ptr< PathImpl > m_pPath;
-    std::unique_ptr< MarkupGroupImpl > m_pPolygonGroup;
+    std::unique_ptr< ConnectionGroupImpl > m_pConnectionPolygons;
+    std::unique_ptr< ExteriorGroupImpl > m_pExteriorPolygons;
     Feature_Contour::Ptr m_pContour;
     
-    MarkupGroupImpl::PolyMap m_polygonMap;
+    ConnectionGroupImpl::PolyMap m_connectionPolyMap;
+    ExteriorGroupImpl::PolyMap m_exteriorPolyMap;
     ContourPointVector m_boundaryPoints;
     PropertyVector m_properties;
     std::string m_strLabelText;
