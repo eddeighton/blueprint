@@ -103,7 +103,7 @@ std::string Feature_Point::getStatement() const
     }
     return os.str();
 }
-
+    
 const GlyphSpec* Feature_Point::getParent( int id ) const 
 { 
     if( Feature_Point::Ptr pParent = boost::dynamic_pointer_cast< Feature_Point >( m_pParent.lock() ) )
@@ -367,7 +367,20 @@ Feature_ContourSegment::Feature_ContourSegment( PtrCst pOriginal, Feature_Contou
         m_pointLeft( *this, 1 ),
         m_pointRight( *this, 2 )
 {
+}
 
+void Feature_ContourSegment::init()
+{
+    Feature::init();
+    
+    m_pSegmentType = get< Property >( "type" );
+    if( !m_pSegmentType )
+    {
+        m_pSegmentType = Property::Ptr( new Property( shared_from_this(), "type" ) );
+        m_pSegmentType->init();
+        m_pSegmentType->setStatement( "none;" );
+        add( m_pSegmentType );
+    }
 }
 
 Node::Ptr Feature_ContourSegment::copy( Node::Ptr pParent, const std::string& strName ) const
@@ -412,6 +425,20 @@ std::string Feature_ContourSegment::getStatement() const
         os << sh;
     }
     return os.str();
+}
+
+std::string Feature_ContourSegment::getSegmentType() const
+{
+    if( m_pSegmentType )
+    {
+        return m_pSegmentType->getValue();
+    }
+    return "none";
+}
+
+bool Feature_ContourSegment::isSegmentExterior() const
+{
+    return getSegmentType() == "exterior;";
 }
 
 void Feature_ContourSegment::getBoundaryPoint( Points type, unsigned int& polyIndex, float& x, float& y, float& fDistance ) const

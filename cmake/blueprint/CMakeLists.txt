@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 2.8)
 #get boost
 include( ${BLUEPRINT_ROOT_DIR}/cmake/boost_include.cmake )
 
+#get cgal
+include( ${BLUEPRINT_ROOT_DIR}/cmake/cgal_include.cmake )
+
 #get agg
 include( ${BLUEPRINT_ROOT_DIR}/cmake/agg_include.cmake )
 
@@ -38,7 +41,8 @@ set( BLUEPRINT_API
     ${BLUEPRINT_API_DIR}/blueprint/connection.h
     ${BLUEPRINT_API_DIR}/blueprint/blueprint.h
     ${BLUEPRINT_API_DIR}/blueprint/spaceUtils.h
-    ${BLUEPRINT_API_DIR}/blueprint/contour.h
+    ${BLUEPRINT_API_DIR}/blueprint/compiler.h
+    ${BLUEPRINT_API_DIR}/blueprint/cgalSettings.h
     ${BLUEPRINT_API_DIR}/blueprint/clip.h
     )
     
@@ -63,7 +67,7 @@ set( BLUEPRINT_SOURCES_SRC
     ${BLUEPRINT_SRC_DIR}/blueprint/blueprint.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/factory.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/spaceUtils.cpp
-    ${BLUEPRINT_SRC_DIR}/blueprint/contour.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/compiler.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/clip.cpp
     )
 
@@ -83,6 +87,7 @@ set_target_properties( blueprintlib PROPERTIES DEBUG_POSTFIX d )
 link_boost( blueprintlib filesystem )
 link_boost( blueprintlib iostreams )
 link_boost( blueprintlib serialization )
+link_cgal( blueprintlib )
 link_agg( blueprintlib )
 link_wykobi( blueprintlib )
 link_clipper( blueprintlib )

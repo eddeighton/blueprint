@@ -2,7 +2,7 @@
 
 #include "blueprint/connection.h"
 #include "blueprint/basicArea.h"
-#include "blueprint/contour.h"
+#include "blueprint/spaceUtils.h"
 
 #include "common/assert_verify.hpp"
 
@@ -318,7 +318,6 @@ void ExteriorAnalysis::calculate()
             std::reverse( areaInteriorPath.begin(), areaInteriorPath.end() );
     }
     
-    
     for( int i = 0; i < iTotalComponents; ++i )
     {
         std::set< const Area* > areas;
@@ -334,7 +333,6 @@ void ExteriorAnalysis::calculate()
         if( !areas.empty() )
         {
             //create exterior for the area set...
-            
             ClipperLib::Paths allPaths;
             {
                 for( const Area* pArea : areas )

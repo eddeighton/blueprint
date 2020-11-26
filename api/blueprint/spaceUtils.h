@@ -2,13 +2,11 @@
 #define SPACEUTILS_15_09_2013
 
 #include "blueprint/rasteriser.h"
-
 #include "blueprint/buffer.h"
 #include "blueprint/glyphspec.h"
 #include "blueprint/dataBitmap.h"
 
-//#include "blueprint/adjacency.h"
-//#include "blueprint/search.h"
+#include "common/angle.hpp"
 
 #include "clipper.hpp"
 #include "wykobi.hpp"
@@ -21,6 +19,15 @@
 
 namespace Blueprint
 {
+    using Angle8Traits = Math::Angle< 8 >;
+    using Angle8       = Angle8Traits::Value;
+    using Point2D      = wykobi::point2d< float >;
+    using Polygon2D    = wykobi::polygon< float, 2 >;
+    using Rect2D       = wykobi::rectangle< float >;
+    
+    const float fMaxConnectionLength = 4.5f;
+    const float fWallLength = 10.0f;
+    const float fWallLengthBy2 = 5.0f;
 
 static wykobi::point2d< float > calculateOffset( const wykobi::rectangle< float >& aabbBox )
 {
@@ -333,6 +340,7 @@ static void generatePathPolygons( const TPathType& path, float fOffsetX = 0.0f, 
         stroke.line_cap( static_cast< agg::line_cap_e >( cap ) );
         stroke.line_join( static_cast< agg::line_join_e >( join ) );*/
     
+/*
 static const double CLIPPER_MAG = 1000000.0;
 
 static void offsetSimplePolygon( const wykobi::polygon< float, 2u >& polygon, wykobi::polygon< float, 2u >& result, float fAmt )
@@ -406,9 +414,9 @@ static void getOuterContours(
         outerContours.push_back( extrudedContour );
         bFirst = false;
     }
-}
+}*/
 
-typedef std::vector< wykobi::point2d< float > > PointVector;
+//typedef std::vector< wykobi::point2d< float > > PointVector;
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 struct Map_FloorAverage

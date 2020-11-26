@@ -40,7 +40,7 @@ namespace Ed
     }
     inline std::ostream& operator<<( std::ostream& os, const wykobi::point2d< float >& pt )
     {
-        return os << pt.x << pt.y;
+        return os << pt.x << ' ' << pt.y << ' ';
     }
     inline std::istream& operator>>( std::istream& is, wykobi::point2d< float >& pt )
     {
@@ -49,7 +49,7 @@ namespace Ed
     
     inline std::ostream& operator<<( std::ostream& os, const wykobi::polygon< float, 2 >& polygon )
     {
-        os << polygon.size();
+        os << polygon.size() << ' ';
         for( auto i = polygon.begin(), iEnd = polygon.end(); i!=iEnd; ++i )
             os << *i;
         return os;

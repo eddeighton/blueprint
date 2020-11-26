@@ -97,7 +97,6 @@ namespace Blueprint
         
         void calculate();
         
-        
         struct Exterior
         {
             friend class ExteriorAnalysis;

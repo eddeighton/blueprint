@@ -59,6 +59,7 @@ public:
 
     Feature_Contour::Ptr getContour() const { return m_pContour; }
     const ConnectionAnalysis& getConnections() const { return m_connections; }
+    const ExteriorAnalysis& getExteriors() const { return m_exteriors; }
     
     //GlyphSpec
     virtual const std::string& getName() const { return Node::getName(); }

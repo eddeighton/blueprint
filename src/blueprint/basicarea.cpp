@@ -1,7 +1,5 @@
 #include "blueprint/basicarea.h"
-
-//#include "blueprint/edit.h"
-#include "blueprint/contour.h"
+#include "blueprint/spaceUtils.h"
 
 #include "ed/ed.hpp"
 
@@ -319,10 +317,8 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
             ConnectionGroupImpl::PolyMap::iterator markupIter = iterPair.first;
             ConnectionAnalysis::ConnectionPairMap::const_iterator connectionIter = iterPair.second;
             markupIter->second = connectionIter->second->getPolygon();
-        }    
-                
+        }
     }
-    
     
     //exteriors
     {
@@ -335,8 +331,6 @@ Site::EvaluationResult Area::evaluate( const EvaluationMode& mode, DataBitmap& d
         {
             m_exteriorPolyMap.insert( std::make_pair( iCounter++, pExterior->getPolygon() ) );
         }
-        
-        
     }
         
     Site::EvaluationResult result;

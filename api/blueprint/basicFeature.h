@@ -283,10 +283,13 @@ public:
     static const std::string& TypeName();
     Feature_ContourSegment( Feature_Contour::Ptr pParent, const std::string& strName );
     Feature_ContourSegment( PtrCst pOriginal, Feature_Contour::Ptr pParent, const std::string& strName );
+    virtual void init();
     virtual Node::Ptr copy( Node::Ptr pParent, const std::string& strName ) const;
     virtual void load( Factory& factory, const Ed::Node& node );
     virtual void save( Ed::Node& node ) const;
     virtual std::string getStatement() const;
+    std::string getSegmentType() const;
+    bool isSegmentExterior() const;
     
     enum Points
     {
@@ -312,6 +315,7 @@ public:
 protected:
     float m_fWidth;
     ControlPointCallback< Feature_ContourSegment > m_pointLeft, m_pointRight;
+    Property::Ptr m_pSegmentType;
 };
 
 }

@@ -1,0 +1,10 @@
+basic<blueprint>
+{
+    area_0000<area>(0,0,East;,false,false)
+    {
+        contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
+        {
+            auto<property>(false)
+        }
+    }
+}

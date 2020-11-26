@@ -7,7 +7,7 @@
 #include "blueprint/property.h"
 #include "blueprint/dataBitmap.h"
 #include "blueprint/factory.h"
-#include "blueprint/contour.h"
+#include "blueprint/spaceUtils.h"
 
 #include "common/assert_verify.hpp"
 #include "common/rounding.hpp"
@@ -166,8 +166,12 @@ private:
         :   m_area( area ),
             m_qX( qX ),
             m_qY( qY ),
-            m_pBoundaryPoint( new Feature_ContourSegment( area.m_pContour, area.m_pContour->generateNewNodeName( "boundary" ) ) )
+            m_pBoundaryPoint( new Feature_ContourSegment( 
+                area.m_pContour, 
+                area.m_pContour->generateNewNodeName( "segment" ) ) )
     {
+        m_pBoundaryPoint->init();
+        
         m_startX = x = Math::quantize_roundUp( x, qX );
         m_startY = y = Math::quantize_roundUp( y, qY );
         VERIFY_RTE( area.m_pContour->add( m_pBoundaryPoint ) );
@@ -959,7 +963,7 @@ void Edit::cmd_editProperties( const Node::PtrCstVector& nodes, const std::strin
     
 std::set< IGlyph* > Edit::generateExtrusion( float fAmount, bool bConvexHull )
 {
-    Area::Ptr pParentArea = boost::dynamic_pointer_cast< Area >( m_pSite );
+    /*Area::Ptr pParentArea = boost::dynamic_pointer_cast< Area >( m_pSite );
     VERIFY_RTE_MSG( pParentArea, "Can only extrude area" );
     
     std::vector< Polygon2D > extrudedContours;
@@ -1068,17 +1072,17 @@ std::set< IGlyph* > Edit::generateExtrusion( float fAmount, bool bConvexHull )
     
     m_pSite->init();
 
-    interaction_evaluate();
+    interaction_evaluate();*/
     
     std::set< IGlyph* > selection;
-    {
+    /*{
         for( Site::Ptr pNewNode : newSites )
         {
             SiteMap::iterator iFind = m_glyphMap.find( pNewNode );
             if( iFind != m_glyphMap.end() )
                 selection.insert( iFind->second->getMainGlyph().get() );
         }
-    }
+    }*/
     
     return selection;
 }
