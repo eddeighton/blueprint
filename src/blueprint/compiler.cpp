@@ -20,13 +20,30 @@ namespace
         const Blueprint::Feature_ContourSegment* pFCS;
     };
     
+    class ContourPoint;
+    struct ConnectionCurves
+    {
+        using Ptr           = std::shared_ptr< ConnectionCurves >;
+        using PtrVector     = std::vector< Ptr >;
+        
+        std::shared_ptr< ContourPoint >
+            m_pFirstStart, m_pFirstEnd, 
+            m_pSecondStart, m_pSecondEnd;
+        
+        Blueprint::Curve_handle m_ch_FirstStart_FirstMid;
+        Blueprint::Curve_handle m_ch_FirstEnd_SecondMid;
+        Blueprint::Curve_handle m_ch_SecondStart_SecondMid;
+        Blueprint::Curve_handle m_ch_SecondEnd_FirstMid;
+        Blueprint::Curve_handle m_ch_FirstMid_SecondMid;
+    };
+    
     struct ContourPoint
     {
         using Ptr           = std::shared_ptr< ContourPoint >;
         using PtrVector     = std::vector< Ptr >;
         
-        using ExteriorConnectionPair = std::pair< Ptr, Ptr >;
-        using ExteriorConnectionPairVector = std::vector< ExteriorConnectionPair >;
+        using ContourPointPtrPair = std::pair< Ptr, Ptr >;
+        using ContourPointPtrPairVector = std::vector< ContourPointPtrPair >;
         
         using Angle8Traits  = Math::Angle< 8 >;
         using Angle8        = Angle8Traits::Value;
@@ -40,7 +57,8 @@ namespace
                 const std::vector< Boundary >& boundaries,
                 const wykobi::polygon< float, 2 >& contour,
                 ContourPoint::PtrVector& points, 
-                ContourPoint::ExteriorConnectionPairVector& exteriorConnectionPairs );
+                ContourPoint::ContourPointPtrPairVector& interiorConnectionPairs,
+                ContourPoint::ContourPointPtrPairVector& exteriorConnectionPairs );
                         
         enum PointType
         {
@@ -130,9 +148,11 @@ namespace
             const std::vector< Boundary >& boundaries,
             const wykobi::polygon< float, 2 >& contour,
             ContourPoint::PtrVector& points, 
-            ContourPoint::ExteriorConnectionPairVector& exteriorConnectionPairs )
+            ContourPoint::ContourPointPtrPairVector& interiorConnectionPairs,
+            ContourPoint::ContourPointPtrPairVector& exteriorConnectionPairs )
     {
-        ContourPoint::ExteriorConnectionPairVector newExteriorConnections;
+        ContourPoint::ContourPointPtrPairVector newInteriorConnections;
+        ContourPoint::ContourPointPtrPairVector newExteriorConnections;
         {
             int totalBoundaries = 0;
             unsigned int iEdgeCounter = 0;
@@ -167,6 +187,11 @@ namespace
                         newExteriorConnections.push_back(
                             std::make_pair( points[ sz ], points[ sz + 1U ] ) );
                     }
+                    else
+                    {
+                        newInteriorConnections.push_back(
+                            std::make_pair( points[ sz ], points[ sz + 1U ] ) );
+                    }
                 }
             }
             VERIFY_RTE_MSG( totalBoundaries == boundaries.size(), "Boundary error" );
@@ -196,7 +221,7 @@ namespace
             }
         }
         
-        //capture exterior connection pairs
+        //capture connection pairs
         {
             for( auto& p : newExteriorConnections )
             {
@@ -208,12 +233,23 @@ namespace
                 }
                 exteriorConnectionPairs.push_back( p );
             }
+            for( auto& p : newInteriorConnections )
+            {
+                if( bFlipped )
+                {
+                    auto t = p;
+                    p.first = t.second;
+                    p.second = t.first;
+                }
+                interiorConnectionPairs.push_back( p );
+            }
         }
+        
     }
     
     void getExteriorBoundaries( 
         const wykobi::polygon< float, 2u >& exteriorPolygon,
-        const ContourPoint::ExteriorConnectionPairVector& exteriorConnectionPairs,
+        const ContourPoint::ContourPointPtrPairVector& exteriorConnectionPairs,
         std::vector< Boundary >& boundaries )
     {
         unsigned int szEdgeIndex = 0;
@@ -233,7 +269,7 @@ namespace
                 
             const ContourPoint::Segment2D exteriorLine = wykobi::make_segment( *i, *iNext );
             
-            for( const ContourPoint::ExteriorConnectionPair& ecp : exteriorConnectionPairs )
+            for( const ContourPoint::ContourPointPtrPair& ecp : exteriorConnectionPairs )
             {
                 ContourPoint::Ptr pStart  = ecp.first;
                 ContourPoint::Ptr pEnd    = ecp.second;
@@ -291,7 +327,7 @@ namespace
             const wykobi::polygon< float, 2 >& contour,
             ContourPoint::PtrVector& points )
     {
-        ContourPoint::ExteriorConnectionPairVector newExteriorConnections;
+        ContourPoint::ContourPointPtrPairVector newExteriorConnections;
         {
             int totalBoundaries = 0;
             unsigned int iEdgeCounter = 0;
@@ -367,21 +403,11 @@ namespace Blueprint
     
 class Compiler::CompilerImpl
 {
-    struct AreaInfo
-    {
-        using Ptr = std::shared_ptr< AreaInfo >;
-        using PtrMap = std::map< const Area*, Ptr >;
-        
-        const Area* pArea;
-        std::vector< Boundary > boundaries;
-        ContourPoint::PtrVector interiorPoints;
-    };
-    AreaInfo::PtrMap m_areaInfoMap;
-    
     struct ExteriorInfo
     {
         using Ptr = std::shared_ptr< ExteriorInfo >;
         using PtrMap = std::map< const ExteriorAnalysis::Exterior*, Ptr >;
+        using PtrVector = std::vector< Ptr >;
         
         const Area* pArea;
         ExteriorAnalysis::Exterior* pExterior;
@@ -390,102 +416,114 @@ class Compiler::CompilerImpl
     };
     ExteriorInfo::PtrMap m_exteriorInfoMap;
     
-    void buildArrangement( const Area* pArea )
+    struct AreaInfo
     {
+        using Ptr = std::shared_ptr< AreaInfo >;
+        using PtrMap = std::map< const Area*, Ptr >;
+        using PtrVector = std::vector< Ptr >;
+        
+        const Area* pArea;
+        std::vector< Boundary > boundaries;
+        ContourPoint::PtrVector interiorPoints;
+        ConnectionCurves::PtrVector connectionCurves;
+        ExteriorInfo::PtrVector exteriors;
+        PtrVector children;
+        
+        void buildArrangement( Arr_with_hist_2& arr );
+        void buildMetaData( Arr_with_hist_2& arr );
+    };
+    AreaInfo::PtrMap m_areaInfoMap;
+    
+    void recurse( AreaInfo::Ptr pAreaInfo )
+    {
+        const ConnectionAnalysis& connections = pAreaInfo->pArea->getConnections();
+        
+        ContourPoint::ContourPointPtrPairVector interiorConnectionPairs;
+        ContourPoint::ContourPointPtrPairVector exteriorConnectionPairs;
+        
+        //first process all child area interiors
+        for( Site::Ptr pSite : pAreaInfo->pArea->getSpaces() )
         {
-            AreaInfo::PtrMap::const_iterator iFind = m_areaInfoMap.find( pArea );
-            if( iFind != m_areaInfoMap.end() )
+            if( const Area* pChildArea = dynamic_cast< const Area* >( pSite.get() ) )
             {
-                AreaInfo& areaInfo = *iFind->second;
-                
-                for( ContourPoint::PtrVector::iterator 
-                        i       = areaInfo.interiorPoints.begin(),
-                        iNext   = areaInfo.interiorPoints.begin(),
-                        iEnd    = areaInfo.interiorPoints.end();
-                        i!=iEnd; ++i )
-                {
-                    ++iNext;
-                    if( iNext == iEnd ) iNext = areaInfo.interiorPoints.begin();
-                    
-                    ContourPoint::Ptr pPoint = *i;
-                    ContourPoint::Ptr pNext = *iNext;
-                    
-                    Curve_handle ch = CGAL::insert( m_arr, 
-                        Segment_2( 
-                            Point_2( pPoint->getPoint().x, pPoint->getPoint().y ),
-                            Point_2( pNext->getPoint().x, pNext->getPoint().y ) ) );
-                        
-                    pPoint->setCurveHandle( ch );
-                }
+                AreaInfo::Ptr pChildAreaInfo =
+                    processArea( pChildArea, &connections, interiorConnectionPairs, exteriorConnectionPairs );
+                pAreaInfo->children.push_back( pChildAreaInfo );
             }
         }
         
-        const ExteriorAnalysis& exteriorAnalysis = pArea->getExteriors();
+        using FCSMap = std::map< const Feature_ContourSegment*, ContourPoint::ContourPointPtrPair >;
+        FCSMap fcsMap;
+        for( auto& p : interiorConnectionPairs )
+        {
+            fcsMap.insert( std::make_pair( p.first->getFCS(), p ) );
+        }
+        
+        //generate all connections
+        {
+            const ConnectionAnalysis::ConnectionPairMap& connectionPairs = connections.getConnections();
+            for( ConnectionAnalysis::ConnectionPairMap::const_iterator
+                i = connectionPairs.begin(), iEnd = connectionPairs.end(); i!=iEnd; ++i )
+            {
+                const Feature_ContourSegment* pFCSFirst    = i->first.first;
+                const Feature_ContourSegment* pFCSSecond   = i->first.second;
+                
+                FCSMap::iterator iFindFirst     = fcsMap.find( pFCSFirst );
+                FCSMap::iterator iFindSecond    = fcsMap.find( pFCSSecond );
+                VERIFY_RTE( iFindFirst != fcsMap.end() );
+                VERIFY_RTE( iFindSecond != fcsMap.end() );
+                
+                ContourPoint::ContourPointPtrPair pairFirst     = iFindFirst->second;
+                ContourPoint::ContourPointPtrPair pairSecond    = iFindSecond->second;
+                
+                ConnectionCurves::Ptr pConnection( new ConnectionCurves );
+                
+                pConnection->m_pFirstStart  = pairFirst.first;
+                pConnection->m_pFirstEnd    = pairFirst.second;
+                //pConnection->m_pFirstMid
+                pConnection->m_pSecondStart = pairSecond.first;
+                pConnection->m_pSecondEnd   = pairSecond.second;
+                //pConnection->m_pSecondMid
+                
+                pAreaInfo->connectionCurves.push_back( pConnection );
+            }
+        }
+        
+        //now construct exterior points WITH connection points
+        const ExteriorAnalysis& exteriorAnalysis = pAreaInfo->pArea->getExteriors();
         const ExteriorAnalysis::Exterior::PtrVector& exteriors = exteriorAnalysis.getExteriors();
+        
         for( ExteriorAnalysis::Exterior::Ptr pExterior : exteriors )
         {
-            ExteriorInfo& exteriorInfo  = *m_exteriorInfoMap[ pExterior.get() ].get();
+            ExteriorInfo::Ptr pExteriorInfo( new ExteriorInfo );
+            {
+                pExteriorInfo->pArea = pAreaInfo->pArea;
+                pExteriorInfo->pExterior = pExterior.get();
+            }
+            m_exteriorInfoMap.insert( std::make_pair( pExterior.get(), pExteriorInfo ) );
+            pAreaInfo->exteriors.push_back( pExteriorInfo );
             
-            for( ContourPoint::PtrVector::iterator 
-                    i       = exteriorInfo.exteriorPoints.begin(),
-                    iNext   = exteriorInfo.exteriorPoints.begin(),
-                    iEnd    = exteriorInfo.exteriorPoints.end();
-                    i!=iEnd; ++i )
-            {
-                ++iNext;
-                if( iNext == iEnd ) iNext = exteriorInfo.exteriorPoints.begin();
+            //get the absolute contour
+            wykobi::polygon< float, 2u > exteriorPolygon = pExterior->getPolygon();
+            getAbsoluteOrientedContour( pAreaInfo->pArea->getAbsoluteTransform(), wykobi::Clockwise, exteriorPolygon );
+            
+            //determine absolute boundaries
+            getExteriorBoundaries( exteriorPolygon, exteriorConnectionPairs, pExteriorInfo->boundaries );
                 
-                ContourPoint::Ptr pPoint = *i;
-                ContourPoint::Ptr pNext = *iNext;
-                
-                Curve_handle ch = CGAL::insert( m_arr, 
-                    Segment_2( 
-                        Point_2( pPoint->getPoint().x, pPoint->getPoint().y ),
-                        Point_2( pNext->getPoint().x, pNext->getPoint().y ) ) );
-                    
-                pPoint->setCurveHandle( ch );
-            }
+            //produce the absolute exterior contour
+            getExteriorContourPoints( connections, pAreaInfo->pArea, pExteriorInfo->boundaries, exteriorPolygon,
+                pExteriorInfo->exteriorPoints );
         }
         
-        
-        for( Site::Ptr pSite : pArea->getSpaces() )
+        for( AreaInfo::Ptr pChildAreaInfo : pAreaInfo->children )
         {
-            if( const Area* pChildArea = dynamic_cast< const Area* >( pSite.get() ) )
-            {
-                buildArrangement( pChildArea );
-            }
+            recurse( pChildAreaInfo );
         }
     }
     
-    void buildMetaData( const Area* pArea )
-    {
-        {
-            AreaInfo::PtrMap::const_iterator iFind = m_areaInfoMap.find( pArea );
-            if( iFind != m_areaInfoMap.end() )
-            {
-                AreaInfo& areaInfo = *iFind->second;
-            }
-        }
-        {
-            const ExteriorAnalysis& exteriorAnalysis = pArea->getExteriors();
-            const ExteriorAnalysis::Exterior::PtrVector& exteriors = exteriorAnalysis.getExteriors();
-            for( ExteriorAnalysis::Exterior::Ptr pExterior : exteriors )
-            {
-                ExteriorInfo& exteriorInfo  = *m_exteriorInfoMap[ pExterior.get() ].get();
-            }
-        }
-        
-        for( Site::Ptr pSite : pArea->getSpaces() )
-        {
-            if( const Area* pChildArea = dynamic_cast< const Area* >( pSite.get() ) )
-            {
-                buildMetaData( pChildArea );
-            }
-        }
-    }
-    
-    void processArea( const Area* pArea, const ConnectionAnalysis* pConnections, 
-        ContourPoint::ExteriorConnectionPairVector& exteriorConnectionPairs )
+    AreaInfo::Ptr processArea( const Area* pArea, const ConnectionAnalysis* pConnections, 
+        ContourPoint::ContourPointPtrPairVector& interiorConnectionPairs, 
+        ContourPoint::ContourPointPtrPairVector& exteriorConnectionPairs )
     {
         AreaInfo::Ptr pAreaInfo( new AreaInfo{ pArea } );
         
@@ -497,59 +535,11 @@ class Compiler::CompilerImpl
             
         //using the relative contour and boundaries produce the absolute contour with correct winding
         getInteriorContourPoints( pArea->getAbsoluteTransform(), pConnections, pArea, pAreaInfo->boundaries, contour, 
-            pAreaInfo->interiorPoints, exteriorConnectionPairs );
+            pAreaInfo->interiorPoints, interiorConnectionPairs, exteriorConnectionPairs );
         
         m_areaInfoMap.insert( std::make_pair( pArea, pAreaInfo ) );
-    }
-    
-    void recurse( const Area* pArea )
-    {
-        const ConnectionAnalysis& connections = pArea->getConnections();
         
-        ContourPoint::ExteriorConnectionPairVector exteriorConnectionPairs;
-        
-        //first process all child area interiors
-        for( Site::Ptr pSite : pArea->getSpaces() )
-        {
-            if( const Area* pChildArea = dynamic_cast< const Area* >( pSite.get() ) )
-            {
-                processArea( pChildArea, &connections, exteriorConnectionPairs );
-            }
-        }
-        
-        //now construct exterior points WITH connection points
-        const ExteriorAnalysis& exteriorAnalysis = pArea->getExteriors();
-        const ExteriorAnalysis::Exterior::PtrVector& exteriors = exteriorAnalysis.getExteriors();
-        
-        for( ExteriorAnalysis::Exterior::Ptr pExterior : exteriors )
-        {
-            ExteriorInfo::Ptr pExteriorInfo( new ExteriorInfo );
-            {
-                pExteriorInfo->pArea = pArea;
-                pExteriorInfo->pExterior = pExterior.get();
-            }
-            m_exteriorInfoMap.insert( std::make_pair( pExterior.get(), pExteriorInfo ) );
-            
-            //get the absolute contour
-            wykobi::polygon< float, 2u > exteriorPolygon = pExterior->getPolygon();
-            getAbsoluteOrientedContour( pArea->getAbsoluteTransform(), wykobi::Clockwise, exteriorPolygon );
-            
-            //determine absolute boundaries
-            getExteriorBoundaries( exteriorPolygon, exteriorConnectionPairs, pExteriorInfo->boundaries );
-                
-            //produce the absolute exterior contour
-            getExteriorContourPoints( connections, pArea, pExteriorInfo->boundaries, exteriorPolygon,
-                pExteriorInfo->exteriorPoints );
-            
-        }
-        
-        for( Site::Ptr pSite : pArea->getSpaces() )
-        {
-            if( const Area* pChildArea = dynamic_cast< const Area* >( pSite.get() ) )
-            {
-                recurse( pChildArea );
-            }
-        }
+        return pAreaInfo;
     }
 
 public:
@@ -567,30 +557,29 @@ public:
             }
         }
         
-        ContourPoint::ExteriorConnectionPairVector exteriorConnectionPairs;
-        for( Site::Ptr pSite : sites )
+        AreaInfo::PtrVector areaInfos;
         {
-            if( Area* pChildArea = dynamic_cast< Area* >( pSite.get() ) )
+            ContourPoint::ContourPointPtrPairVector interiorConnectionPairs;
+            ContourPoint::ContourPointPtrPairVector exteriorConnectionPairs;;
+            for( Site::Ptr pSite : sites )
             {
-                processArea( pChildArea, nullptr, exteriorConnectionPairs );
-                recurse( pChildArea );
+                if( Area* pChildArea = dynamic_cast< Area* >( pSite.get() ) )
+                {
+                    AreaInfo::Ptr pAreaInfo = 
+                        processArea( pChildArea, nullptr, interiorConnectionPairs, exteriorConnectionPairs );
+                    recurse( pAreaInfo );
+                    areaInfos.push_back( pAreaInfo );
+                }
             }
         }
         
-        for( Site::Ptr pSite : sites )
+        for( AreaInfo::Ptr pAreInfo : areaInfos )
         {
-            if( Area* pChildArea = dynamic_cast< Area* >( pSite.get() ) )
-            {
-                buildArrangement( pChildArea );
-            }
+            pAreInfo->buildArrangement( m_arr );
         }
-        
-        for( Site::Ptr pSite : sites )
+        for( AreaInfo::Ptr pAreInfo : areaInfos )
         {
-            if( Area* pChildArea = dynamic_cast< Area* >( pSite.get() ) )
-            {
-                buildMetaData( pChildArea );
-            }
+            pAreInfo->buildMetaData( m_arr );
         }
         
         //extract contours
@@ -671,6 +660,104 @@ public:
     const Site::PtrVector& m_sites;
     Arr_with_hist_2 m_arr;
 };
+
+void Compiler::CompilerImpl::AreaInfo::buildArrangement( Arr_with_hist_2& arr )
+{
+    {
+        for( ContourPoint::PtrVector::iterator 
+                i       = interiorPoints.begin(),
+                iNext   = interiorPoints.begin(),
+                iEnd    = interiorPoints.end();
+                i!=iEnd; ++i )
+        {
+            ++iNext;
+            if( iNext == iEnd ) iNext = interiorPoints.begin();
+            
+            ContourPoint::Ptr pPoint = *i;
+            ContourPoint::Ptr pNext = *iNext;
+            
+            Curve_handle ch = CGAL::insert( arr, 
+                Segment_2( 
+                    Point_2( pPoint->getPoint().x, pPoint->getPoint().y ),
+                    Point_2( pNext->getPoint().x, pNext->getPoint().y ) ) );
+                
+            pPoint->setCurveHandle( ch );
+        }
+    }
+    {
+        for( ConnectionCurves::Ptr pCurve : connectionCurves )
+        {
+            ContourPoint::Vector2D v = 
+                (   pCurve->m_pSecondEnd->getPoint() - 
+                    pCurve->m_pFirstStart->getPoint() );
+            v.x /= 2.0f;
+            v.y /= 2.0f;
+        
+            pCurve->m_ch_FirstStart_FirstMid = CGAL::insert( arr, 
+                Segment_2( 
+                    Point_2( pCurve->m_pFirstStart->getPoint().x,           pCurve->m_pFirstStart->getPoint().y ),
+                    Point_2( pCurve->m_pFirstStart->getPoint().x + v.x,     pCurve->m_pFirstStart->getPoint().y + v.y ) ) );
+            pCurve->m_ch_FirstEnd_SecondMid = CGAL::insert( arr, 
+                Segment_2( 
+                    Point_2( pCurve->m_pFirstEnd->getPoint().x,             pCurve->m_pFirstEnd->getPoint().y ),
+                    Point_2( pCurve->m_pFirstEnd->getPoint().x + v.x,       pCurve->m_pFirstEnd->getPoint().y + v.y ) ) );
+            pCurve->m_ch_SecondStart_SecondMid = CGAL::insert( arr, 
+                Segment_2( 
+                    Point_2( pCurve->m_pSecondStart->getPoint().x,          pCurve->m_pSecondStart->getPoint().y ),
+                    Point_2( pCurve->m_pSecondStart->getPoint().x - v.x,    pCurve->m_pSecondStart->getPoint().y - v.y ) ) );
+            pCurve->m_ch_SecondEnd_FirstMid = CGAL::insert( arr, 
+                Segment_2( 
+                    Point_2( pCurve->m_pSecondEnd->getPoint().x,            pCurve->m_pSecondEnd->getPoint().y ),
+                    Point_2( pCurve->m_pSecondEnd->getPoint().x - v.x,      pCurve->m_pSecondEnd->getPoint().y - v.y ) ) );
+            pCurve->m_ch_FirstMid_SecondMid = CGAL::insert( arr, 
+                Segment_2( 
+                    Point_2( pCurve->m_pFirstStart->getPoint().x + v.x,     pCurve->m_pFirstStart->getPoint().y + v.y ),
+                    Point_2( pCurve->m_pSecondStart->getPoint().x - v.x,    pCurve->m_pSecondStart->getPoint().y - v.y ) ) );
+        }
+    }
+    {
+        for( ExteriorInfo::Ptr pExterior : exteriors )
+        {
+            for( ContourPoint::PtrVector::iterator 
+                    i       = pExterior->exteriorPoints.begin(),
+                    iNext   = pExterior->exteriorPoints.begin(),
+                    iEnd    = pExterior->exteriorPoints.end();
+                    i!=iEnd; ++i )
+            {
+                ++iNext;
+                if( iNext == iEnd ) iNext = pExterior->exteriorPoints.begin();
+                
+                ContourPoint::Ptr pPoint = *i;
+                ContourPoint::Ptr pNext = *iNext;
+                
+                Curve_handle ch = CGAL::insert( arr, 
+                    Segment_2( 
+                        Point_2( pPoint->getPoint().x, pPoint->getPoint().y ),
+                        Point_2( pNext->getPoint().x, pNext->getPoint().y ) ) );
+                    
+                pPoint->setCurveHandle( ch );
+            }
+        }
+    }
+    
+    for( AreaInfo::Ptr pChildAreaInfo : children )
+    {
+        pChildAreaInfo->buildArrangement( arr );
+    }
+}
+
+void Compiler::CompilerImpl::AreaInfo::buildMetaData( Arr_with_hist_2& arr )
+{
+    {
+        for( ExteriorInfo::Ptr pExterior : exteriors )
+        {
+        }
+    }
+    for( AreaInfo::Ptr pChildAreaInfo : children )
+    {
+        pChildAreaInfo->buildMetaData( arr );
+    }
+}
 
 Compiler::Compiler( const Site::PtrVector& sites )
     :   m_pPimpl( std::make_shared< CompilerImpl >( sites ) )

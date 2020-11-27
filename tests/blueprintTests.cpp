@@ -375,3 +375,8 @@ TEST( CGAL, CompilerComplex )
     loadTest( "complex.blu" );
 }
 
+TEST( CGAL, CompilerComplex_big )
+{
+    loadTest( "complex_big.blu" );
+}
+
