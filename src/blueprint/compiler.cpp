@@ -12,6 +12,8 @@
 
 namespace
 {
+    class ContourPoint;
+    
     struct Boundary
     {
         unsigned int edge;
@@ -20,7 +22,17 @@ namespace
         const Blueprint::Feature_ContourSegment* pFCS;
     };
     
-    class ContourPoint;
+    struct ExteriorBoundary
+    {
+        unsigned int edge;
+        wykobi::point2d< float > start, end;
+        float distance;
+        const Blueprint::Feature_ContourSegment* pFCS;
+        std::shared_ptr< ContourPoint >
+            m_pFirstStart, m_pFirstEnd, 
+            m_pSecondStart, m_pSecondEnd;
+    };
+    
     struct ConnectionCurves
     {
         using Ptr           = std::shared_ptr< ConnectionCurves >;
@@ -250,7 +262,7 @@ namespace
     void getExteriorBoundaries( 
         const wykobi::polygon< float, 2u >& exteriorPolygon,
         const ContourPoint::ContourPointPtrPairVector& exteriorConnectionPairs,
-        std::vector< Boundary >& boundaries )
+        std::vector< ExteriorBoundary >& boundaries )
     {
         unsigned int szEdgeIndex = 0;
         for( wykobi::polygon< float, 2u >::const_iterator
@@ -280,39 +292,36 @@ namespace
                         pEnd->getPoint().x - pStart->getPoint().x, 
                         pEnd->getPoint().y - pStart->getPoint().y );
                         
+                        
                 //outer contour is clockwise - interior is counter-clockwise - so these two angles
                 //just need to be equal for them to be in opposing direction.
                 if( interiorAngle == exteriorAngle )
                 {
-                    const Math::Angle< 8 >::Value orthoNormal =
-                        static_cast< Math::Angle< 8 >::Value >( ( interiorAngle + 2 ) % 8 );
-                    ContourPoint::Vector2D vDir;
-                    Math::toVector< Math::Angle< 8 > >( orthoNormal, vDir.x, vDir.y );
+                    const ContourPoint::Point2D ptStart =
+                        closest_point_on_segment_from_point( exteriorLine, pStart->getPoint() );
+                    const float fStartDist = wykobi::distance( pStart->getPoint(), ptStart );
                     
-                    const ContourPoint::Segment2D connectionStartLine = wykobi::make_segment( 
-                            pStart->getPoint(), 
-                            pStart->getPoint() + vDir * Blueprint::ConnectionAnalysis::fConnectionMaxDist );
+                    const ContourPoint::Point2D ptEnd =
+                        closest_point_on_segment_from_point( exteriorLine, pEnd->getPoint() );
+                    const float fEndDist = wykobi::distance( pEnd->getPoint(), ptEnd );
                         
-                    const ContourPoint::Segment2D connectionEndLine = wykobi::make_segment( 
-                            pEnd->getPoint(), 
-                            pEnd->getPoint() + vDir * Blueprint::ConnectionAnalysis::fConnectionMaxDist );
-                        
-                    if( intersect( exteriorLine, connectionStartLine ) &&
-                        intersect( exteriorLine, connectionEndLine ) )
+                    if( ( fStartDist >= Blueprint::ConnectionAnalysis::fConnectionMinDist ) &&
+                        ( fStartDist <= Blueprint::ConnectionAnalysis::fConnectionMaxDist ) &&
+                        ( fEndDist >= Blueprint::ConnectionAnalysis::fConnectionMinDist   ) &&
+                        ( fEndDist <= Blueprint::ConnectionAnalysis::fConnectionMaxDist   ) )
                     {
-                        const ContourPoint::Point2D ptStart =
-                            intersection_point( exteriorLine, connectionStartLine );
-                        const ContourPoint::Point2D ptEnd =
-                            intersection_point( exteriorLine, connectionEndLine );
-                            
                         const float startfDistance = wykobi::distance( pStart->getPoint(), ptStart );
                             
-                        std::cout << "Exterior boundary at: (" << ptStart.x << "," << ptStart.y << ") (" << 
-                            ptEnd.x << "," << ptEnd.y << ") distance:" << startfDistance << std::endl;
+                        std::cout << "Exterior boundary at: " << 
+                            "(" << ptStart.x << "," << ptStart.y << ") (" << ptEnd.x << "," << ptEnd.y << ")" << 
+                            " startfDistance: "     << startfDistance << 
+                            " fStartDist: "         << fStartDist << 
+                            " fEndDist: "           << fEndDist << 
+                            std::endl;
                         boundaries.push_back(
-                            Boundary
+                            ExteriorBoundary
                             { 
-                                szEdgeIndex, ptStart, ptEnd, startfDistance, pStart->getFCS()
+                                szEdgeIndex, ptStart, ptEnd, startfDistance, pStart->getFCS(), pStart, pEnd
                             } );
                     }
                 }
@@ -322,12 +331,12 @@ namespace
     
     void getExteriorContourPoints( 
             const Blueprint::ConnectionAnalysis& connectionAnalysis, 
-            const Blueprint::Area* pArea, 
-            const std::vector< Boundary >& boundaries,
-            const wykobi::polygon< float, 2 >& contour,
-            ContourPoint::PtrVector& points )
+            const Blueprint::Area* pArea,
+            const wykobi::polygon< float, 2 >& contour, 
+            std::vector< ExteriorBoundary >& boundaries,
+            ContourPoint::PtrVector& points)
     {
-        ContourPoint::ContourPointPtrPairVector newExteriorConnections;
+        //ContourPoint::ContourPointPtrPairVector newExteriorConnections;
         {
             int totalBoundaries = 0;
             unsigned int iEdgeCounter = 0;
@@ -337,8 +346,8 @@ namespace
             {
                 points.push_back( ContourPoint::Ptr( new ContourPoint( ContourPoint::Normal, *i, nullptr ) ) );
                 
-                std::map< float, const Boundary* > inSegmentBoundaries;
-                for( const Boundary& boundary : boundaries )
+                std::map< float, ExteriorBoundary* > inSegmentBoundaries;
+                for( ExteriorBoundary& boundary : boundaries )
                 {
                     if( boundary.edge == iEdgeCounter )
                     {
@@ -348,35 +357,27 @@ namespace
                     }
                 }
                 
-                for( const auto& boundPair : inSegmentBoundaries )
+                for( auto& boundPair : inSegmentBoundaries )
                 {
                     const std::size_t sz = points.size();
                     points.push_back( ContourPoint::Ptr( 
                         new ContourPoint( ContourPoint::Start,  boundPair.second->start, boundPair.second->pFCS ) ) );
                     points.push_back( ContourPoint::Ptr( 
                         new ContourPoint( ContourPoint::End,    boundPair.second->end  , boundPair.second->pFCS ) ) );
+                        
+                    {
+                        //reverse order of the points
+                        boundPair.second->m_pSecondStart = points[ sz + 1U ];
+                        boundPair.second->m_pSecondEnd = points[ sz ];
+                    }
+                        
+                    //newExteriorConnections.push_back(
+                    //    std::make_pair( points[ sz ], points[ sz + 1U ] ) );
                     ++totalBoundaries;
                 }
             }
             VERIFY_RTE_MSG( totalBoundaries == boundaries.size(), "Boundary error" );
         }
-        
-        //check final orientation
-        bool bFlipped = false;
-        {
-            wykobi::polygon< float, 2 > completeContour;
-            for( ContourPoint::Ptr pPoint : points )
-            {
-                completeContour.push_back( pPoint->getPoint() );
-            }
-            const int polyOrientation = wykobi::polygon_orientation( completeContour );
-            if( polyOrientation == wykobi::Clockwise )
-            {
-                bFlipped = true;
-                std::reverse( points.begin(), points.end() );
-            }
-        }
-        
     }
     
     bool getAbsoluteOrientedContour( const Blueprint::Matrix& transform, int iOrientation, wykobi::polygon< float, 2u >& contour )
@@ -411,8 +412,9 @@ class Compiler::CompilerImpl
         
         const Area* pArea;
         ExteriorAnalysis::Exterior* pExterior;
-        std::vector< Boundary > boundaries;
+        std::vector< ExteriorBoundary > boundaries;
         ContourPoint::PtrVector exteriorPoints;
+        ConnectionCurves::PtrVector connectionCurves;
     };
     ExteriorInfo::PtrMap m_exteriorInfoMap;
     
@@ -452,15 +454,15 @@ class Compiler::CompilerImpl
             }
         }
         
-        using FCSMap = std::map< const Feature_ContourSegment*, ContourPoint::ContourPointPtrPair >;
-        FCSMap fcsMap;
-        for( auto& p : interiorConnectionPairs )
-        {
-            fcsMap.insert( std::make_pair( p.first->getFCS(), p ) );
-        }
         
-        //generate all connections
+        //generate interior connections
         {
+            using FCSMap = std::map< const Feature_ContourSegment*, ContourPoint::ContourPointPtrPair >;
+            FCSMap fcsMap;
+            for( auto& p : interiorConnectionPairs )
+            {
+                fcsMap.insert( std::make_pair( p.first->getFCS(), p ) );
+            }
             const ConnectionAnalysis::ConnectionPairMap& connectionPairs = connections.getConnections();
             for( ConnectionAnalysis::ConnectionPairMap::const_iterator
                 i = connectionPairs.begin(), iEnd = connectionPairs.end(); i!=iEnd; ++i )
@@ -480,40 +482,60 @@ class Compiler::CompilerImpl
                 
                 pConnection->m_pFirstStart  = pairFirst.first;
                 pConnection->m_pFirstEnd    = pairFirst.second;
-                //pConnection->m_pFirstMid
                 pConnection->m_pSecondStart = pairSecond.first;
                 pConnection->m_pSecondEnd   = pairSecond.second;
-                //pConnection->m_pSecondMid
                 
                 pAreaInfo->connectionCurves.push_back( pConnection );
             }
         }
         
         //now construct exterior points WITH connection points
-        const ExteriorAnalysis& exteriorAnalysis = pAreaInfo->pArea->getExteriors();
-        const ExteriorAnalysis::Exterior::PtrVector& exteriors = exteriorAnalysis.getExteriors();
-        
-        for( ExteriorAnalysis::Exterior::Ptr pExterior : exteriors )
         {
-            ExteriorInfo::Ptr pExteriorInfo( new ExteriorInfo );
+            const ExteriorAnalysis& exteriorAnalysis = pAreaInfo->pArea->getExteriors();
+            const ExteriorAnalysis::Exterior::PtrVector& exteriors = exteriorAnalysis.getExteriors();
+            
+            for( ExteriorAnalysis::Exterior::Ptr pExterior : exteriors )
             {
-                pExteriorInfo->pArea = pAreaInfo->pArea;
-                pExteriorInfo->pExterior = pExterior.get();
-            }
-            m_exteriorInfoMap.insert( std::make_pair( pExterior.get(), pExteriorInfo ) );
-            pAreaInfo->exteriors.push_back( pExteriorInfo );
-            
-            //get the absolute contour
-            wykobi::polygon< float, 2u > exteriorPolygon = pExterior->getPolygon();
-            getAbsoluteOrientedContour( pAreaInfo->pArea->getAbsoluteTransform(), wykobi::Clockwise, exteriorPolygon );
-            
-            //determine absolute boundaries
-            getExteriorBoundaries( exteriorPolygon, exteriorConnectionPairs, pExteriorInfo->boundaries );
+                ExteriorInfo::Ptr pExteriorInfo( new ExteriorInfo );
+                {
+                    pExteriorInfo->pArea = pAreaInfo->pArea;
+                    pExteriorInfo->pExterior = pExterior.get();
+                }
+                m_exteriorInfoMap.insert( std::make_pair( pExterior.get(), pExteriorInfo ) );
+                pAreaInfo->exteriors.push_back( pExteriorInfo );
                 
-            //produce the absolute exterior contour
-            getExteriorContourPoints( connections, pAreaInfo->pArea, pExteriorInfo->boundaries, exteriorPolygon,
-                pExteriorInfo->exteriorPoints );
+                //get the absolute contour
+                wykobi::polygon< float, 2u > exteriorPolygon = pExterior->getPolygon();
+                getAbsoluteOrientedContour( pAreaInfo->pArea->getAbsoluteTransform(), wykobi::Clockwise, exteriorPolygon );
+                
+                //determine absolute boundaries
+                getExteriorBoundaries( exteriorPolygon, exteriorConnectionPairs, 
+                    pExteriorInfo->boundaries );
+                    
+                //produce the absolute exterior contour
+                getExteriorContourPoints( connections, pAreaInfo->pArea, exteriorPolygon, 
+                    pExteriorInfo->boundaries,
+                    pExteriorInfo->exteriorPoints );
+                    
+                for( const ExteriorBoundary& exteriorBoundary : pExteriorInfo->boundaries )
+                {
+                    ConnectionCurves::Ptr pConnection( new ConnectionCurves );
+                    
+                    pConnection->m_pFirstStart  = exteriorBoundary.m_pFirstStart;
+                    pConnection->m_pFirstEnd    = exteriorBoundary.m_pFirstEnd;
+                    pConnection->m_pSecondStart = exteriorBoundary.m_pSecondStart;
+                    pConnection->m_pSecondEnd   = exteriorBoundary.m_pSecondEnd;
+                    
+                    VERIFY_RTE( pConnection->m_pFirstStart  );
+                    VERIFY_RTE( pConnection->m_pFirstEnd    );
+                    VERIFY_RTE( pConnection->m_pSecondStart );
+                    VERIFY_RTE( pConnection->m_pSecondEnd   );
+                    
+                    pExteriorInfo->connectionCurves.push_back( pConnection );
+                }
+            }
         }
+                
         
         for( AreaInfo::Ptr pChildAreaInfo : pAreaInfo->children )
         {
@@ -736,6 +758,36 @@ void Compiler::CompilerImpl::AreaInfo::buildArrangement( Arr_with_hist_2& arr )
                         Point_2( pNext->getPoint().x, pNext->getPoint().y ) ) );
                     
                 pPoint->setCurveHandle( ch );
+            }
+            
+            for( ConnectionCurves::Ptr pCurve : pExterior->connectionCurves )
+            {
+                ContourPoint::Vector2D v = 
+                    (   pCurve->m_pSecondEnd->getPoint() - 
+                        pCurve->m_pFirstStart->getPoint() );
+                v.x /= 2.0f;
+                v.y /= 2.0f;
+            
+                pCurve->m_ch_FirstStart_FirstMid = CGAL::insert( arr, 
+                    Segment_2( 
+                        Point_2( pCurve->m_pFirstStart->getPoint().x,           pCurve->m_pFirstStart->getPoint().y ),
+                        Point_2( pCurve->m_pFirstStart->getPoint().x + v.x,     pCurve->m_pFirstStart->getPoint().y + v.y ) ) );
+                pCurve->m_ch_FirstEnd_SecondMid = CGAL::insert( arr, 
+                    Segment_2( 
+                        Point_2( pCurve->m_pFirstEnd->getPoint().x,             pCurve->m_pFirstEnd->getPoint().y ),
+                        Point_2( pCurve->m_pFirstEnd->getPoint().x + v.x,       pCurve->m_pFirstEnd->getPoint().y + v.y ) ) );
+                pCurve->m_ch_SecondStart_SecondMid = CGAL::insert( arr, 
+                    Segment_2( 
+                        Point_2( pCurve->m_pSecondStart->getPoint().x,          pCurve->m_pSecondStart->getPoint().y ),
+                        Point_2( pCurve->m_pSecondStart->getPoint().x - v.x,    pCurve->m_pSecondStart->getPoint().y - v.y ) ) );
+                pCurve->m_ch_SecondEnd_FirstMid = CGAL::insert( arr, 
+                    Segment_2( 
+                        Point_2( pCurve->m_pSecondEnd->getPoint().x,            pCurve->m_pSecondEnd->getPoint().y ),
+                        Point_2( pCurve->m_pSecondEnd->getPoint().x - v.x,      pCurve->m_pSecondEnd->getPoint().y - v.y ) ) );
+                pCurve->m_ch_FirstMid_SecondMid = CGAL::insert( arr, 
+                    Segment_2( 
+                        Point_2( pCurve->m_pFirstStart->getPoint().x + v.x,     pCurve->m_pFirstStart->getPoint().y + v.y ),
+                        Point_2( pCurve->m_pSecondStart->getPoint().x - v.x,    pCurve->m_pSecondStart->getPoint().y - v.y ) ) );
             }
         }
     }

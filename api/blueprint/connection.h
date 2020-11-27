@@ -20,6 +20,7 @@ namespace Blueprint
     {
     public:
         static inline const float fConnectionMaxDist = 4.5f;
+        static inline const float fConnectionMinDist = 1.5f;
         static inline const float fQuantisation      = 5.0f;
         
         struct FCSID

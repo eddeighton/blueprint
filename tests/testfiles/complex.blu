@@ -1,14 +1,14 @@
 complex<blueprint>
 {
-    area_0000<area>(-34,52,East;,false,false)
+    area_0000<area>(-30,52,East;,false,false)
     {
-        contour<contour>(4,-55,-225,279,-225,279,57,-55,57)
+        contour<contour>(4,-55,-261,279,-261,279,57,-55,57)
         {
             auto<property>(true)
         }
-        area_0006<area>(38,-132,NorthWest;,true,false)
+        area_0006<area>(26,-132,NorthWest;,true,false)
         {
-            contour<contour>(4,-61,3,127,3,127,71,-61,71)
+            contour<contour>(4,-61,3,127,3,127,121,-61,121)
             {
                 auto<property>(true)
             }
@@ -42,7 +42,7 @@ complex<blueprint>
                     auto<property>(false)
                     boundary_0001<contoursegment>(1,0.5,4)
                     {
-                        type<property>(none;)
+                        type<property>(exterior;)
                     }
                     boundary_0002<contoursegment>(0,0.5,4)
                     {
@@ -109,9 +109,9 @@ complex<blueprint>
                 contour<contour>(4,-15,-15,47,-15,47,53,-15,53)
                 {
                     auto<property>(false)
-                    boundary_0001<contoursegment>(1,0.5,4)
+                    boundary_0001<contoursegment>(1,0.764706,4)
                     {
-                        type<property>(none;)
+                        type<property>(exterior;)
                     }
                     boundary_0002<contoursegment>(0,0.5,4)
                     {
@@ -119,11 +119,11 @@ complex<blueprint>
                     }
                     boundary_0003<contoursegment>(3,0.5,4)
                     {
-                        type<property>(none;)
+                        type<property>(exterior;)
                     }
                     boundary_0004<contoursegment>(2,0.5,4)
                     {
-                        type<property>(none;)
+                        type<property>(exterior;)
                     }
                 }
                 area_0001<area>(29,7,NorthEast;,false,false)
@@ -133,7 +133,7 @@ complex<blueprint>
                         auto<property>(false)
                         segment_0001<contoursegment>(3,0.5,4)
                         {
-                            type<property>(none;)
+                            type<property>(exterior;)
                         }
                         segment_0002<contoursegment>(2,0.5,4)
                         {
@@ -196,6 +196,13 @@ complex<blueprint>
                     {
                         type<property>(none;)
                     }
+                }
+            }
+            area_0010<area>(86,106,East;,false,false)
+            {
+                contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
+                {
+                    auto<property>(false)
                 }
             }
         }
@@ -307,7 +314,7 @@ complex<blueprint>
                 boundary_0003<contoursegment>(3,0.890244,4)
                 {
                     exterior<property>(true)
-                    type<property>(none;)
+                    type<property>(exterior;)
                 }
                 boundary_0004<contoursegment>(1,0.158537,4)
                 {
