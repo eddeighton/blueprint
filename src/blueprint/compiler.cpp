@@ -1,8 +1,10 @@
 
 #include "blueprint/compiler.h"
 #include "blueprint/connection.h"
+#include "blueprint/cgalSettings.h"
 
 #include "common/angle.hpp"
+#include "common/file.hpp"
 
 #include "blueprint/cgalSettings.h"
 
@@ -33,7 +35,7 @@ namespace
         using Vector2D      = wykobi::vector2d< float >;
         
         friend void getInteriorContourPoints( const Blueprint::Matrix& transform,
-                const Blueprint::ConnectionAnalysis& connectionAnalysis, 
+                const Blueprint::ConnectionAnalysis* pConnections, 
                 const Blueprint::Area* pArea, 
                 const std::vector< Boundary >& boundaries,
                 const wykobi::polygon< float, 2 >& contour,
@@ -59,10 +61,14 @@ namespace
         const Point2D& getPoint() const { return m_pt; }
         const Blueprint::Feature_ContourSegment* getFCS() const { return m_pFCS; }
         
+        Blueprint::Curve_handle getCurveHandle() const { return m_ch; }
+        void setCurveHandle( Blueprint::Curve_handle ch ) { m_ch = ch; }
+        
     private:
         PointType m_type;
         Point2D m_pt;
         const Blueprint::Feature_ContourSegment* m_pFCS = nullptr;
+        Blueprint::Curve_handle m_ch;
     };
     
     void getInteriorBoundaries( const Blueprint::ConnectionAnalysis& connectionAnalysis, 
@@ -119,7 +125,7 @@ namespace
     }
     
     void getInteriorContourPoints( const Blueprint::Matrix& transform,
-            const Blueprint::ConnectionAnalysis& connectionAnalysis, 
+            const Blueprint::ConnectionAnalysis* pConnections, 
             const Blueprint::Area* pArea, 
             const std::vector< Boundary >& boundaries,
             const wykobi::polygon< float, 2 >& contour,
@@ -205,7 +211,7 @@ namespace
         }
     }
     
-    void getExteriorBoundaries( const Blueprint::Matrix& transform,
+    void getExteriorBoundaries( 
         const wykobi::polygon< float, 2u >& exteriorPolygon,
         const ContourPoint::ExteriorConnectionPairVector& exteriorConnectionPairs,
         std::vector< Boundary >& boundaries )
@@ -384,10 +390,120 @@ class Compiler::CompilerImpl
     };
     ExteriorInfo::PtrMap m_exteriorInfoMap;
     
-    void recurse( Matrix transform, const Area* pArea )
+    void buildArrangement( const Area* pArea )
     {
-        pArea->getTransform().transform( transform );
+        {
+            AreaInfo::PtrMap::const_iterator iFind = m_areaInfoMap.find( pArea );
+            if( iFind != m_areaInfoMap.end() )
+            {
+                AreaInfo& areaInfo = *iFind->second;
+                
+                for( ContourPoint::PtrVector::iterator 
+                        i       = areaInfo.interiorPoints.begin(),
+                        iNext   = areaInfo.interiorPoints.begin(),
+                        iEnd    = areaInfo.interiorPoints.end();
+                        i!=iEnd; ++i )
+                {
+                    ++iNext;
+                    if( iNext == iEnd ) iNext = areaInfo.interiorPoints.begin();
+                    
+                    ContourPoint::Ptr pPoint = *i;
+                    ContourPoint::Ptr pNext = *iNext;
+                    
+                    Curve_handle ch = CGAL::insert( m_arr, 
+                        Segment_2( 
+                            Point_2( pPoint->getPoint().x, pPoint->getPoint().y ),
+                            Point_2( pNext->getPoint().x, pNext->getPoint().y ) ) );
+                        
+                    pPoint->setCurveHandle( ch );
+                }
+            }
+        }
         
+        const ExteriorAnalysis& exteriorAnalysis = pArea->getExteriors();
+        const ExteriorAnalysis::Exterior::PtrVector& exteriors = exteriorAnalysis.getExteriors();
+        for( ExteriorAnalysis::Exterior::Ptr pExterior : exteriors )
+        {
+            ExteriorInfo& exteriorInfo  = *m_exteriorInfoMap[ pExterior.get() ].get();
+            
+            for( ContourPoint::PtrVector::iterator 
+                    i       = exteriorInfo.exteriorPoints.begin(),
+                    iNext   = exteriorInfo.exteriorPoints.begin(),
+                    iEnd    = exteriorInfo.exteriorPoints.end();
+                    i!=iEnd; ++i )
+            {
+                ++iNext;
+                if( iNext == iEnd ) iNext = exteriorInfo.exteriorPoints.begin();
+                
+                ContourPoint::Ptr pPoint = *i;
+                ContourPoint::Ptr pNext = *iNext;
+                
+                Curve_handle ch = CGAL::insert( m_arr, 
+                    Segment_2( 
+                        Point_2( pPoint->getPoint().x, pPoint->getPoint().y ),
+                        Point_2( pNext->getPoint().x, pNext->getPoint().y ) ) );
+                    
+                pPoint->setCurveHandle( ch );
+            }
+        }
+        
+        
+        for( Site::Ptr pSite : pArea->getSpaces() )
+        {
+            if( const Area* pChildArea = dynamic_cast< const Area* >( pSite.get() ) )
+            {
+                buildArrangement( pChildArea );
+            }
+        }
+    }
+    
+    void buildMetaData( const Area* pArea )
+    {
+        {
+            AreaInfo::PtrMap::const_iterator iFind = m_areaInfoMap.find( pArea );
+            if( iFind != m_areaInfoMap.end() )
+            {
+                AreaInfo& areaInfo = *iFind->second;
+            }
+        }
+        {
+            const ExteriorAnalysis& exteriorAnalysis = pArea->getExteriors();
+            const ExteriorAnalysis::Exterior::PtrVector& exteriors = exteriorAnalysis.getExteriors();
+            for( ExteriorAnalysis::Exterior::Ptr pExterior : exteriors )
+            {
+                ExteriorInfo& exteriorInfo  = *m_exteriorInfoMap[ pExterior.get() ].get();
+            }
+        }
+        
+        for( Site::Ptr pSite : pArea->getSpaces() )
+        {
+            if( const Area* pChildArea = dynamic_cast< const Area* >( pSite.get() ) )
+            {
+                buildMetaData( pChildArea );
+            }
+        }
+    }
+    
+    void processArea( const Area* pArea, const ConnectionAnalysis* pConnections, 
+        ContourPoint::ExteriorConnectionPairVector& exteriorConnectionPairs )
+    {
+        AreaInfo::Ptr pAreaInfo( new AreaInfo{ pArea } );
+        
+        //get the relative boundary info
+        if( pConnections )
+            getInteriorBoundaries( *pConnections, pArea, pAreaInfo->boundaries ); 
+            
+        const wykobi::polygon< float, 2 > contour = pArea->getContour()->getPolygon();
+            
+        //using the relative contour and boundaries produce the absolute contour with correct winding
+        getInteriorContourPoints( pArea->getAbsoluteTransform(), pConnections, pArea, pAreaInfo->boundaries, contour, 
+            pAreaInfo->interiorPoints, exteriorConnectionPairs );
+        
+        m_areaInfoMap.insert( std::make_pair( pArea, pAreaInfo ) );
+    }
+    
+    void recurse( const Area* pArea )
+    {
         const ConnectionAnalysis& connections = pArea->getConnections();
         
         ContourPoint::ExteriorConnectionPairVector exteriorConnectionPairs;
@@ -397,21 +513,7 @@ class Compiler::CompilerImpl
         {
             if( const Area* pChildArea = dynamic_cast< const Area* >( pSite.get() ) )
             {
-                Matrix childTransform = transform;
-                pChildArea->getTransform().transform( childTransform );
-                
-                AreaInfo::Ptr pAreaInfo( new AreaInfo{ pChildArea } );
-                
-                //get the relative boundary info
-                getInteriorBoundaries( connections, pChildArea, pAreaInfo->boundaries ); 
-                    
-                const wykobi::polygon< float, 2 > contour = pChildArea->getContour()->getPolygon();
-                    
-                //using the relative contour and boundaries produce the absolute contour with correct winding
-                getInteriorContourPoints( childTransform, connections, pChildArea, pAreaInfo->boundaries, contour, 
-                    pAreaInfo->interiorPoints, exteriorConnectionPairs );
-                
-                m_areaInfoMap.insert( std::make_pair( pChildArea, pAreaInfo ) );
+                processArea( pChildArea, &connections, exteriorConnectionPairs );
             }
         }
         
@@ -430,10 +532,10 @@ class Compiler::CompilerImpl
             
             //get the absolute contour
             wykobi::polygon< float, 2u > exteriorPolygon = pExterior->getPolygon();
-            getAbsoluteOrientedContour( transform, wykobi::Clockwise, exteriorPolygon );
+            getAbsoluteOrientedContour( pArea->getAbsoluteTransform(), wykobi::Clockwise, exteriorPolygon );
             
             //determine absolute boundaries
-            getExteriorBoundaries( transform, exteriorPolygon, exteriorConnectionPairs, pExteriorInfo->boundaries );
+            getExteriorBoundaries( exteriorPolygon, exteriorConnectionPairs, pExteriorInfo->boundaries );
                 
             //produce the absolute exterior contour
             getExteriorContourPoints( connections, pArea, pExteriorInfo->boundaries, exteriorPolygon,
@@ -445,7 +547,7 @@ class Compiler::CompilerImpl
         {
             if( const Area* pChildArea = dynamic_cast< const Area* >( pSite.get() ) )
             {
-                recurse( transform, pChildArea );
+                recurse( pChildArea );
             }
         }
     }
@@ -465,14 +567,105 @@ public:
             }
         }
         
-        Matrix transform;
+        ContourPoint::ExteriorConnectionPairVector exteriorConnectionPairs;
         for( Site::Ptr pSite : sites )
         {
             if( Area* pChildArea = dynamic_cast< Area* >( pSite.get() ) )
             {
-                recurse( transform, pChildArea );
+                processArea( pChildArea, nullptr, exteriorConnectionPairs );
+                recurse( pChildArea );
             }
         }
+        
+        for( Site::Ptr pSite : sites )
+        {
+            if( Area* pChildArea = dynamic_cast< Area* >( pSite.get() ) )
+            {
+                buildArrangement( pChildArea );
+            }
+        }
+        
+        for( Site::Ptr pSite : sites )
+        {
+            if( Area* pChildArea = dynamic_cast< Area* >( pSite.get() ) )
+            {
+                buildMetaData( pChildArea );
+            }
+        }
+        
+        //extract contours
+        
+    }
+    
+    static inline double to_double( const CGAL::Quotient< CGAL::MP_Float >& q )
+    {
+        return 
+            CGAL::INTERN_MP_FLOAT::to_double( q.numerator() ) /
+            CGAL::INTERN_MP_FLOAT::to_double( q.denominator() );
+    }
+    
+    void generateHTML( const boost::filesystem::path& filepath ) const
+    {
+        std::unique_ptr< boost::filesystem::ofstream > os =
+            createNewFileStream( filepath );
+            
+        double scale = 10.0;
+        double  minX = std::numeric_limits< double >::max(), 
+                minY = std::numeric_limits< double >::max();
+        double  maxX = -std::numeric_limits< double >::max(), 
+                maxY = -std::numeric_limits< double >::max();
+        for( auto i = m_arr.edges_begin(); i != m_arr.edges_end(); ++i )
+        {
+            {
+                const double x = to_double( i->source()->point().x() );
+                const double y = to_double( -i->source()->point().y() );
+                if( x < minX ) minX = x;
+                if( y < minY ) minY = y;
+                if( x > maxX ) maxX = x;
+                if( y > maxY ) maxY = y;
+            }
+            
+            {
+                const double x = to_double( i->target()->point().x() );
+                const double y = to_double( -i->target()->point().y() );
+                if( x < minX ) minX = x;
+                if( y < minY ) minY = y;
+                if( x > maxX ) maxX = x;
+                if( y > maxY ) maxY = y;
+            }
+        }
+        const double sizeX = maxX - minX;
+        const double sizeY = maxY - minY;
+            
+        *os << "<!DOCTYPE html>\n";
+        *os << "<html>\n";
+        *os << "  <head>\n";
+        *os << "    <title>Compilation Output</title>\n";
+        *os << "  </head>\n";
+        *os << "  <body>\n";
+        *os << "    <h1>" << filepath.string() << "</h1>\n";
+        
+        *os << "    <svg width=\"" << 100 + sizeX * scale << "\" height=\"" << 100 + sizeY * scale << "\" >\n";
+        
+        for( auto i = m_arr.edges_begin(); i != m_arr.edges_end(); ++i )
+        {
+            const double startX = ( to_double( i->source()->point().x() ) - minX ) * scale;
+            const double startY = ( to_double( -i->source()->point().y() ) - minY ) * scale;
+            const double endX   = ( to_double( i->target()->point().x() ) - minX ) * scale;
+            const double endY   = ( to_double( -i->target()->point().y() ) - minY ) * scale;
+            
+            std::ostringstream osEdge;
+            osEdge << startX << "," << startY << " " << endX << "," << endY;
+            
+            *os << "       <polyline points=\"" << osEdge.str() << "\" style=\"fill:none;stroke:blue;stroke-width:1\" />\n";
+            *os << "       <circle cx=\"" << startX << "\" cy=\"" << startY << "\" r=\"3\" stroke=\"green\" stroke-width=\"1\" fill=\"green\" />\n";
+            *os << "       <circle cx=\"" << endX << "\" cy=\"" << endY << "\" r=\"3\" stroke=\"green\" stroke-width=\"1\" fill=\"green\" />\n";
+        }
+        
+        *os << "    </svg>\n";
+        *os << "  </body>\n";
+        *os << "</html>\n";
+
     }
   
     const Site::PtrVector& m_sites;
@@ -484,4 +677,8 @@ Compiler::Compiler( const Site::PtrVector& sites )
 {
 }
 
+void Compiler::generateHTML( const boost::filesystem::path& filepath ) const
+{
+    m_pPimpl->generateHTML( filepath );
+}
 }

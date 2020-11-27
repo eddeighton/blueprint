@@ -33,7 +33,8 @@ set( BLUEPRINT_TEST_FILES
     ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_child.blu
     ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_connection.blu 
     ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_loop.blu
-    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_exterior_connection.blu  )
+    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_exterior_connection.blu 
+    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/complex.blu  )
     
 
 add_executable( blueprint_tests

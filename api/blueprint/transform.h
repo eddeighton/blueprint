@@ -17,44 +17,50 @@ class Matrix
 public:
     Matrix(){}
     Matrix( float x, float y )
-        :   m_x( x ),
-            m_y( y )
+        :   m31( x ),
+            m32( y )
     {}
     
     inline float M11() const { return m11; }
     inline float M12() const { return m12; }
     inline float M21() const { return m21; }
     inline float M22() const { return m22; }
-    inline float X()   const { return m_x; }
-    inline float Y()   const { return m_y; }
+    inline float X()   const { return m31; }
+    inline float Y()   const { return m32; }
     
     inline void transform( float& x, float& y ) const
     {
         float xTemp = x;
         float yTemp = y;
         
-        x = ( m11 * xTemp ) + ( m21 * yTemp ) + m_x;
-        y = ( m12 * xTemp ) + ( m22 * yTemp ) + m_y;
+        x = ( m11 * xTemp ) + ( m21 * yTemp ) + m31;
+        y = ( m12 * xTemp ) + ( m22 * yTemp ) + m32;
     }
     
     inline void transform( Matrix& matrix ) const
     {
-        const float n11 = matrix.m11, n12 = matrix.m12, 
-                    n21 = matrix.m21, n22 = matrix.m22;
-            
-        matrix.m11 = ( n11 * m11 ) + ( n21 * m12 );
-        matrix.m12 = ( n12 * m11 ) + ( n22 * m12 );
-        matrix.m21 = ( n11 * m21 ) + ( n21 * m22 );
-        matrix.m22 = ( n12 * m21 ) + ( n22 * m22 );
+        const Matrix temp = matrix;
         
-        matrix.m_x += m_x;
-        matrix.m_y += m_y;
+        matrix.m11 = ( m11 * temp.m11 ) + ( m21 * temp.m12 );// + ( m31 * temp.m13 );
+        matrix.m21 = ( m11 * temp.m21 ) + ( m21 * temp.m22 );// + ( m31 * temp.m23 );
+        matrix.m31 = ( m11 * temp.m31 ) + ( m21 * temp.m32 ) + ( m31 /** temp.m33*/ );
+        
+        matrix.m12 = ( m12 * temp.m11 ) + ( m22 * temp.m12 );// + ( m32 * temp.m13 );
+        matrix.m22 = ( m12 * temp.m21 ) + ( m22 * temp.m22 );// + ( m32 * temp.m23 );
+        matrix.m32 = ( m12 * temp.m31 ) + ( m22 * temp.m32 ) + ( m32 /** temp.m33*/ );
+        
+       // matrix.m13 = ( m13 * temp.m11 ) + ( m23 * temp.m12 ) + ( m33 * temp.m13 );
+       // matrix.m23 = ( m13 * temp.m21 ) + ( m23 * temp.m22 ) + ( m33 * temp.m23 );
+       // matrix.m33 = ( m13 * temp.m31 ) + ( m23 * temp.m32 ) + ( m33 * temp.m33 );
     }
     
 protected:
-    float m_x = 0.0f, m_y = 0.0f;
-    float m11 = 1.0f, m12 = 0.0f, 
-          m21 = 0.0f, m22 = 1.0f;
+
+    //  m(x,y) for row,column
+    //                col 0       col 1       col 2
+    float /*row 0*/   m11 = 1.0f, m21= 0.0f,  m31 = 0.0f, 
+          /*row 1*/   m12 = 0.0f, m22 = 1.0f, m32 = 0.0f;
+          /*row 2*/// m13 = 0     m23 - 0     m33 = 1
 };
     
 class Transform : public Matrix
@@ -80,15 +86,15 @@ public:
     
     void setTranslation( float x, float y )
     {
-        m_x = x;
-        m_y = y;
+        m31 = x;
+        m32 = y;
         updateMatrix();
     }
     
     void translateBy( float x, float y )
     {
-        m_x += x;
-        m_y += y;
+        m31 += x;
+        m32 += y;
         updateMatrix();
     }
     

@@ -63,7 +63,7 @@ public:
     const Site::PtrVector& getSpaces() const { return m_spaces; }
 
     //generator
-    void getAbsoluteTransform( Matrix& transform );
+    Matrix getAbsoluteTransform() const;
     
     virtual bool isConnection() { return false; }
 

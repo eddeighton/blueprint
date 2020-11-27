@@ -15,6 +15,7 @@ class Compiler
 public:
     Compiler( const Site::PtrVector& sites );
 
+    void generateHTML( const boost::filesystem::path& filepath ) const;
 private:
     class CompilerImpl;
     std::shared_ptr< CompilerImpl > m_pPimpl;

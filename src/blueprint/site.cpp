@@ -51,14 +51,16 @@ void Site::remove( Node::Ptr pNode )
     }
 }
 
-void Site::getAbsoluteTransform( Matrix& transform )
+Matrix Site::getAbsoluteTransform() const
 {
-    Site::Ptr pIter = boost::dynamic_pointer_cast< Site >( getPtr() );
+    Matrix transform;
+    Site::PtrCst pIter = boost::dynamic_pointer_cast< const Site >( getPtr() );
     while( pIter )
     {
         pIter->getTransform().transform( transform );
-        pIter = boost::dynamic_pointer_cast< Site >( pIter->Node::getParent() );
+        pIter = boost::dynamic_pointer_cast< const Site >( pIter->Node::getParent() );
     }
+    return transform;
 }
 
 }

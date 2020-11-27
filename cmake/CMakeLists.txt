@@ -11,6 +11,7 @@ IF( ${WIN32} )
 
 add_definitions(-D_WIN32_WINNT=0x0601)
 add_definitions(-DNOMINMAX -D_NOMINMAX)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 
 ENDIF( ${WIN32} )
 

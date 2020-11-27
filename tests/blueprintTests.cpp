@@ -328,13 +328,16 @@ TEST( CGAL, DataTest )
 void loadTest( const char* pszFileName )
 {
     const boost::filesystem::path installPath = getenv( "BLUEPRINT" );
-    const boost::filesystem::path testFilePath = installPath / "testfiles" / pszFileName;
+    boost::filesystem::path testFilePath = installPath / "testfiles" / pszFileName;
+    ASSERT_TRUE( boost::filesystem::exists( testFilePath ) );
 
     Blueprint::Factory factory;
-    Blueprint::Site::Ptr pTest = factory.load( testFilePath.string().c_str() );
+    Blueprint::Site::Ptr pTest = factory.load( testFilePath.string() );
     ASSERT_TRUE( pTest );
     
     Blueprint::Compiler compiler( pTest->getSpaces() );
+    
+    compiler.generateHTML( testFilePath.replace_extension( ".html" ) );
 }
 
 TEST( CGAL, CompilerBasic )
@@ -359,10 +362,16 @@ TEST( CGAL, CompilerBasic_loop )
 
 TEST( CGAL, CompilerBasic_exterior_connection )
 {
-    {
-        char c;
-        std::cin >> c;
-    }
+    //{
+    //    char c;
+    //    std::cin >> c;
+    //}
     std::cout << "Hello from CompilerBasic_exterior_connection" << std::endl;
     loadTest( "basic_exterior_connection.blu" );
 }
+
+TEST( CGAL, CompilerComplex )
+{
+    loadTest( "complex.blu" );
+}
+
