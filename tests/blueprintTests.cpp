@@ -235,7 +235,7 @@ TEST( CGAL, OverlapTest )
     
 }
 
-
+/*
 TEST( CGAL, DataTest )
 {
     using namespace Blueprint;
@@ -323,60 +323,82 @@ TEST( CGAL, DataTest )
     //       +----+----+----+
     ASSERT_EQ( iCountOne, 8 );
     ASSERT_EQ( iCountTwo, 2 );
+}*/
+
+boost::filesystem::path constructPath( const char* pszName, const char* pszExt )
+{
+    static const boost::filesystem::path installPath = getenv( "BLUEPRINT" );
+    std::ostringstream os;
+    os << pszName << pszExt;
+    return installPath / "testfiles" / os.str();;
 }
 
 void loadTest( const char* pszFileName )
 {
-    const boost::filesystem::path installPath = getenv( "BLUEPRINT" );
-    boost::filesystem::path testFilePath = installPath / "testfiles" / pszFileName;
-    ASSERT_TRUE( boost::filesystem::exists( testFilePath ) );
-
+    const boost::filesystem::path inputFile = constructPath( pszFileName, ".blu" );
+    
     Blueprint::Factory factory;
-    Blueprint::Site::Ptr pTest = factory.load( testFilePath.string() );
+    Blueprint::Site::Ptr pTest = factory.load( inputFile.string() );
     ASSERT_TRUE( pTest );
     
     Blueprint::Compiler compiler( pTest->getSpaces() );
     
-    compiler.generateHTML( testFilePath.replace_extension( ".html" ) );
+    compiler.generateHTML( constructPath( pszFileName, "_html.html" ) );
+    compiler.generateOutput( constructPath( pszFileName, "_output.html" ) );
 }
-
+/*
 TEST( CGAL, CompilerBasic )
-{
-    loadTest( "basic.blu" );
-}
-
-TEST( CGAL, CompilerBasic_child )
-{
-    loadTest( "basic_child.blu" );
-}
-
-TEST( CGAL, CompilerBasic_connection )
-{
-    loadTest( "basic_connection.blu" );
-}
-
-TEST( CGAL, CompilerBasic_loop )
-{
-    loadTest( "basic_loop.blu" );
-}
-
-TEST( CGAL, CompilerBasic_exterior_connection )
 {
     //{
     //    char c;
     //    std::cin >> c;
     //}
-    std::cout << "Hello from CompilerBasic_exterior_connection" << std::endl;
-    loadTest( "basic_exterior_connection.blu" );
+    loadTest( "basic" );
+}
+TEST( CGAL, CompilerBasic_child )
+{
+    loadTest( "basic_child" );
 }
 
+TEST( CGAL, CompilerBasic_child_intersect )
+{
+    loadTest( "basic_child_intersect" );
+}
+
+TEST( CGAL, CompilerBasic_connection )
+{
+    //{
+    //    char c;
+    //    std::cin >> c;
+    //}
+    loadTest( "basic_connection" );
+}
+
+TEST( CGAL, CompilerBasic_loop )
+{
+    //{
+    //    char c;
+    //    std::cin >> c;
+    //}
+    loadTest( "basic_loop" );
+}
+
+TEST( CGAL, CompilerBasic_exterior_connection )
+{
+    loadTest( "basic_exterior_connection" );
+}
+
+TEST( CGAL, CompilerBasic_exterior_connection_intersect )
+{
+    loadTest( "basic_exterior_connection_intersect" );
+}
+*/
 TEST( CGAL, CompilerComplex )
 {
-    loadTest( "complex.blu" );
+    loadTest( "complex" );
 }
-
+/*
 TEST( CGAL, CompilerComplex_big )
 {
-    loadTest( "complex_big.blu" );
-}
-
+    loadTest( "complex_big" );
+}*/

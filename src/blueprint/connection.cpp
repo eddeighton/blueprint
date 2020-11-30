@@ -296,7 +296,7 @@ bool ConnectionAnalysis::isFeatureContourSegmentConnected( Feature_ContourSegmen
 ////////////////////////////////////////////////////////////////////////////////////
 void ExteriorAnalysis::calculate()
 {
-    static const double CLIPPER_MAG = 10000.0;
+    static const double CLIPPER_MAG = 10000000.0;
             
     m_exteriors.clear();
     

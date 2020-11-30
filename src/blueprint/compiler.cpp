@@ -10,6 +10,54 @@
 
 #include <iostream>
 
+namespace 
+{
+    
+static const std::vector< const char* > SVG_COLOURS =
+{
+    "blue",
+    "green",
+    "red",
+    "yellow",
+    "orange",
+    "purple",
+    "brown",
+    "black"                   
+};
+
+inline double to_double( const CGAL::Quotient< CGAL::MP_Float >& q )
+{
+    return 
+        CGAL::INTERN_MP_FLOAT::to_double( q.numerator() ) /
+        CGAL::INTERN_MP_FLOAT::to_double( q.denominator() );
+}
+
+void svgLine( Blueprint::Arr_with_hist_2::Halfedge_const_handle h, double minX, double minY, double scale, const char* pszColour, std::ostream& os )
+{
+    if( h->target()->point() == h->curve().source() )
+        h = h->twin();
+    
+    const double startX = ( to_double(  h->source()->point().x() ) - minX ) * scale;
+    const double startY = ( to_double( -h->source()->point().y() ) - minY ) * scale;
+    const double endX   = ( to_double(  h->target()->point().x() ) - minX ) * scale;
+    const double endY   = ( to_double( -h->target()->point().y() ) - minY ) * scale;
+    
+    std::ostringstream osEdge;
+    osEdge << 
+        startX << "," << startY << " " << 
+        ( startX + ( endX - startX ) / 2.0 ) << "," << ( startY + ( endY - startY ) / 2.0 ) << " " << 
+        endX << "," << endY;
+    
+    os << "       <polyline points=\"" << osEdge.str() << "\" style=\"fill:none;stroke:" << pszColour << ";stroke-width:1\" marker-mid=\"url(#mid)\" />\n";
+    os << "       <circle cx=\"" << startX << "\" cy=\"" << startY << "\" r=\"3\" stroke=\"" << pszColour << "\" stroke-width=\"1\" fill=\"" << pszColour << "\" />\n";
+    os << "       <circle cx=\"" << endX << "\" cy=\"" << endY << "\" r=\"3\" stroke=\"" << pszColour << "\" stroke-width=\"1\" fill=\"" << pszColour << "\" />\n";
+
+}
+
+                
+
+}
+
 namespace
 {
     class ContourPoint;
@@ -39,14 +87,16 @@ namespace
         using PtrVector     = std::vector< Ptr >;
         
         std::shared_ptr< ContourPoint >
-            m_pFirstStart, m_pFirstEnd, 
-            m_pSecondStart, m_pSecondEnd;
+            m_pFirstStart, m_pFirstEnd, m_pFirstMid, 
+            m_pSecondStart, m_pSecondEnd, m_pSecondMid;
+            
+            
+        Blueprint::Arr_with_hist_2::Vertex_handle m_vFirstStart,  m_vFirstEnd;
+        Blueprint::Arr_with_hist_2::Vertex_handle m_vSecondStart, m_vSecondEnd;
+        Blueprint::Arr_with_hist_2::Halfedge_handle m_hDoorStep;
         
-        Blueprint::Curve_handle m_ch_FirstStart_FirstMid;
-        Blueprint::Curve_handle m_ch_FirstEnd_SecondMid;
-        Blueprint::Curve_handle m_ch_SecondStart_SecondMid;
-        Blueprint::Curve_handle m_ch_SecondEnd_FirstMid;
-        Blueprint::Curve_handle m_ch_FirstMid_SecondMid;
+        void create( Blueprint::Arr_with_hist_2& arr );
+        void finish( Blueprint::Arr_with_hist_2& arr );
     };
     
     struct ContourPoint
@@ -79,13 +129,18 @@ namespace
             End
         };
         
-        ContourPoint( PointType _type, Point2D _pt,
+        ContourPoint( const Blueprint::Area* pArea, bool bInterior, PointType _type, Point2D _pt,
                     const Blueprint::Feature_ContourSegment* _pFCS )
-            :   m_type( _type ),
+            :   m_pArea( pArea ),
+                m_bInterior( bInterior ),
+                m_type( _type ),
                 m_pt( _pt ),
                 m_pFCS( _pFCS )
         {
         }
+        
+        const Blueprint::Area* getArea() const { return m_pArea; }
+        bool isInterior() const { return m_bInterior; }
         
         PointType getType() const { return m_type; }
         const Point2D& getPoint() const { return m_pt; }
@@ -95,11 +150,162 @@ namespace
         void setCurveHandle( Blueprint::Curve_handle ch ) { m_ch = ch; }
         
     private:
+        const Blueprint::Area* m_pArea;
+        bool m_bInterior;
         PointType m_type;
         Point2D m_pt;
         const Blueprint::Feature_ContourSegment* m_pFCS = nullptr;
         Blueprint::Curve_handle m_ch;
     };
+    
+    void ConnectionCurves::create( Blueprint::Arr_with_hist_2& arr )
+    {
+        VERIFY_RTE( m_pFirstStart->getArea() ==  m_pFirstEnd->getArea() );
+        VERIFY_RTE( m_pSecondStart->getArea() == m_pSecondEnd->getArea() );
+        VERIFY_RTE( m_pFirstStart->getArea() !=  m_pSecondStart->getArea() );
+        
+        const Blueprint::Point_2 ptFirstStart( m_pFirstStart->getPoint().x, m_pFirstStart->getPoint().y );
+        const Blueprint::Point_2 ptFirstEnd(   m_pFirstEnd->getPoint().x,   m_pFirstEnd->getPoint().y ); 
+        Blueprint::Curve_handle hFirstDoorStep = 
+            CGAL::insert( arr, Blueprint::Segment_2( ptFirstStart, ptFirstEnd ) );
+                
+        const Blueprint::Point_2 ptSecondStart( m_pSecondStart->getPoint().x, m_pSecondStart->getPoint().y );
+        const Blueprint::Point_2 ptSecondEnd(   m_pSecondEnd->getPoint().x,   m_pSecondEnd->getPoint().y ); 
+        Blueprint::Curve_handle hSecondDoorStep = 
+            CGAL::insert( arr, Blueprint::Segment_2( ptSecondStart, ptSecondEnd ) );
+            
+        const Blueprint::Point_2 ptFirstMid(  m_pFirstMid->getPoint().x,  m_pFirstMid->getPoint().y );
+        const Blueprint::Point_2 ptSecondMid( m_pSecondMid->getPoint().x, m_pSecondMid->getPoint().y ); 
+                
+        {
+            int iFoundFirstStart = 0,  iFoundFirstEnd = 0;
+            int iFoundSecondStart = 0, iFoundSecondEnd = 0;
+            for( Blueprint::Arr_with_hist_2::Vertex_iterator 
+                    i = arr.vertices_begin(),
+                    iEnd = arr.vertices_end(); i!=iEnd; ++i )
+            {
+                if( i->point() == ptFirstStart )
+                {
+                    ++iFoundFirstStart;
+                    m_vFirstStart = i;
+                }
+                if( i->point() == ptFirstEnd )
+                {
+                    ++iFoundFirstEnd;
+                    m_vFirstEnd = i;
+                }
+                if( i->point() == ptSecondStart )
+                {
+                    ++iFoundSecondStart;
+                    m_vSecondStart = i;
+                }
+                if( i->point() == ptSecondEnd )
+                {
+                    ++iFoundSecondEnd;
+                    m_vSecondEnd = i;
+                }
+            }
+            VERIFY_RTE( ( iFoundFirstStart == 1 )   && ( iFoundFirstEnd == 1 ) );
+            VERIFY_RTE( ( iFoundSecondStart == 1 )  && ( iFoundSecondEnd == 1 ) );
+            VERIFY_RTE( ( iFoundFirstStart == 1 )   && ( iFoundFirstEnd == 1 ) );
+            VERIFY_RTE( ( iFoundSecondStart == 1 )  && ( iFoundSecondEnd == 1 ) );
+        }
+        
+        //create edge to mid points
+        const Blueprint::Segment_2 firstStartToMid(  ptFirstStart,  ptFirstMid );
+        const Blueprint::Segment_2 firstEndToMid(    ptFirstEnd,    ptSecondMid );
+        const Blueprint::Segment_2 secondStartToMid( ptSecondStart, ptSecondMid );
+        const Blueprint::Segment_2 secondEndToMid(   ptSecondEnd,   ptFirstMid );
+        
+        Blueprint::Arr_with_hist_2::Vertex_handle vFirstMid;
+        {
+            if( ptFirstStart < ptFirstMid )
+            {
+                Blueprint::Arr_with_hist_2::Halfedge_handle hFirstStartToMid = 
+                    arr.insert_from_left_vertex( firstStartToMid, m_vFirstStart );
+                vFirstMid = hFirstStartToMid->target();
+            }
+            else
+            {
+                Blueprint::Arr_with_hist_2::Halfedge_handle hFirstStartToMid = 
+                    arr.insert_from_right_vertex( firstStartToMid, m_vFirstStart );
+                vFirstMid = hFirstStartToMid->target();
+            }
+        }
+        
+        Blueprint::Arr_with_hist_2::Vertex_handle vSecondMid;
+        {
+            if( ptFirstEnd < ptSecondMid )
+            {
+                Blueprint::Arr_with_hist_2::Halfedge_handle hFirstEndToMid = 
+                    arr.insert_from_left_vertex( firstEndToMid, m_vFirstEnd );
+                vSecondMid = hFirstEndToMid->target();
+            }
+            else
+            {
+                Blueprint::Arr_with_hist_2::Halfedge_handle hFirstEndToMid = 
+                    arr.insert_from_right_vertex( firstEndToMid, m_vFirstEnd );
+                vSecondMid = hFirstEndToMid->target();
+            }
+        }
+        
+        {
+            Blueprint::Arr_with_hist_2::Halfedge_handle hSecondStartToMid = 
+                arr.insert_at_vertices( secondStartToMid, m_vSecondStart, vSecondMid );
+            Blueprint::Arr_with_hist_2::Halfedge_handle hSecondEndToMid   = 
+                arr.insert_at_vertices( secondEndToMid, m_vSecondEnd, vFirstMid );
+        }
+        
+        //create edge between mid points
+        {
+            const Blueprint::Segment_2 segDoorStep( ptFirstMid, ptSecondMid );
+            m_hDoorStep = arr.insert_at_vertices( segDoorStep, vFirstMid, vSecondMid );
+        }
+        
+    }
+    void ConnectionCurves::finish( Blueprint::Arr_with_hist_2& arr )
+    {
+        m_hDoorStep->set_data( m_pFirstStart->getArea() );
+        m_hDoorStep->twin()->set_data( m_pSecondStart->getArea() );
+        
+        //remove edge between m_vFirstStart m_vFirstEnd
+        {
+            bool bFound = false;
+            Blueprint::Arr_with_hist_2::Halfedge_around_vertex_circulator first, iter;
+            first = iter = m_vFirstStart->incident_halfedges();
+            do
+            {
+                if( iter->source() == m_vFirstEnd )
+                {
+                    arr.remove_edge( iter );
+                    bFound = true;
+                    break;
+                }
+                ++iter;
+            }
+            while( iter != first );
+            VERIFY_RTE( bFound );
+        }
+
+        //remove edge between m_vSecondStart m_vSecondEnd
+        {
+            bool bFound = false;
+            Blueprint::Arr_with_hist_2::Halfedge_around_vertex_circulator first, iter;
+            first = iter = m_vSecondStart->incident_halfedges();
+            do
+            {
+                if( iter->source() == m_vSecondEnd )
+                {
+                    arr.remove_edge( iter );
+                    bFound = true;
+                    break;
+                }
+                ++iter;
+            }
+            while( iter != first );
+            VERIFY_RTE( bFound );
+        }
+    }
     
     void getInteriorBoundaries( const Blueprint::ConnectionAnalysis& connectionAnalysis, 
                         const Blueprint::Area* pArea,
@@ -172,7 +378,8 @@ namespace
                 i = contour.begin(),
                 iEnd = contour.end(); i!=iEnd; ++i, ++iEdgeCounter )
             {
-                points.push_back( ContourPoint::Ptr( new ContourPoint( ContourPoint::Normal, *i, nullptr ) ) );
+                points.push_back( ContourPoint::Ptr( 
+                    new ContourPoint( pArea, true, ContourPoint::Normal, *i, nullptr ) ) );
                 
                 std::map< float, const Boundary* > inSegmentBoundaries;
                 for( const Boundary& boundary : boundaries )
@@ -189,15 +396,15 @@ namespace
                 {
                     const std::size_t sz = points.size();
                     points.push_back( ContourPoint::Ptr( 
-                        new ContourPoint( ContourPoint::Start,  boundPair.second->start, boundPair.second->pFCS ) ) );
+                        new ContourPoint( pArea, true, ContourPoint::Start,  boundPair.second->start, boundPair.second->pFCS ) ) );
                     points.push_back( ContourPoint::Ptr( 
-                        new ContourPoint( ContourPoint::End,    boundPair.second->end  , boundPair.second->pFCS ) ) );
+                        new ContourPoint( pArea, true, ContourPoint::End,    boundPair.second->end  , boundPair.second->pFCS ) ) );
                     ++totalBoundaries;
                     
                     if( boundPair.second->pFCS->isSegmentExterior() )
                     {
                         newExteriorConnections.push_back(
-                            std::make_pair( points[ sz ], points[ sz + 1U ] ) );
+                            std::make_pair( points[ sz + 1U ], points[ sz ] ) );
                     }
                     else
                     {
@@ -226,7 +433,7 @@ namespace
                 completeContour.push_back( pPoint->m_pt );
             }
             const int polyOrientation = wykobi::polygon_orientation( completeContour );
-            if( polyOrientation == wykobi::CounterClockwise )
+            if( polyOrientation != wykobi::CounterClockwise )
             {
                 bFlipped = true;
                 std::reverse( points.begin(), points.end() );
@@ -310,14 +517,17 @@ namespace
                         ( fEndDist >= Blueprint::ConnectionAnalysis::fConnectionMinDist   ) &&
                         ( fEndDist <= Blueprint::ConnectionAnalysis::fConnectionMaxDist   ) )
                     {
-                        const float startfDistance = wykobi::distance( pStart->getPoint(), ptStart );
+                        const float startfDistance = wykobi::distance( *i, ptStart );
                             
-                        std::cout << "Exterior boundary at: " << 
+                        std::cout << "Exterior boundary " << 
+                            " area: " << pStart->getFCS()->Node::getParent()->getParent()->getName() << 
+                            " boundary: " << pStart->getFCS()->Node::getName() <<
                             "(" << ptStart.x << "," << ptStart.y << ") (" << ptEnd.x << "," << ptEnd.y << ")" << 
                             " startfDistance: "     << startfDistance << 
                             " fStartDist: "         << fStartDist << 
                             " fEndDist: "           << fEndDist << 
                             std::endl;
+                            
                         boundaries.push_back(
                             ExteriorBoundary
                             { 
@@ -336,7 +546,6 @@ namespace
             std::vector< ExteriorBoundary >& boundaries,
             ContourPoint::PtrVector& points)
     {
-        //ContourPoint::ContourPointPtrPairVector newExteriorConnections;
         {
             int totalBoundaries = 0;
             unsigned int iEdgeCounter = 0;
@@ -344,7 +553,8 @@ namespace
                 i = contour.begin(),
                 iEnd = contour.end(); i!=iEnd; ++i, ++iEdgeCounter )
             {
-                points.push_back( ContourPoint::Ptr( new ContourPoint( ContourPoint::Normal, *i, nullptr ) ) );
+                points.push_back( ContourPoint::Ptr( 
+                    new ContourPoint( pArea, false, ContourPoint::Normal, *i, nullptr ) ) );
                 
                 std::map< float, ExteriorBoundary* > inSegmentBoundaries;
                 for( ExteriorBoundary& boundary : boundaries )
@@ -353,7 +563,10 @@ namespace
                     {
                         auto result = 
                             inSegmentBoundaries.insert( std::make_pair( boundary.distance, &boundary ) );
-                        VERIFY_RTE_MSG( result.second, "Duplicate segment distance error" );
+                        VERIFY_RTE_MSG( result.second, "Exterior boundary duplicate segment distance error: " << 
+                                " exterior area: " << pArea->Node::getName() << 
+                                " interior area: " << boundary.pFCS->Node::getParent()->getParent()->getName() << 
+                                " boundary: " << boundary.pFCS->Node::getName() );
                     }
                 }
                 
@@ -361,18 +574,15 @@ namespace
                 {
                     const std::size_t sz = points.size();
                     points.push_back( ContourPoint::Ptr( 
-                        new ContourPoint( ContourPoint::Start,  boundPair.second->start, boundPair.second->pFCS ) ) );
+                        new ContourPoint( pArea, false, ContourPoint::Start,  boundPair.second->start, boundPair.second->pFCS ) ) );
                     points.push_back( ContourPoint::Ptr( 
-                        new ContourPoint( ContourPoint::End,    boundPair.second->end  , boundPair.second->pFCS ) ) );
+                        new ContourPoint( pArea, false, ContourPoint::End,    boundPair.second->end  , boundPair.second->pFCS ) ) );
                         
                     {
                         //reverse order of the points
                         boundPair.second->m_pSecondStart = points[ sz + 1U ];
                         boundPair.second->m_pSecondEnd = points[ sz ];
                     }
-                        
-                    //newExteriorConnections.push_back(
-                    //    std::make_pair( points[ sz ], points[ sz + 1U ] ) );
                     ++totalBoundaries;
                 }
             }
@@ -433,8 +643,10 @@ class Compiler::CompilerImpl
         
         void buildArrangement( Arr_with_hist_2& arr );
         void buildMetaData( Arr_with_hist_2& arr );
+        void generate( Arr_with_hist_2& arr, double minX, double minY, double scale, int& iColour, std::ostream& os );
     };
     AreaInfo::PtrMap m_areaInfoMap;
+    AreaInfo::PtrVector m_rootAreaInfos;
     
     void recurse( AreaInfo::Ptr pAreaInfo )
     {
@@ -472,20 +684,43 @@ class Compiler::CompilerImpl
                 
                 FCSMap::iterator iFindFirst     = fcsMap.find( pFCSFirst );
                 FCSMap::iterator iFindSecond    = fcsMap.find( pFCSSecond );
+                
                 VERIFY_RTE( iFindFirst != fcsMap.end() );
                 VERIFY_RTE( iFindSecond != fcsMap.end() );
                 
-                ContourPoint::ContourPointPtrPair pairFirst     = iFindFirst->second;
-                ContourPoint::ContourPointPtrPair pairSecond    = iFindSecond->second;
-                
-                ConnectionCurves::Ptr pConnection( new ConnectionCurves );
-                
-                pConnection->m_pFirstStart  = pairFirst.first;
-                pConnection->m_pFirstEnd    = pairFirst.second;
-                pConnection->m_pSecondStart = pairSecond.first;
-                pConnection->m_pSecondEnd   = pairSecond.second;
-                
-                pAreaInfo->connectionCurves.push_back( pConnection );
+                if( iFindFirst != fcsMap.end() &&
+                    iFindSecond != fcsMap.end() )
+                {
+                    
+                    ContourPoint::ContourPointPtrPair pairFirst     = iFindFirst->second;
+                    ContourPoint::ContourPointPtrPair pairSecond    = iFindSecond->second;
+                    
+                    ConnectionCurves::Ptr pConnection( new ConnectionCurves );
+                    
+                    pConnection->m_pFirstStart  = pairFirst.first;
+                    pConnection->m_pFirstEnd    = pairFirst.second;
+                    pConnection->m_pSecondStart = pairSecond.first;
+                    pConnection->m_pSecondEnd   = pairSecond.second;
+                        
+                    ContourPoint::Vector2D v = 
+                        (   pConnection->m_pSecondEnd->getPoint() - 
+                            pConnection->m_pFirstStart->getPoint() );
+                    v.x /= 2.0f;
+                    v.y /= 2.0f;
+                    
+                    pConnection->m_pFirstMid = ContourPoint::Ptr( 
+                        new ContourPoint( pConnection->m_pFirstStart->getArea(), false, 
+                            ContourPoint::Start, wykobi::make_point< float >(
+                                pConnection->m_pFirstStart->getPoint().x + v.x, 
+                                pConnection->m_pFirstStart->getPoint().y + v.y  ), nullptr ) );
+                    pConnection->m_pSecondMid = ContourPoint::Ptr( 
+                        new ContourPoint( pConnection->m_pSecondStart->getArea(), false, 
+                            ContourPoint::Start, wykobi::make_point< float >( 
+                                pConnection->m_pFirstEnd->getPoint().x + v.x, 
+                                pConnection->m_pFirstEnd->getPoint().y + v.y  ), nullptr ) );
+                        
+                    pAreaInfo->connectionCurves.push_back( pConnection );
+                }
             }
         }
         
@@ -530,6 +765,23 @@ class Compiler::CompilerImpl
                     VERIFY_RTE( pConnection->m_pFirstEnd    );
                     VERIFY_RTE( pConnection->m_pSecondStart );
                     VERIFY_RTE( pConnection->m_pSecondEnd   );
+                    
+                    ContourPoint::Vector2D v = 
+                        (   pConnection->m_pSecondEnd->getPoint() - 
+                            pConnection->m_pFirstStart->getPoint() );
+                    v.x /= 2.0f;
+                    v.y /= 2.0f;
+                    
+                    pConnection->m_pFirstMid = ContourPoint::Ptr( 
+                        new ContourPoint( pConnection->m_pFirstStart->getArea(), false, 
+                            ContourPoint::Start,  wykobi::make_point< float >(
+                                pConnection->m_pFirstStart->getPoint().x + v.x, 
+                                pConnection->m_pFirstStart->getPoint().y + v.y  ), nullptr ) );
+                    pConnection->m_pSecondMid = ContourPoint::Ptr( 
+                        new ContourPoint( pConnection->m_pSecondStart->getArea(), false, 
+                            ContourPoint::Start,  wykobi::make_point< float >( 
+                                pConnection->m_pFirstEnd->getPoint().x + v.x, 
+                                pConnection->m_pFirstEnd->getPoint().y + v.y  ), nullptr ) );
                     
                     pExteriorInfo->connectionCurves.push_back( pConnection );
                 }
@@ -579,7 +831,6 @@ public:
             }
         }
         
-        AreaInfo::PtrVector areaInfos;
         {
             ContourPoint::ContourPointPtrPairVector interiorConnectionPairs;
             ContourPoint::ContourPointPtrPairVector exteriorConnectionPairs;;
@@ -590,29 +841,30 @@ public:
                     AreaInfo::Ptr pAreaInfo = 
                         processArea( pChildArea, nullptr, interiorConnectionPairs, exteriorConnectionPairs );
                     recurse( pAreaInfo );
-                    areaInfos.push_back( pAreaInfo );
+                    m_rootAreaInfos.push_back( pAreaInfo );
                 }
             }
         }
         
-        for( AreaInfo::Ptr pAreInfo : areaInfos )
+        for( AreaInfo::Ptr pAreInfo : m_rootAreaInfos )
         {
             pAreInfo->buildArrangement( m_arr );
         }
-        for( AreaInfo::Ptr pAreInfo : areaInfos )
+        
+        //ensure all data pointers are null
+        for( Arr_with_hist_2::Halfedge_handle h : m_arr.halfedge_handles() )
+        {
+            h->set_data( nullptr );
+            h->twin()->set_data( nullptr );
+        }
+        
+        for( AreaInfo::Ptr pAreInfo : m_rootAreaInfos )
         {
             pAreInfo->buildMetaData( m_arr );
         }
         
         //extract contours
         
-    }
-    
-    static inline double to_double( const CGAL::Quotient< CGAL::MP_Float >& q )
-    {
-        return 
-            CGAL::INTERN_MP_FLOAT::to_double( q.numerator() ) /
-            CGAL::INTERN_MP_FLOAT::to_double( q.denominator() );
     }
     
     void generateHTML( const boost::filesystem::path& filepath ) const
@@ -657,20 +909,59 @@ public:
         *os << "    <h1>" << filepath.string() << "</h1>\n";
         
         *os << "    <svg width=\"" << 100 + sizeX * scale << "\" height=\"" << 100 + sizeY * scale << "\" >\n";
-        
+        *os << "      <defs>\n";
+        *os << "      <marker id=\"mid\" markerWidth=\"10\" markerHeight=\"10\" refX=\"0\" refY=\"3\" orient=\"auto\" markerUnits=\"strokeWidth\">\n";
+        *os << "      <path d=\"M0,0 L0,6 L9,3 z\" fill=\"#f00\" />\n";
+        *os << "      </marker>\n";
+        *os << "      </defs>\n";
+        *os << "       <text x=\"" << 10 << "\" y=\"" << 10 << 
+                         "\" fill=\"green\"  >Vertex Count: " << m_arr.number_of_vertices() << " </text>\n";
+        *os << "       <text x=\"" << 10 << "\" y=\"" << 20 << 
+                         "\" fill=\"green\"  >Edge Count: " << m_arr.number_of_edges() << " </text>\n";
+                         
         for( auto i = m_arr.edges_begin(); i != m_arr.edges_end(); ++i )
         {
-            const double startX = ( to_double( i->source()->point().x() ) - minX ) * scale;
-            const double startY = ( to_double( -i->source()->point().y() ) - minY ) * scale;
-            const double endX   = ( to_double( i->target()->point().x() ) - minX ) * scale;
-            const double endY   = ( to_double( -i->target()->point().y() ) - minY ) * scale;
+            Arr_with_hist_2::Halfedge_handle h = i;
             
-            std::ostringstream osEdge;
-            osEdge << startX << "," << startY << " " << endX << "," << endY;
+            if( i->target()->point() == i->curve().source() )
+                h = h->twin();
             
-            *os << "       <polyline points=\"" << osEdge.str() << "\" style=\"fill:none;stroke:blue;stroke-width:1\" />\n";
-            *os << "       <circle cx=\"" << startX << "\" cy=\"" << startY << "\" r=\"3\" stroke=\"green\" stroke-width=\"1\" fill=\"green\" />\n";
-            *os << "       <circle cx=\"" << endX << "\" cy=\"" << endY << "\" r=\"3\" stroke=\"green\" stroke-width=\"1\" fill=\"green\" />\n";
+            svgLine( h, minX, minY, scale, "blue", *os );
+            
+            {
+                const double startX = ( to_double(  h->source()->point().x() ) - minX ) * scale;
+                const double startY = ( to_double( -h->source()->point().y() ) - minY ) * scale;
+                const double endX   = ( to_double(  h->target()->point().x() ) - minX ) * scale;
+                const double endY   = ( to_double( -h->target()->point().y() ) - minY ) * scale;
+                
+                std::ostringstream osText;
+                {
+                    const void* pData       = h->data();
+                    const void* pTwinData   = h->twin()->data();
+                    if( const Area* pArea = (const Area*)pData )
+                    {
+                        osText << "l:" << pArea->getName();
+                    }
+                    else
+                    {
+                        osText << "l:";
+                    }
+                    if( const Area* pArea = (const Area*)pTwinData )
+                    {
+                        osText << " r:" << pArea->getName();
+                    }
+                    else
+                    {
+                        osText << " r:";
+                    }
+                }
+                {
+                    float x = startX + ( endX - startX ) / 2.0f;
+                    float y = startY + ( endY - startY ) / 2.0f;
+                    *os << "       <text x=\"" << x << "\" y=\"" << y << 
+                                     "\" fill=\"green\" transform=\"rotate(30 " << x << "," << y << ")\" >" << osText.str() << " </text>\n";
+                }
+            }
         }
         
         *os << "    </svg>\n";
@@ -679,13 +970,74 @@ public:
 
     }
   
-    const Site::PtrVector& m_sites;
-    Arr_with_hist_2 m_arr;
-};
+    void generateOutput( const boost::filesystem::path& filepath ) const
+    {
+        std::unique_ptr< boost::filesystem::ofstream > os =
+            createNewFileStream( filepath );
+            
+        double scale = 10.0;
+        double  minX = std::numeric_limits< double >::max(), 
+                minY = std::numeric_limits< double >::max();
+        double  maxX = -std::numeric_limits< double >::max(), 
+                maxY = -std::numeric_limits< double >::max();
+        for( auto i = m_arr.edges_begin(); i != m_arr.edges_end(); ++i )
+        {
+            {
+                const double x = to_double( i->source()->point().x() );
+                const double y = to_double( -i->source()->point().y() );
+                if( x < minX ) minX = x;
+                if( y < minY ) minY = y;
+                if( x > maxX ) maxX = x;
+                if( y > maxY ) maxY = y;
+            }
+            
+            {
+                const double x = to_double( i->target()->point().x() );
+                const double y = to_double( -i->target()->point().y() );
+                if( x < minX ) minX = x;
+                if( y < minY ) minY = y;
+                if( x > maxX ) maxX = x;
+                if( y > maxY ) maxY = y;
+            }
+        }
+        const double sizeX = maxX - minX;
+        const double sizeY = maxY - minY;
+            
+        *os << "<!DOCTYPE html>\n";
+        *os << "<html>\n";
+        *os << "  <head>\n";
+        *os << "    <title>Compilation Output</title>\n";
+        *os << "  </head>\n";
+        *os << "  <body>\n";
+        *os << "    <h1>" << filepath.string() << "</h1>\n";
+        
+        *os << "    <svg width=\"" << 100 + sizeX * scale << "\" height=\"" << 100 + sizeY * scale << "\" >\n";
+        *os << "      <defs>\n";
+        *os << "        <defs>\n";
+        *os << "            <marker id=\"mid\" markerWidth=\"10\" markerHeight=\"10\" refX=\"0\" refY=\"3\" orient=\"auto\" markerUnits=\"strokeWidth\">\n";
+        *os << "                <path d=\"M0,0 L0,6 L9,3 z\" fill=\"#f00\" />\n";
+        *os << "            </marker>\n";
+        *os << "        </defs>\n";
+        *os << "      </defs>\n";
+        
+        int iColour = 0;
+        for( AreaInfo::Ptr pAreaInfo : m_rootAreaInfos )
+        {
+            pAreaInfo->generate( m_arr, minX, minY, scale, iColour, *os );
+        }
 
+        *os << "    </svg>\n";
+        *os << "  </body>\n";
+        *os << "</html>\n";
+    }
+
+    const Site::PtrVector& m_sites;
+    mutable Arr_with_hist_2 m_arr;
+};
 void Compiler::CompilerImpl::AreaInfo::buildArrangement( Arr_with_hist_2& arr )
 {
     {
+        VERIFY_RTE( interiorPoints.size() > 2U );
         for( ContourPoint::PtrVector::iterator 
                 i       = interiorPoints.begin(),
                 iNext   = interiorPoints.begin(),
@@ -702,44 +1054,19 @@ void Compiler::CompilerImpl::AreaInfo::buildArrangement( Arr_with_hist_2& arr )
                 Segment_2( 
                     Point_2( pPoint->getPoint().x, pPoint->getPoint().y ),
                     Point_2( pNext->getPoint().x, pNext->getPoint().y ) ) );
-                
             pPoint->setCurveHandle( ch );
         }
     }
     {
         for( ConnectionCurves::Ptr pCurve : connectionCurves )
         {
-            ContourPoint::Vector2D v = 
-                (   pCurve->m_pSecondEnd->getPoint() - 
-                    pCurve->m_pFirstStart->getPoint() );
-            v.x /= 2.0f;
-            v.y /= 2.0f;
-        
-            pCurve->m_ch_FirstStart_FirstMid = CGAL::insert( arr, 
-                Segment_2( 
-                    Point_2( pCurve->m_pFirstStart->getPoint().x,           pCurve->m_pFirstStart->getPoint().y ),
-                    Point_2( pCurve->m_pFirstStart->getPoint().x + v.x,     pCurve->m_pFirstStart->getPoint().y + v.y ) ) );
-            pCurve->m_ch_FirstEnd_SecondMid = CGAL::insert( arr, 
-                Segment_2( 
-                    Point_2( pCurve->m_pFirstEnd->getPoint().x,             pCurve->m_pFirstEnd->getPoint().y ),
-                    Point_2( pCurve->m_pFirstEnd->getPoint().x + v.x,       pCurve->m_pFirstEnd->getPoint().y + v.y ) ) );
-            pCurve->m_ch_SecondStart_SecondMid = CGAL::insert( arr, 
-                Segment_2( 
-                    Point_2( pCurve->m_pSecondStart->getPoint().x,          pCurve->m_pSecondStart->getPoint().y ),
-                    Point_2( pCurve->m_pSecondStart->getPoint().x - v.x,    pCurve->m_pSecondStart->getPoint().y - v.y ) ) );
-            pCurve->m_ch_SecondEnd_FirstMid = CGAL::insert( arr, 
-                Segment_2( 
-                    Point_2( pCurve->m_pSecondEnd->getPoint().x,            pCurve->m_pSecondEnd->getPoint().y ),
-                    Point_2( pCurve->m_pSecondEnd->getPoint().x - v.x,      pCurve->m_pSecondEnd->getPoint().y - v.y ) ) );
-            pCurve->m_ch_FirstMid_SecondMid = CGAL::insert( arr, 
-                Segment_2( 
-                    Point_2( pCurve->m_pFirstStart->getPoint().x + v.x,     pCurve->m_pFirstStart->getPoint().y + v.y ),
-                    Point_2( pCurve->m_pSecondStart->getPoint().x - v.x,    pCurve->m_pSecondStart->getPoint().y - v.y ) ) );
+            pCurve->create( arr );
         }
     }
     {
         for( ExteriorInfo::Ptr pExterior : exteriors )
         {
+            VERIFY_RTE( pExterior->exteriorPoints.size() > 2U );
             for( ContourPoint::PtrVector::iterator 
                     i       = pExterior->exteriorPoints.begin(),
                     iNext   = pExterior->exteriorPoints.begin(),
@@ -756,38 +1083,12 @@ void Compiler::CompilerImpl::AreaInfo::buildArrangement( Arr_with_hist_2& arr )
                     Segment_2( 
                         Point_2( pPoint->getPoint().x, pPoint->getPoint().y ),
                         Point_2( pNext->getPoint().x, pNext->getPoint().y ) ) );
-                    
                 pPoint->setCurveHandle( ch );
             }
             
             for( ConnectionCurves::Ptr pCurve : pExterior->connectionCurves )
             {
-                ContourPoint::Vector2D v = 
-                    (   pCurve->m_pSecondEnd->getPoint() - 
-                        pCurve->m_pFirstStart->getPoint() );
-                v.x /= 2.0f;
-                v.y /= 2.0f;
-            
-                pCurve->m_ch_FirstStart_FirstMid = CGAL::insert( arr, 
-                    Segment_2( 
-                        Point_2( pCurve->m_pFirstStart->getPoint().x,           pCurve->m_pFirstStart->getPoint().y ),
-                        Point_2( pCurve->m_pFirstStart->getPoint().x + v.x,     pCurve->m_pFirstStart->getPoint().y + v.y ) ) );
-                pCurve->m_ch_FirstEnd_SecondMid = CGAL::insert( arr, 
-                    Segment_2( 
-                        Point_2( pCurve->m_pFirstEnd->getPoint().x,             pCurve->m_pFirstEnd->getPoint().y ),
-                        Point_2( pCurve->m_pFirstEnd->getPoint().x + v.x,       pCurve->m_pFirstEnd->getPoint().y + v.y ) ) );
-                pCurve->m_ch_SecondStart_SecondMid = CGAL::insert( arr, 
-                    Segment_2( 
-                        Point_2( pCurve->m_pSecondStart->getPoint().x,          pCurve->m_pSecondStart->getPoint().y ),
-                        Point_2( pCurve->m_pSecondStart->getPoint().x - v.x,    pCurve->m_pSecondStart->getPoint().y - v.y ) ) );
-                pCurve->m_ch_SecondEnd_FirstMid = CGAL::insert( arr, 
-                    Segment_2( 
-                        Point_2( pCurve->m_pSecondEnd->getPoint().x,            pCurve->m_pSecondEnd->getPoint().y ),
-                        Point_2( pCurve->m_pSecondEnd->getPoint().x - v.x,      pCurve->m_pSecondEnd->getPoint().y - v.y ) ) );
-                pCurve->m_ch_FirstMid_SecondMid = CGAL::insert( arr, 
-                    Segment_2( 
-                        Point_2( pCurve->m_pFirstStart->getPoint().x + v.x,     pCurve->m_pFirstStart->getPoint().y + v.y ),
-                        Point_2( pCurve->m_pSecondStart->getPoint().x - v.x,    pCurve->m_pSecondStart->getPoint().y - v.y ) ) );
+                pCurve->create( arr );
             }
         }
     }
@@ -800,17 +1101,103 @@ void Compiler::CompilerImpl::AreaInfo::buildArrangement( Arr_with_hist_2& arr )
 
 void Compiler::CompilerImpl::AreaInfo::buildMetaData( Arr_with_hist_2& arr )
 {
+    for( ExteriorInfo::Ptr pExterior : exteriors )
     {
-        for( ExteriorInfo::Ptr pExterior : exteriors )
+        for( ConnectionCurves::Ptr pCurve : pExterior->connectionCurves )
         {
+            VERIFY_RTE( pCurve->m_pFirstStart->getArea() == pCurve->m_pFirstEnd->getArea() );
+            VERIFY_RTE( pCurve->m_pSecondStart->getArea() == pCurve->m_pSecondEnd->getArea() );
+            VERIFY_RTE( pCurve->m_pFirstStart->getArea() != pCurve->m_pSecondStart->getArea() );
+            pCurve->finish( arr );
         }
     }
+    
+    for( ConnectionCurves::Ptr pCurve : connectionCurves )
+    {
+        VERIFY_RTE( pCurve->m_pFirstStart->getArea() == pCurve->m_pFirstEnd->getArea() );
+        VERIFY_RTE( pCurve->m_pSecondStart->getArea() == pCurve->m_pSecondEnd->getArea() );
+        VERIFY_RTE( pCurve->m_pFirstStart->getArea() != pCurve->m_pSecondStart->getArea() );
+        pCurve->finish( arr );
+    }
+    
     for( AreaInfo::Ptr pChildAreaInfo : children )
     {
         pChildAreaInfo->buildMetaData( arr );
     }
 }
 
+void drawEdges( const std::vector< Arr_with_hist_2::Halfedge_const_handle >& edges, 
+        double minX, double minY, double scale, int& iColour, std::ostream& os )
+{
+    const char* pszColour = SVG_COLOURS[ iColour ];
+    for( Arr_with_hist_2::Halfedge_const_handle he : edges )
+    {
+        svgLine( he, minX, minY, scale, pszColour, os );
+    }
+}
+
+using VertexHandle = Arr_with_hist_2::Vertex_const_handle;
+using HalfedgeHandle = Arr_with_hist_2::Halfedge_const_handle;
+
+void Compiler::CompilerImpl::AreaInfo::generate( Arr_with_hist_2& arr, 
+            double minX, double minY, double scale, int& iColour, std::ostream& os )
+{
+    iColour = ( iColour + 1 ) % SVG_COLOURS.size();
+    
+    std::vector< HalfedgeHandle > path;
+    for( auto i = arr.faces_begin(),
+        iEnd = arr.faces_end(); i!=iEnd; ++i )
+    {
+        bool bIsFaceForArea = false;
+        path.clear();
+        if( !i->is_unbounded() )
+        {
+            Arr_with_hist_2::Ccb_halfedge_const_circulator iter = i->outer_ccb();
+            Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+            do
+            {   
+                path.push_back( iter );
+                if( iter->data() == pArea )
+                {
+                    bIsFaceForArea = true;
+                }
+                ++iter;
+            }
+            while( iter != start );
+            
+        }
+        if( bIsFaceForArea )
+        {
+            drawEdges( path, minX, minY, scale, iColour, os );
+            
+            for( Arr_with_hist_2::Hole_const_iterator 
+                holeIter = i->holes_begin(),
+                holeIterEnd = i->holes_end(); 
+                    holeIter != holeIterEnd; ++holeIter )
+            {
+                path.clear();
+                Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
+                Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+                do
+                {   
+                    path.push_back( iter );
+                    ++iter;
+                }
+                while( iter != start );
+                
+                drawEdges( path, minX, minY, scale, iColour, os );
+                
+            }
+            
+        }
+    }
+    
+    for( AreaInfo::Ptr pChildAreaInfo : children )
+    {
+        pChildAreaInfo->generate( arr, minX, minY, scale, iColour, os );
+    }
+}
+        
 Compiler::Compiler( const Site::PtrVector& sites )
     :   m_pPimpl( std::make_shared< CompilerImpl >( sites ) )
 {
@@ -820,4 +1207,9 @@ void Compiler::generateHTML( const boost::filesystem::path& filepath ) const
 {
     m_pPimpl->generateHTML( filepath );
 }
+void Compiler::generateOutput( const boost::filesystem::path& filepath ) const
+{
+    m_pPimpl->generateOutput( filepath );
+}
+
 }

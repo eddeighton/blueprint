@@ -1,4 +1,4 @@
-basic_exterior_connection<blueprint>
+basic_exterior_connection_intersect<blueprint>
 {
     area_0000<area>(2,2,East;,false,false)
     {
@@ -6,7 +6,7 @@ basic_exterior_connection<blueprint>
         {
             auto<property>(false)
         }
-        area_0001<area>(4,38,East;,false,true)
+        area_0001<area>(0,42,East;,false,true)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {
@@ -25,7 +25,7 @@ basic_exterior_connection<blueprint>
                 }
             }
         }
-        area_0002<area>(36,38,West;,false,false)
+        area_0002<area>(32,42,West;,false,false)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {
