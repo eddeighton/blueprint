@@ -1165,10 +1165,31 @@ void Compiler::CompilerImpl::AreaInfo::generate( Arr_with_hist_2& arr,
             }
             while( iter != start );
             
+            //search through all holes
+            for( Arr_with_hist_2::Hole_const_iterator 
+                holeIter = i->holes_begin(),
+                holeIterEnd = i->holes_end(); 
+                    holeIter != holeIterEnd; ++holeIter )
+            {
+                Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
+                Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+                do
+                {   
+                    if( iter->data() == pArea )
+                    {
+                        bIsFaceForArea = true;
+                        break;
+                    }
+                    ++iter;
+                }
+                while( iter != start );
+            }
         }
+        
         if( bIsFaceForArea )
         {
-            drawEdges( path, minX, minY, scale, iColour, os );
+            if( !path.empty() )
+                drawEdges( path, minX, minY, scale, iColour, os );
             
             for( Arr_with_hist_2::Hole_const_iterator 
                 holeIter = i->holes_begin(),
@@ -1186,9 +1207,7 @@ void Compiler::CompilerImpl::AreaInfo::generate( Arr_with_hist_2& arr,
                 while( iter != start );
                 
                 drawEdges( path, minX, minY, scale, iColour, os );
-                
             }
-            
         }
     }
     

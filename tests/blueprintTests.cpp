@@ -325,80 +325,59 @@ TEST( CGAL, DataTest )
     ASSERT_EQ( iCountTwo, 2 );
 }*/
 
-boost::filesystem::path constructPath( const char* pszName, const char* pszExt )
+static const boost::filesystem::path testFilesFolderPath = getenv( "BLUEPRINT" );
+    
+boost::filesystem::path constructPath( const boost::filesystem::path& inputFile, const char* pszExt )
 {
-    static const boost::filesystem::path installPath = getenv( "BLUEPRINT" );
+    boost::filesystem::path t = inputFile;
+    t.replace_extension( "" );
     std::ostringstream os;
-    os << pszName << pszExt;
-    return installPath / "testfiles" / os.str();;
+    os << t.filename().string() << pszExt;
+    return t.parent_path() / os.str();
 }
 
-void loadTest( const char* pszFileName )
-{
-    const boost::filesystem::path inputFile = constructPath( pszFileName, ".blu" );
-    
+void loadTest( const boost::filesystem::path& inputFile )
+{    
     Blueprint::Factory factory;
     Blueprint::Site::Ptr pTest = factory.load( inputFile.string() );
     ASSERT_TRUE( pTest );
     
     Blueprint::Compiler compiler( pTest->getSpaces() );
     
-    compiler.generateHTML( constructPath( pszFileName, "_html.html" ) );
-    compiler.generateOutput( constructPath( pszFileName, "_output.html" ) );
+    compiler.generateHTML(   constructPath( inputFile, "__all.html" ) );
+    compiler.generateOutput( constructPath( inputFile, "__faces.html" ) );
 }
-/*
-TEST( CGAL, CompilerBasic )
+
+TEST( CGAL, CompilerTestFiles )
 {
     //{
     //    char c;
     //    std::cin >> c;
     //}
-    loadTest( "basic" );
+    
+    std::vector< boost::filesystem::path > testFiles;
+    for( boost::filesystem::directory_iterator iter( testFilesFolderPath / "testfiles" );
+        iter != boost::filesystem::directory_iterator(); ++iter )
+    {
+        const boost::filesystem::path& filePath = *iter;
+        if( !boost::filesystem::is_directory( filePath ) )
+        {
+            if( boost::filesystem::extension( *iter ) == ".blu" )
+            {
+                if( !filePath.stem().empty() )
+                {
+                    testFiles.push_back( *iter );
+                }
+                else
+                {
+                    //make this recursive...
+                }
+            }
+        }
+    }
+    
+    for( const boost::filesystem::path& testFile : testFiles )
+    {
+        loadTest( testFile );
+    }
 }
-TEST( CGAL, CompilerBasic_child )
-{
-    loadTest( "basic_child" );
-}
-
-TEST( CGAL, CompilerBasic_child_intersect )
-{
-    loadTest( "basic_child_intersect" );
-}
-
-TEST( CGAL, CompilerBasic_connection )
-{
-    //{
-    //    char c;
-    //    std::cin >> c;
-    //}
-    loadTest( "basic_connection" );
-}
-
-TEST( CGAL, CompilerBasic_loop )
-{
-    //{
-    //    char c;
-    //    std::cin >> c;
-    //}
-    loadTest( "basic_loop" );
-}
-
-TEST( CGAL, CompilerBasic_exterior_connection )
-{
-    loadTest( "basic_exterior_connection" );
-}
-
-TEST( CGAL, CompilerBasic_exterior_connection_intersect )
-{
-    loadTest( "basic_exterior_connection_intersect" );
-}
-*/
-TEST( CGAL, CompilerComplex )
-{
-    loadTest( "complex" );
-}
-/*
-TEST( CGAL, CompilerComplex_big )
-{
-    loadTest( "complex_big" );
-}*/

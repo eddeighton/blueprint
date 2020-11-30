@@ -28,16 +28,18 @@ include( ${BLUEPRINT_ROOT_DIR}/cmake/gtest_include.cmake )
 set( BLUEPRINT_TESTS_SOURCE
     ${BLUEPRINT_ROOT_DIR}/tests/blueprintTests.cpp )
     
-set( BLUEPRINT_TEST_FILES
-    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic.blu
-    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_child.blu
-    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_child_intersect.blu
-    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_connection.blu 
-    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_loop.blu
-    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_exterior_connection.blu 
-    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_exterior_connection_intersect.blu 
-    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/complex.blu 
-    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/complex_big.blu  )
+file( GLOB BLUEPRINT_TEST_FILES ${BLUEPRINT_ROOT_DIR}/tests/testfiles/*.blu )
+    
+#set( BLUEPRINT_TEST_FILES
+#    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic.blu
+#    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_child.blu
+#    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_child_intersect.blu
+#    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_connection.blu 
+#    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_loop.blu
+#    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_exterior_connection.blu 
+#    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/basic_exterior_connection_intersect.blu 
+#    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/complex.blu 
+#    ${BLUEPRINT_ROOT_DIR}/tests/testfiles/complex_big.blu  )
     
 
 add_executable( blueprint_tests
