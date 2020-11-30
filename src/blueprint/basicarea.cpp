@@ -342,27 +342,35 @@ void Area::setTransform( const Transform& transform )
     m_transform = transform; 
     setModified();
 }
-void Area::cmd_rotateLeft()
+void Area::cmd_rotateLeft( const Rect2D& transformBounds )
 {
-    m_transform.rotateLeft();
+    const Point2D ptTopLeft = wykobi::rectangle_corner( transformBounds, 0 );
+    const Point2D ptBotRight  = wykobi::rectangle_corner( transformBounds, 2 );
+    m_transform.rotateLeft( ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
     setModified();
 }
 
-void Area::cmd_rotateRight()
+void Area::cmd_rotateRight( const Rect2D& transformBounds )
 {
-    m_transform.rotateRight();
+    const Point2D ptTopLeft = wykobi::rectangle_corner( transformBounds, 0 );
+    const Point2D ptBotRight  = wykobi::rectangle_corner( transformBounds, 2 );
+    m_transform.rotateRight( ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
     setModified();
 }
 
-void Area::cmd_flipHorizontally()
+void Area::cmd_flipHorizontally( const Rect2D& transformBounds )
 {
-    m_transform.flipHorizontally();
+   const Point2D ptTopLeft = wykobi::rectangle_corner( transformBounds, 0 );
+    const Point2D ptBotRight  = wykobi::rectangle_corner( transformBounds, 2 );
+    m_transform.flipHorizontally( ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
     setModified();
 }
 
-void Area::cmd_flipVertically()
+void Area::cmd_flipVertically( const Rect2D& transformBounds )
 {
-    m_transform.flipVertically();
+    const Point2D ptTopLeft = wykobi::rectangle_corner( transformBounds, 0 );
+    const Point2D ptBotRight  = wykobi::rectangle_corner( transformBounds, 2 );
+    m_transform.flipVertically( ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
     setModified();
 }
 

@@ -106,10 +106,10 @@ public:
     }
     
     //cmds
-    void cmd_rotateLeft();
-    void cmd_rotateRight();
-    void cmd_flipHorizontally();
-    void cmd_flipVertically();
+    void cmd_rotateLeft( const Rect2D& transformBounds );
+    void cmd_rotateRight( const Rect2D& transformBounds );
+    void cmd_flipHorizontally( const Rect2D& transformBounds );
+    void cmd_flipVertically( const Rect2D& transformBounds );
 
     const ContourPointVector& getBoundaries() const { return m_boundaryPoints; }
     const PropertyVector& getProperties() const { return m_properties; }

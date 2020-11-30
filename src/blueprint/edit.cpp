@@ -216,12 +216,13 @@ private:
         m_startY = y = Math::quantize_roundUp( y, qY );
 
         Feature_Contour::Ptr pContour = area.m_pContour;
-
-        Polygon2D poly = pContour->getPolygon();
-        m_iPointIndex = poly.size();
-        poly.push_back( wykobi::make_point< float >( m_startX, m_startY ) );
-        area.m_pContour->set( poly );
-
+        m_originalPolygon = pContour->getPolygon();
+        
+        const Point2D pt = wykobi::make_point< float >( m_startX, m_startY );
+        Polygon2D newPoly = m_originalPolygon;
+        newPoly.push_back( pt );
+        m_area.m_pContour->set( newPoly );
+        
         OnMove( x, y );
     }
     
@@ -230,8 +231,28 @@ public:
     {
         const float fDeltaX = Math::quantize_roundUp( x, m_qX );
         const float fDeltaY = Math::quantize_roundUp( y, m_qY );
-
-        m_area.m_pContour->set( m_iPointIndex, fDeltaX, fDeltaY  );
+        const Point2D pt = wykobi::make_point< float >( fDeltaX, fDeltaY );
+        const SegmentIDRatioPointTuple sirpt =
+            findClosestPointOnContour( m_originalPolygon, pt );
+        
+        unsigned int uiIndex = std::get< 0 >( sirpt );
+        VERIFY_RTE( uiIndex < m_originalPolygon.size() || uiIndex == 0 );
+        if( m_originalPolygon.size() > 0 )
+            uiIndex = ( uiIndex + 1 ) % m_originalPolygon.size();
+        
+        Polygon2D newPoly;
+        for( std::size_t sz = 0U; ( sz != uiIndex ) && ( sz < m_originalPolygon.size() ); ++sz )
+            newPoly.push_back( m_originalPolygon[ sz ] );
+        newPoly.push_back( pt );
+        for( std::size_t sz = uiIndex; sz < m_originalPolygon.size(); ++sz )
+            newPoly.push_back( m_originalPolygon[ sz ] );
+        
+        //set all the points without reallocating control points
+        for( std::size_t sz = 0; sz != newPoly.size(); ++sz )
+        {
+            m_area.m_pContour->set( sz, newPoly[ sz ].x, newPoly[ sz ].y );
+        }
+        
     }
     virtual Site::Ptr GetInteractionSite() const
     {
@@ -240,8 +261,8 @@ public:
 
 private:
     Area& m_area;
+    Polygon2D m_originalPolygon;
     float m_startX, m_startY, m_qX, m_qY;
-    int m_iPointIndex;
 };
 
 
@@ -827,6 +848,47 @@ IInteraction::Ptr Edit::cmd_paste( Site::PtrVector sites, float x, float y, floa
     return pNewInteraction;
 }
 
+void getSelectionBounds( const std::vector< Area* >& areas, Rect2D& transformBounds )
+{
+    Point2D ptBoundsTopLeft, ptBoundsBotRight;
+    
+    bool bFirst = true;
+    for( const Area* pArea : areas )
+    {
+        Polygon2D poly = pArea->getContour()->getPolygon();
+        for( Point2D& pt : poly )
+            pArea->getTransform().transform( pt.x, pt.y );
+        
+        const Rect2D polyAABB = wykobi::aabb( poly );
+        const Point2D ptTopLeft = wykobi::rectangle_corner( polyAABB, 0 );
+        const Point2D ptBotRight  = wykobi::rectangle_corner( polyAABB, 2 );
+        
+        if( bFirst )
+        {
+            ptBoundsTopLeft     = ptTopLeft;
+            ptBoundsBotRight    = ptBotRight;
+            bFirst = false;
+        }
+        else
+        {
+            if( ptTopLeft.x < ptBoundsTopLeft.x )
+                ptBoundsTopLeft.x = ptTopLeft.x;
+            if( ptTopLeft.y < ptBoundsTopLeft.y )
+                ptBoundsTopLeft.y = ptTopLeft.y;
+            
+            if( ptBotRight.x > ptBoundsBotRight.x )
+                ptBoundsBotRight.x = ptBotRight.x;
+            if( ptBotRight.y > ptBoundsBotRight.y )
+                ptBoundsBotRight.y = ptBotRight.y;
+        }
+    }
+    
+    transformBounds = 
+        wykobi::make_rectangle< float >( 
+            ptBoundsTopLeft, 
+            ptBoundsBotRight );
+}
+
 void Edit::cmd_rotateLeft( const std::set< IGlyph* >& selection )
 {
     std::vector< Area* > areas;
@@ -835,12 +897,17 @@ void Edit::cmd_rotateLeft( const std::set< IGlyph* >& selection )
         iEnd = selection.end(); i!=iEnd; ++i )
     {
         if( const Area* pSite = dynamic_cast< const Area* >( (*i)->getGlyphSpec() ) )
+        {
             areas.push_back( const_cast< Area* >( pSite ) );
+        }
     }
+    
+    Rect2D transformBounds;
+    getSelectionBounds( areas, transformBounds );
     
     for( Area* pArea : areas )
     {
-        pArea->cmd_rotateLeft();
+        pArea->cmd_rotateLeft( transformBounds );
     }
 
     interaction_evaluate();
@@ -856,9 +923,12 @@ void Edit::cmd_rotateRight( const std::set< IGlyph* >& selection )
             areas.push_back( const_cast< Area* >( pSite ) );
     }
     
+    Rect2D transformBounds;
+    getSelectionBounds( areas, transformBounds );
+    
     for( Area* pArea : areas )
     {
-        pArea->cmd_rotateRight();
+        pArea->cmd_rotateRight( transformBounds );
     }
 
     interaction_evaluate();
@@ -874,9 +944,12 @@ void Edit::cmd_flipHorizontally( const std::set< IGlyph* >& selection )
             areas.push_back( const_cast< Area* >( pSite ) );
     }
     
+    Rect2D transformBounds;
+    getSelectionBounds( areas, transformBounds );
+    
     for( Area* pArea : areas )
     {
-        pArea->cmd_flipHorizontally();
+        pArea->cmd_flipHorizontally( transformBounds );
     }
 
     interaction_evaluate();
@@ -892,9 +965,12 @@ void Edit::cmd_flipVertically( const std::set< IGlyph* >& selection )
             areas.push_back( const_cast< Area* >( pSite ) );
     }
     
+    Rect2D transformBounds;
+    getSelectionBounds( areas, transformBounds );
+    
     for( Area* pArea : areas )
     {
-        pArea->cmd_flipVertically();
+        pArea->cmd_flipVertically( transformBounds );
     }
 
     m_pSite->init();
@@ -1339,23 +1415,48 @@ bool SpaceGlyphs::owns( IGlyph* pGlyph ) const
 
 void SpaceGlyphs::cmd_delete( const std::set< IGlyph* >& selection )
 {
+    std::vector< const GlyphSpec* > selectionGlyphSpecs;
+    for( IGlyph* pGlyph : selection )
+    {
+        selectionGlyphSpecs.push_back( pGlyph->getGlyphSpec());
+    }
+    
+    std::set< GlyphSpecProducer* > glyphSpecProducers;
     for( std::set< IGlyph* >::iterator 
         i = selection.begin(),
         iEnd = selection.end(); i!=iEnd; ++i )
     {
         IGlyph* pGlyph = *i;
-        
         if( GlyphSpecProducer* pGlyphPrd = const_cast< GlyphSpecProducer* >( fromGlyph( pGlyph ) ) )
         {
             if( !dynamic_cast< Site* >( pGlyphPrd ) )
             {
-                if( !pGlyphPrd->cmd_delete( pGlyph->getGlyphSpec() ) )
+                glyphSpecProducers.insert( pGlyphPrd );
+            }
+        }
+    }
+    
+    std::set< GlyphSpecProducer* > unhandled;
+    for( GlyphSpecProducer* pGlyphSpecProducer : glyphSpecProducers )
+    {
+        if( !pGlyphSpecProducer->cmd_delete( selectionGlyphSpecs ) )
+        {
+            unhandled.insert( pGlyphSpecProducer );
+        }
+    }
+    
+    //if no handler delete the selection itself
+    for( std::set< GlyphSpecProducer* >::iterator 
+        i = unhandled.begin(),
+        iEnd = unhandled.end(); i!=iEnd; ++i )
+    {
+        if( GlyphSpecProducer* pGlyphPrd = *i )
+        {
+            if( !dynamic_cast< Site* >( pGlyphPrd ) )
+            {
+                if( Node::Ptr pParent = pGlyphPrd->getParent() )
                 {
-                    if( Node::Ptr pParent = pGlyphPrd->getParent() )
-                    {
-                        pParent->remove( const_cast< GlyphSpecProducer* >( pGlyphPrd )->getPtr() );
-                        break;
-                    }
+                    pParent->remove( const_cast< GlyphSpecProducer* >( pGlyphPrd )->getPtr() );
                 }
             }
         }

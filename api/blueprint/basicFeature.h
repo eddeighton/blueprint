@@ -137,19 +137,22 @@ public:
     }
     void set( int id, float fX, float fY ) 
     { 
-        const float fNewValueX = Map_FloorAverage()( fX );
-        //const float fNewValueX = fX;
-        if( m_polygon[ id ].x != fNewValueX )
+        if( id >= 0 && id < m_polygon.size() )
         {
-            m_polygon[ id ].x = fNewValueX;
-            setModified();
-        }
-        const float fNewValueY = Map_FloorAverage()( fY );
-        //const float fNewValueY = fY;
-        if( m_polygon[ id ].y != fNewValueY )
-        {
-            m_polygon[ id ].y = fNewValueY;
-            setModified();
+            const float fNewValueX = Map_FloorAverage()( fX );
+            //const float fNewValueX = fX;
+            if( m_polygon[ id ].x != fNewValueX )
+            {
+                m_polygon[ id ].x = fNewValueX;
+                setModified();
+            }
+            const float fNewValueY = Map_FloorAverage()( fY );
+            //const float fNewValueY = fY;
+            if( m_polygon[ id ].y != fNewValueY )
+            {
+                m_polygon[ id ].y = fNewValueY;
+                setModified();
+            }
         }
     }
     const std::string& getName(  int id ) const { return Node::getName(); }
@@ -160,6 +163,7 @@ public:
         m_polygon.push_back( wykobi::make_point< float >( Map_FloorAverage()( x ), Map_FloorAverage()( y ) ) );
         recalculateControlPoints();
     }
+    
     void set( const wykobi::polygon< float, 2 >& shape )
     {
         if( !( m_polygon.size() == shape.size() ) || 
@@ -172,58 +176,29 @@ public:
             recalculateControlPoints();
         }
     }
+    
     template< class T >
     void set( const T& shape )
     {
         set( wykobi::make_polygon( shape ) );
     }
-    void recalculateControlPoints()
-    {
-        generics::deleteAndClear( m_points );
-        if( !isAutoCalculate() )
-        {
-            int id = 0;
-            for( wykobi::polygon< float, 2 >::const_iterator 
-                i = m_polygon.begin(), iEnd = m_polygon.end(); i!=iEnd; ++i, ++id )
-            {
-                m_points.push_back( new PointType( *this, id ) );
-            }
-        }
-    }
+    
+    void recalculateControlPoints();
+    
     virtual int getControlPointCount() 
     { 
         return m_points.size(); 
     }
+    
     virtual void getControlPoints( ControlPoint::List& controlPoints )
     {
         std::copy( m_points.begin(), m_points.end(), std::back_inserter( controlPoints ) );
     }
 
-    const PointType* getRootControlPoint() const { return m_points.empty() ? 0u : m_points[ 0u ]; }
+    const PointType* getRootControlPoint() const { return m_points.empty() ? nullptr : m_points[ 0u ]; }
 
-    virtual bool cmd_delete( const GlyphSpec* pGlyphSpec ) 
-    { 
-        bool bFound = false;
-        
-        int iCounter = 0;
-        for( auto i = m_points.begin(),
-            iEnd = m_points.end(); i!=iEnd; ++i, ++iCounter )
-        {
-            if( ( pGlyphSpec == *i ) && ( i != m_points.begin() ) )
-            {
-                //erase the point
-                //delete *i;
-                //m_points.erase( i );
-                m_polygon.erase( iCounter );
-                bFound = true;
-                break;
-            }
-        }
-        if( bFound )
-            recalculateControlPoints();
-        
-        return bFound; 
-    }
+    virtual bool cmd_delete( const std::vector< const GlyphSpec* >& selection );
+    
 
 private:
     wykobi::polygon< float, 2 > m_polygon;

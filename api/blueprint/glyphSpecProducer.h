@@ -48,7 +48,7 @@ public:
     virtual void getMarkupPolygonGroups( MarkupPolygonGroup::List& ) {}
     virtual void getMarkupTexts( MarkupText::List& ) {}
 
-    virtual bool cmd_delete( const GlyphSpec* ) { return false; }
+    virtual bool cmd_delete( const std::vector< const GlyphSpec* >& ) { return false; }
 };
 
 

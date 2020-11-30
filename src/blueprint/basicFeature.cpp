@@ -214,6 +214,52 @@ const GlyphSpec* Feature_Contour::getParent( int id ) const
         return 0u; 
 }
 
+void Feature_Contour::recalculateControlPoints()
+{
+    generics::deleteAndClear( m_points );
+    if( !isAutoCalculate() )
+    {
+        int id = 0;
+        for( wykobi::polygon< float, 2 >::const_iterator 
+            i = m_polygon.begin(), iEnd = m_polygon.end(); i!=iEnd; ++i, ++id )
+        {
+            m_points.push_back( new PointType( *this, id ) );
+        }
+    }
+}
+
+bool Feature_Contour::cmd_delete( const std::vector< const GlyphSpec* >& selection ) 
+{ 
+    std::vector< int > removals;
+    {
+        int iCounter = m_points.size() - 1;
+        for( auto i = m_points.rbegin(),
+            iEnd = m_points.rend(); i!=iEnd; ++i, --iCounter )
+        {
+            for( const GlyphSpec* pGlyphSpec : selection )
+            {
+                if( pGlyphSpec == *i )
+                {
+                    removals.push_back( iCounter );
+                }
+            }
+        }
+    }
+    
+    for( int i : removals )
+    {
+        m_polygon.erase( i );
+        m_points.erase( m_points.begin() + i );
+    }
+    
+    {
+        std::size_t sz = 0U;
+        for( PointType* pPoint : m_points )
+            pPoint->setIndex( sz++ );
+    }
+    
+    return !removals.empty(); 
+}
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 const std::string& Feature_ContourPoint::TypeName()

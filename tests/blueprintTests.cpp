@@ -9,6 +9,7 @@
 #include "blueprint/site.h"
 #include "blueprint/cgalSettings.h"
 #include "blueprint/compiler.h"
+#include "blueprint/transform.h"
 
 #include "blueprint/serialisation.h"
 
@@ -50,6 +51,43 @@ TEST( BlueprintTests, Check )
 
 }*/
 
+TEST( Transform, Bounds )
+{
+    {
+        char c;
+        std::cin >> c;
+    }
+    
+    static const float tol = 0.001f;
+    
+    Blueprint::Transform t1( 3.0f, 4.0f );
+    
+    ASSERT_NEAR( t1.X(),   3.0f, tol );
+    ASSERT_NEAR( t1.Y(),   4.0f, tol );
+    ASSERT_NEAR( t1.M11(), 1.0f, tol );
+    ASSERT_NEAR( t1.M21(), 0.0f, tol );
+    ASSERT_NEAR( t1.M12(), 0.0f, tol );
+    ASSERT_NEAR( t1.M22(), 1.0f, tol );
+    
+    t1.flipVertically( 6.0f, 5.0f, 10.0f, 9.0f  );
+    
+    ASSERT_NEAR( t1.X(),   3.0f  , tol );
+    ASSERT_NEAR( t1.Y(),   10.0f , tol );
+    ASSERT_NEAR( t1.M11(), 1.0f  , tol );
+    ASSERT_NEAR( t1.M21(), 0.0f  , tol );
+    ASSERT_NEAR( t1.M12(), 0.0f  , tol );
+    ASSERT_NEAR( t1.M22(), -1.0f , tol );
+    
+    t1.flipVertically( 6.0f, 5.0f, 10.0f, 9.0f );
+    
+    ASSERT_NEAR( t1.X(),   3.0f , tol );
+    ASSERT_NEAR( t1.Y(),   4.0f , tol );
+    ASSERT_NEAR( t1.M11(), 1.0f , tol );
+    ASSERT_NEAR( t1.M21(), 0.0f , tol );
+    ASSERT_NEAR( t1.M12(), 0.0f , tol );
+    ASSERT_NEAR( t1.M22(), 1.0f , tol );
+}
+/*
 TEST( Serialisation, Points )
 {
     using namespace Ed;
@@ -86,13 +124,13 @@ TEST( Serialisation, Polygons )
         ASSERT_NEAR( i->y, j->y, 0.001f );
     }
 }
-/*
+
 TEST( Toolbox, Check1 )
 {
     const char* pszToolboxPath = getenv( "BLUEPRINT_TOOLBOX_PATH" );
     Blueprint::Toolbox::Ptr pToolbox( new Blueprint::Toolbox( pszToolboxPath ) );
     ASSERT_TRUE( pToolbox->getPalette( "shapes" ) );
-}*/
+}
 
 TEST( CGAL, ErrorTest )
 {
@@ -235,7 +273,7 @@ TEST( CGAL, OverlapTest )
     
 }
 
-/*
+
 TEST( CGAL, DataTest )
 {
     using namespace Blueprint;
@@ -323,7 +361,7 @@ TEST( CGAL, DataTest )
     //       +----+----+----+
     ASSERT_EQ( iCountOne, 8 );
     ASSERT_EQ( iCountTwo, 2 );
-}*/
+}
 
 static const boost::filesystem::path testFilesFolderPath = getenv( "BLUEPRINT" );
     
@@ -380,4 +418,4 @@ TEST( CGAL, CompilerTestFiles )
     {
         loadTest( testFile );
     }
-}
+}*/

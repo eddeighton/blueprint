@@ -450,6 +450,8 @@ public:
             m_id( id )
     {}
     
+    void setIndex( int iIndex ) { m_id = iIndex; }
+    
     virtual const GlyphSpec* getParent() const { return m_callback.getParent( m_id ); }
     virtual float getX() const { return m_callback.getX( m_id ); }
     virtual float getY() const { return m_callback.getY( m_id ); }

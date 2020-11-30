@@ -25,8 +25,20 @@ public:
     inline float M12() const { return m12; }
     inline float M21() const { return m21; }
     inline float M22() const { return m22; }
+    inline float M31() const { return m31; }
+    inline float M32() const { return m32; }
     inline float X()   const { return m31; }
     inline float Y()   const { return m32; }
+    
+    void assign( const Matrix& a )
+    {
+        m11 = a.m11 ;
+        m21 = a.m21 ;
+        m31 = a.m31 ;
+        m12 = a.m12 ;
+        m22 = a.m22 ;
+        m32 = a.m32 ;
+    }
     
     inline void transform( float& x, float& y ) const
     {
@@ -69,6 +81,13 @@ public:
     Transform()
     {
     }
+    
+    Transform( float x, float y )
+        :   Matrix( x, y ),
+            m_angle( Math::Angle< 8 >::eEast ),
+            m_bMirrorX( false ),
+            m_bMirrorY( false )
+    {}
     
     Transform( float x, float y, Math::Angle< 8 >::Value angle, bool bMirrorX, bool bMirrorY )
         :   Matrix( x, y ),
@@ -120,6 +139,67 @@ public:
     {
         m_bMirrorY = !m_bMirrorY;
         updateMatrix();
+    }
+    
+    static Matrix transformWithinBounds( const Matrix& existing, const Matrix& transform, float fMinX, float fMinY, float fMaxX, float fMaxY )
+    {
+        Matrix result;
+        {
+            const float fCentreX = fMinX + ( fMaxX - fMinX ) / 2.0f;
+            const float fCentreY = fMinY + ( fMaxY - fMinY ) / 2.0f;
+            
+            const Matrix translateToBoundsCentre( -fCentreX, -fCentreY );
+            const Matrix translateBack( fCentreX, fCentreY );
+            
+            //pre multiply
+            existing.transform( result );
+            translateToBoundsCentre.transform( result );
+            transform.transform( result );
+            translateBack.transform( result );
+        }
+        return result;
+    }
+    
+    void rotateLeft( float fMinX, float fMinY, float fMaxX, float fMaxY )
+    {
+        m_angle = Math::rotate< Math::Angle< 8 > >( m_angle, 1 );
+        
+        const Transform transform( 0.0f, 0.0f, 
+            Math::rotate< Math::Angle< 8 > >( Math::Angle< 8 >::eEast, 1 ), 
+            false, false );
+        
+        const Matrix matrix = transformWithinBounds( *this, transform, fMinX, fMinY, fMaxX, fMaxY );
+        assign( matrix );
+    }
+    
+    void rotateRight( float fMinX, float fMinY, float fMaxX, float fMaxY )
+    {
+        m_angle = Math::rotate< Math::Angle< 8 > >( m_angle, -1 );
+        
+        const Transform transform( 0.0f, 0.0f, 
+            Math::rotate< Math::Angle< 8 > >( Math::Angle< 8 >::eEast, -1 ), 
+            false, false );
+            
+        const Matrix matrix = transformWithinBounds( *this, transform, fMinX, fMinY, fMaxX, fMaxY );
+        assign( matrix );
+    }
+    
+    void flipHorizontally( float fMinX, float fMinY, float fMaxX, float fMaxY )
+    {
+        m_bMirrorX = !m_bMirrorX;
+        const Transform transform( 0.0f, 0.0f, Math::Angle< 8 >::eEast, true, false );
+            
+        const Matrix matrix = transformWithinBounds( *this, transform, fMinX, fMinY, fMaxX, fMaxY );
+        assign( matrix );
+    }
+    
+    void flipVertically( float fMinX, float fMinY, float fMaxX, float fMaxY )
+    {
+        m_bMirrorY = !m_bMirrorY;
+        const Transform transform( 0.0f, 0.0f, Math::Angle< 8 >::eEast, false, true );
+        
+        const Matrix matrix = transformWithinBounds( *this, transform, fMinX, fMinY, fMaxX, fMaxY );
+        assign( matrix );
     }
     
 private:
