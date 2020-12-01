@@ -1,16 +1,13 @@
 #ifndef FEATURE_18_09_2013
 #define FEATURE_18_09_2013
 
-#include "spaceUtils.h"
-
-#include "blueprint/buffer.h"
+#include "blueprint/geometry.h"
 #include "blueprint/property.h"
 #include "blueprint/glyphSpec.h"
 #include "blueprint/glyphSpecProducer.h"
+#include "blueprint/markup.h"
 
 #include "ed/node.hpp"
-
-#include "wykobi.hpp"
 
 #include <boost/shared_ptr.hpp>
 
@@ -94,9 +91,9 @@ public:
         controlPoints.push_back( &m_point );
     }
 
-    const wykobi::point2d< float >& get() const { return m_ptOrigin; }
+    const Point2D& get() const { return m_ptOrigin; }
 
-    wykobi::point2d< float > m_ptOrigin;
+    Point2D m_ptOrigin;
     ControlPointCallback< Feature_Point > m_point;
 };
 
@@ -201,7 +198,7 @@ public:
     
 
 private:
-    wykobi::polygon< float, 2 > m_polygon;
+    Polygon2D m_polygon;
     PointVector m_points;
     Property::Ptr m_pAutoCalc;
 };
@@ -246,52 +243,6 @@ protected:
     Feature_Contour::WeakPtrCst m_pContour;
 };
 
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
-class Feature_ContourSegment : public Feature_ContourPoint
-{
-public:
-    typedef boost::shared_ptr< Feature_ContourSegment > Ptr;
-    typedef boost::weak_ptr< Feature_ContourSegment > PtrWeak;
-    typedef boost::shared_ptr< const Feature_ContourSegment > PtrCst;
-    
-    static const std::string& TypeName();
-    Feature_ContourSegment( Feature_Contour::Ptr pParent, const std::string& strName );
-    Feature_ContourSegment( PtrCst pOriginal, Feature_Contour::Ptr pParent, const std::string& strName );
-    virtual void init();
-    virtual Node::Ptr copy( Node::Ptr pParent, const std::string& strName ) const;
-    virtual void load( Factory& factory, const Ed::Node& node );
-    virtual void save( Ed::Node& node ) const;
-    virtual std::string getStatement() const;
-    std::string getSegmentType() const;
-    bool isSegmentExterior() const;
-    
-    enum Points
-    {
-        eMidPoint,
-        eLeft,
-        eRight,
-        TOTAL_CONTROl_POINTS
-    };
-
-    void getBoundaryPoint( Points type, unsigned int& polyIndex, float& x, float& y, float& fDistance ) const;
-    float getWidth() const { return m_fWidth; }
-
-    virtual float getX( int id ) const;
-    virtual float getY( int id ) const;
-    virtual void set( int id, float fX, float fY );
-    virtual int getControlPointCount() { return 3; }
-    virtual void getControlPoints( ControlPoint::List& controlPoints )
-    {
-        Feature_ContourPoint::getControlPoints( controlPoints );
-        controlPoints.push_back( &m_pointLeft );
-        controlPoints.push_back( &m_pointRight );
-    }
-protected:
-    float m_fWidth;
-    ControlPointCallback< Feature_ContourSegment > m_pointLeft, m_pointRight;
-    Property::Ptr m_pSegmentType;
-};
 
 }
 

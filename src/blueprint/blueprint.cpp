@@ -2,7 +2,6 @@
 #include "blueprint/edit.h"
 
 #include "blueprint/blueprint.h"
-#include "blueprint/basicarea.h"
 #include "blueprint/spaceUtils.h"
 
 #include "ed/ed.hpp"
@@ -73,15 +72,11 @@ void Blueprint::save( Ed::Node& node ) const
     Site::save( node );
 }
 
-Blueprint::EvaluationResult Blueprint::evaluate( const EvaluationMode& mode, DataBitmap& data )
+void Blueprint::evaluate( const EvaluationMode& mode, EvaluationResults& results )
 {
-    EvaluationResult result;
-    
     for( Site::PtrVector::iterator i = m_spaces.begin(),
         iEnd = m_spaces.end(); i!=iEnd; ++i )
-        (*i)->evaluate( mode, data );
-
-    return result;
+        (*i)->evaluate( mode, results );
 }
 
 

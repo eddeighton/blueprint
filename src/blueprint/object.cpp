@@ -1,55 +1,55 @@
 
 
-#include "blueprint/connection.h"
+#include "blueprint/object.h"
 
 #include "common/assert_verify.hpp"
 
 namespace Blueprint
 {
 
-const std::string& Connection::TypeName()
+const std::string& Object::TypeName()
 {
-    static const std::string strTypeName( "connect" );
+    static const std::string strTypeName( "object" );
     return strTypeName;
 }
 
-Connection::Connection( Site::Ptr pParent, const std::string& strName )
+Object::Object( Site::Ptr pParent, const std::string& strName )
     :   Site( pParent, strName )
 {
     
 }
 
-Connection::Connection( PtrCst pOriginal, Site::Ptr pParent, const std::string& strName )
+Object::Object( PtrCst pOriginal, Site::Ptr pParent, const std::string& strName )
     :   Site( pOriginal, pParent, strName )
 {
     
 }
 
-Node::Ptr Connection::copy( Node::Ptr pParent, const std::string& strName ) const
+Node::Ptr Object::copy( Node::Ptr pParent, const std::string& strName ) const
 {
     Site::Ptr pSiteParent = boost::dynamic_pointer_cast< Site >( pParent );
     VERIFY_RTE( pSiteParent || !pParent );
-    return Node::copy< Connection >( 
-        boost::dynamic_pointer_cast< const Connection >( shared_from_this() ), pSiteParent, strName );
+    return Node::copy< Object >( 
+        boost::dynamic_pointer_cast< const Object >( shared_from_this() ), pSiteParent, strName );
 }
 
-void Connection::save( Ed::Node& node ) const
+void Object::save( Ed::Node& node ) const
 {
     node.statement.addTag( Ed::Identifier( TypeName() ) );
     Site::save( node );
 }
     
-std::string Connection::getStatement() const
+std::string Object::getStatement() const
 {
     return Site::getStatement();
 }
 
-void Connection::init()
+void Object::init()
 {
     Site::init();
 }
 
-void Connection::init( float x, float y )
+void Object::init( float x, float y )
 {
     //if( bEmptyContour )
     {

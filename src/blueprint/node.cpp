@@ -45,6 +45,11 @@ std::string Node::generateNewNodeName( const std::string& strPrefix ) const
     return strNewKey;
 }
 
+std::string Node::generateNewNodeName( Node::Ptr pCopiedNode ) const
+{
+    return generateNewNodeName( pCopiedNode->getName().substr( 0, 4 ) );
+}
+
 void Node::setModified()
 {
     m_lastModifiedTick.update();

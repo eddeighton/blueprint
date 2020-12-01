@@ -3,8 +3,11 @@
 
 #include "blueprint/basicFeature.h"
 #include "blueprint/blueprint.h"
-#include "blueprint/basicarea.h"
 #include "blueprint/clip.h"
+#include "blueprint/space.h"
+#include "blueprint/wall.h"
+#include "blueprint/connection.h"
+#include "blueprint/object.h"
 
 #include "ed/node.hpp"
 
@@ -43,15 +46,35 @@ Node::Ptr Factory::load( Node::Ptr pParent, const Ed::Node& node )
             {
                 const Ed::Identifier& id = idOpt.get();
                 
-                if( id == Area::TypeName() )
+                if( id == Space::TypeName() )
                 {
                     Site::Ptr pSiteParent = boost::dynamic_pointer_cast< Site >( pParent );
                     ASSERT( !pParent || pSiteParent );
-                    pResult = Area::Ptr( new Area( pSiteParent, identity ) );
+                    pResult = Space::Ptr( new Space( pSiteParent, identity ) );
                 }
-                else if( id == Clip::TypeName() )
+                if( id == Wall::TypeName() )
                 {
-                    pResult = Clip::Ptr( new Clip( pParent, identity ) );
+                    Site::Ptr pSiteParent = boost::dynamic_pointer_cast< Site >( pParent );
+                    ASSERT( !pParent || pSiteParent );
+                    pResult = Wall::Ptr( new Wall( pSiteParent, identity ) );
+                }
+                if( id == Connection::TypeName() )
+                {
+                    Site::Ptr pSiteParent = boost::dynamic_pointer_cast< Site >( pParent );
+                    ASSERT( !pParent || pSiteParent );
+                    pResult = Connection::Ptr( new Connection( pSiteParent, identity ) );
+                }
+                if( id == Object::TypeName() )
+                {
+                    Site::Ptr pSiteParent = boost::dynamic_pointer_cast< Site >( pParent );
+                    ASSERT( !pParent || pSiteParent );
+                    pResult = Object::Ptr( new Object( pSiteParent, identity ) );
+                }
+                else  if( id == Clip::TypeName() )
+                {
+                    Site::Ptr pSiteParent = boost::dynamic_pointer_cast< Site >( pParent );
+                    ASSERT( !pParent || pSiteParent );
+                    pResult = Clip::Ptr( new Clip( pSiteParent, identity ) );
                 }
                 /*else if( id == Connection::TypeName() )
                 {
@@ -88,12 +111,6 @@ Node::Ptr Factory::load( Node::Ptr pParent, const Ed::Node& node )
                     Feature_Contour::Ptr pFeatureParent = boost::dynamic_pointer_cast< Feature_Contour >( pParent );
                     ASSERT( pFeatureParent );
                     pResult = Feature_ContourPoint::Ptr( new Feature_ContourPoint( pFeatureParent, identity ) );
-                }
-                else if( id == Feature_ContourSegment::TypeName() )
-                {
-                    Feature_Contour::Ptr pFeatureParent = boost::dynamic_pointer_cast< Feature_Contour >( pParent );
-                    ASSERT( pFeatureParent );
-                    pResult = Feature_ContourSegment::Ptr( new Feature_ContourSegment( pFeatureParent, identity ) );
                 }
                 else if( id == Feature_Contour::TypeName() )
                 {

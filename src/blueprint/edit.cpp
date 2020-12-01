@@ -1,7 +1,7 @@
 #include "blueprint/edit.h"
 
-#include "blueprint/basicarea.h"
 #include "blueprint/clip.h"
+#include "blueprint/space.h"
 #include "blueprint/blueprint.h"
 
 #include "blueprint/property.h"
@@ -156,50 +156,6 @@ private:
     IInteraction::Ptr m_pToolInteraction;
 };
 
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-class Boundary_Interaction : public IInteraction
-{
-    friend class Edit;
-private:
-    Boundary_Interaction( Area& area, float x, float y, float qX, float qY )
-        :   m_area( area ),
-            m_qX( qX ),
-            m_qY( qY ),
-            m_pBoundaryPoint( new Feature_ContourSegment( 
-                area.m_pContour, 
-                area.m_pContour->generateNewNodeName( "segment" ) ) )
-    {
-        m_pBoundaryPoint->init();
-        
-        m_startX = x = Math::quantize_roundUp( x, qX );
-        m_startY = y = Math::quantize_roundUp( y, qY );
-        VERIFY_RTE( area.m_pContour->add( m_pBoundaryPoint ) );
-        m_area.m_boundaryPoints.push_back( m_pBoundaryPoint );
-        
-        const wykobi::point2d< float >& origin = m_area.m_pContour->getPolygon()[0];
-        OnMove( x, y );
-    }
-    
-public:
-    virtual void OnMove( float x, float y )
-    {
-        float fDeltaX = Math::quantize_roundUp( x, m_qX );
-        float fDeltaY = Math::quantize_roundUp( y, m_qY );
-
-        const wykobi::point2d< float >& origin = m_area.m_pContour->getPolygon()[0];
-        m_pBoundaryPoint->set( 0, fDeltaX - origin.x, fDeltaY - origin.y );
-    }
-    virtual Site::Ptr GetInteractionSite() const
-    {
-        return m_area.shared_from_this();
-    }
-
-private:
-    Area& m_area;
-    Feature_ContourSegment::Ptr m_pBoundaryPoint;
-    float m_startX, m_startY, m_qX, m_qY;
-};
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -207,21 +163,21 @@ class Polygon_Interaction : public IInteraction
 {
     friend class Edit;
 private:
-    Polygon_Interaction( Area& area, float x, float y, float qX, float qY )
-        :   m_area( area ),
+    Polygon_Interaction( Site& site, float x, float y, float qX, float qY )
+        :   m_site( site ),
             m_qX( qX ),
             m_qY( qY )
     {
         m_startX = x = Math::quantize_roundUp( x, qX );
         m_startY = y = Math::quantize_roundUp( y, qY );
 
-        Feature_Contour::Ptr pContour = area.m_pContour;
+        Feature_Contour::Ptr pContour = m_site.getContour();
         m_originalPolygon = pContour->getPolygon();
         
         const Point2D pt = wykobi::make_point< float >( m_startX, m_startY );
         Polygon2D newPoly = m_originalPolygon;
         newPoly.push_back( pt );
-        m_area.m_pContour->set( newPoly );
+        pContour->set( newPoly );
         
         OnMove( x, y );
     }
@@ -247,20 +203,23 @@ public:
         for( std::size_t sz = uiIndex; sz < m_originalPolygon.size(); ++sz )
             newPoly.push_back( m_originalPolygon[ sz ] );
         
+        if( wykobi::polygon_orientation( newPoly ) == wykobi::Clockwise )
+            std::reverse( newPoly.begin(), newPoly.end() );
+        
         //set all the points without reallocating control points
         for( std::size_t sz = 0; sz != newPoly.size(); ++sz )
         {
-            m_area.m_pContour->set( sz, newPoly[ sz ].x, newPoly[ sz ].y );
+            m_site.getContour()->set( sz, newPoly[ sz ].x, newPoly[ sz ].y );
         }
         
     }
     virtual Site::Ptr GetInteractionSite() const
     {
-        return m_area.shared_from_this();
+        return boost::dynamic_pointer_cast< Site >( m_site.getPtr() );
     }
 
 private:
-    Area& m_area;
+    Site& m_site;
     Polygon2D m_originalPolygon;
     float m_startX, m_startY, m_qX, m_qY;
 };
@@ -414,9 +373,9 @@ IInteraction::Ptr Edit::interaction_draw( ToolMode toolMode, float x, float y, f
         x = Math::quantize_roundUp( x , qX );
         y = Math::quantize_roundUp( y , qY );
         
-        if( Area* pArea = dynamic_cast< Area* >( m_pSite.get() ) )
+        if( Site* pSite = dynamic_cast< Site* >( m_pSite.get() ) )
         {
-            IInteraction::Ptr pToolInteraction( new Polygon_Interaction( *pArea, x, y, qX, qY ) );
+            IInteraction::Ptr pToolInteraction( new Polygon_Interaction( *pSite, x, y, qX, qY ) );
             interaction_evaluate();
             m_pActiveInteraction = new InteractionToolWrapper( *this, pToolInteraction );
             return make_interaction_ptr( this, m_pActiveInteraction );
@@ -424,8 +383,8 @@ IInteraction::Ptr Edit::interaction_draw( ToolMode toolMode, float x, float y, f
         else
         {
             //create new area
-            Area::Ptr pNewSite( new Area( m_pSite, m_pSite->generateNewNodeName( "area" ) ) );
-            pNewSite->init( x, y, true );
+            Space::Ptr pNewSite( new Space( m_pSite, m_pSite->generateNewNodeName( "space" ) ) );
+            pNewSite->init( x, y );
             m_pSite->add( pNewSite );
             interaction_evaluate();
             
@@ -436,23 +395,6 @@ IInteraction::Ptr Edit::interaction_draw( ToolMode toolMode, float x, float y, f
             pNewEdit->m_pActiveInteraction = new InteractionToolWrapper( *pNewEdit, pToolInteraction );
             pNewEdit->interaction_evaluate();
             return make_interaction_ptr( pNewEdit, pNewEdit->m_pActiveInteraction );
-        }
-    }
-    else if( toolMode == IEditContext::eConnection )
-    {
-        x = Math::quantize_roundUp( x , qX );
-        y = Math::quantize_roundUp( y , qY );
-        
-        if( Area* pArea = dynamic_cast< Area* >( m_pSite.get() ) )
-        {
-            IInteraction::Ptr pToolInteraction( new Boundary_Interaction( *pArea, x, y, qX, qY ) );
-            interaction_evaluate();
-            m_pActiveInteraction = new InteractionToolWrapper( *this, pToolInteraction );
-            return make_interaction_ptr( this, m_pActiveInteraction );
-        }
-        else
-        {
-            return IInteraction::Ptr();
         }
     }
     else if( toolMode == IEditContext::eArea )
@@ -475,7 +417,7 @@ IInteraction::Ptr Edit::interaction_draw( ToolMode toolMode, float x, float y, f
                 {
                     Site::Ptr pClipSiteCopy = 
                         boost::dynamic_pointer_cast< Site >( pClipSite->copy( m_pSite, 
-                            m_pSite->generateNewNodeName( "area" ) ) );
+                            m_pSite->generateNewNodeName( pClipSite ) ) );
                     m_pSite->add( pClipSiteCopy );
                     newSites.insert( pClipSiteCopy );
                 } 
@@ -488,16 +430,19 @@ IInteraction::Ptr Edit::interaction_draw( ToolMode toolMode, float x, float y, f
                 
                 Transform transform = pClipSiteCopy->getTransform();
                 transform.translateBy( x, y );
-                
                 pClipSiteCopy->setTransform( transform );
             }
         }
-        else if( Area::Ptr pArea = boost::dynamic_pointer_cast< Area >( pSite ) )
+        else if( pSite )
         {
-            Area::Ptr pNewSite = 
-                boost::dynamic_pointer_cast< Area >( pArea->copy( m_pSite, 
-                    m_pSite->generateNewNodeName( "area" ) ) );
-            pNewSite->init( x, y, false );
+            Site::Ptr pNewSite = boost::dynamic_pointer_cast< Site >( 
+                pSite->copy( m_pSite, m_pSite->generateNewNodeName( pSite ) ) );
+            pNewSite->init();
+            
+            Transform transform = pSite->getTransform();
+            transform.translateBy( x, y );
+            pNewSite->setTransform( transform );
+            
             m_pSite->add( pNewSite );
             newSites.insert( pNewSite );
         }
@@ -567,38 +512,11 @@ bool Edit::canEdit( IGlyph* pGlyph, ToolType toolType, ToolMode toolMode ) const
         if( const GlyphSpecProducer* pGlyphPrd = fromGlyph( pGlyph ) )
         {
             return true;
-            /*if( dynamic_cast< const Feature_ContourSegment* >( pGlyphPrd ) )
-            {
-            }
-            else if( dynamic_cast< const Site* >( pGlyphPrd ) )
-            {
-            }
-            else
-            {
-            }*/
-            //return m_pSite->canEditWithTool( pGlyphPrd, uiToolType );
         }
         
         
     }
     return false;
-    
-    /*
-    bool bCanEdit = false;
-    if( pGlyph->getGlyphSpec()->canEdit() )
-    {
-        for( SpaceGlyphs::Map::const_iterator 
-            j = m_glyphMap.begin(),
-            jEnd = m_glyphMap.end(); j!=jEnd; ++j )
-        {
-            if( j->second->owns( pGlyph ) )
-            {
-                bCanEdit = true;
-                break;
-            }
-        }
-    }
-    return bCanEdit;*/
 }
 
 
@@ -607,15 +525,8 @@ void Edit::interaction_evaluate()
     //LOG_PROFILE_BEGIN( edit_interaction_evaluate );
     const Site::EvaluationMode mode = { m_bViewBitmap, m_bViewCellComplex, m_bViewClearance };
 
-    DataBitmap data;
-    
-    //{
-    //    Site::Ptr pIter = m_pSite;
-    //    while( Site::Ptr pParent = boost::dynamic_pointer_cast< Site >( pIter->Node::getParent() ) )
-    //        pIter = pParent;
-    //    pIter->evaluate( mode, data );
-    //}
-    m_pSite->evaluate( mode, data );
+    Site::EvaluationResults results;
+    m_pSite->evaluate( mode, results );
     
     interaction_update();
 
@@ -709,7 +620,7 @@ Node::Ptr Edit::cmd_cut( const std::set< IGlyph* >& selection )
     }
     else if( !sites.empty() )
     {
-        Clip::Ptr pClip( new Clip( Node::Ptr(), "clip" ) );
+        Clip::Ptr pClip( new Clip( Site::Ptr(), "clip" ) );
         for( Site::PtrSet::iterator 
             i = sites.begin(),
             iEnd = sites.end(); i!=iEnd; ++i )
@@ -754,7 +665,7 @@ Node::Ptr Edit::cmd_copy( const std::set< IGlyph* >& selection )
     }
     else if( !sites.empty() )
     {
-        Clip::Ptr pClip( new Clip( Node::Ptr(), "copy" ) );
+        Clip::Ptr pClip( new Clip( Site::Ptr(), "copy" ) );
         for( Site::PtrSet::iterator 
             i = sites.begin(),
             iEnd = sites.end(); i!=iEnd; ++i )
@@ -798,8 +709,14 @@ IInteraction::Ptr Edit::cmd_paste( Node::Ptr pPaste, float x, float y, float qX,
 IInteraction::Ptr Edit::cmd_paste( IGlyph* pGlyph, float x, float y, float qX, float qY )
 {
     Site::PtrVector sites;
-    if( const Area* pSite = dynamic_cast< const Area* >( pGlyph->getGlyphSpec() ) )
-        sites.push_back( const_cast< Area* >( pSite )->shared_from_this() );
+    if( const Site* pSite = dynamic_cast< const Site* >( pGlyph->getGlyphSpec() ) )
+    {
+        Node::Ptr pNode = const_cast< Site* >( pSite )->getPtr();
+        VERIFY_RTE( pNode );
+        Site::Ptr pSitePtr = boost::dynamic_pointer_cast< Site >( pNode );
+        VERIFY_RTE( pSitePtr );
+        sites.push_back( pSitePtr );
+    }
     return cmd_paste( sites, x, y, qX, qY );
 }
 IInteraction::Ptr Edit::cmd_paste( const std::set< IGlyph* >& selection, float x, float y, float qX, float qY )
@@ -809,8 +726,14 @@ IInteraction::Ptr Edit::cmd_paste( const std::set< IGlyph* >& selection, float x
         i = selection.begin(),
         iEnd = selection.end(); i!=iEnd; ++i )
     {
-        if( const Area* pSite = dynamic_cast< const Area* >( (*i)->getGlyphSpec() ) )
-            sites.push_back( const_cast< Area* >( pSite )->shared_from_this() );
+        if( const Site* pSite = dynamic_cast< const Site* >( (*i)->getGlyphSpec() ) )
+        {
+            Node::Ptr pNode = const_cast< Site* >( pSite )->getPtr();
+            VERIFY_RTE( pNode );
+            Site::Ptr pSitePtr = boost::dynamic_pointer_cast< Site >( pNode );
+            VERIFY_RTE( pSitePtr );
+            sites.push_back( pSitePtr );
+        }
     }
     return cmd_paste( sites, x, y, qX, qY );
 }
@@ -826,7 +749,7 @@ IInteraction::Ptr Edit::cmd_paste( Site::PtrVector sites, float x, float y, floa
         i = sites.begin(),
         iEnd = sites.end(); i!=iEnd; ++i )
     {
-        const std::string strNewKey = m_pSite->generateNewNodeName( "area" );
+        const std::string strNewKey = m_pSite->generateNewNodeName( *i );
         Site::Ptr pCopy = boost::dynamic_pointer_cast< Site >( 
             (*i)->copy( m_pSite, strNewKey ) );
         VERIFY_RTE( pCopy );
@@ -848,12 +771,12 @@ IInteraction::Ptr Edit::cmd_paste( Site::PtrVector sites, float x, float y, floa
     return pNewInteraction;
 }
 
-void getSelectionBounds( const std::vector< Area* >& areas, Rect2D& transformBounds )
+void getSelectionBounds( const std::vector< Site* >& sites, Rect2D& transformBounds )
 {
     Point2D ptBoundsTopLeft, ptBoundsBotRight;
     
     bool bFirst = true;
-    for( const Area* pArea : areas )
+    for( const Site* pArea : sites )
     {
         Polygon2D poly = pArea->getContour()->getPolygon();
         for( Point2D& pt : poly )
@@ -891,42 +814,42 @@ void getSelectionBounds( const std::vector< Area* >& areas, Rect2D& transformBou
 
 void Edit::cmd_rotateLeft( const std::set< IGlyph* >& selection )
 {
-    std::vector< Area* > areas;
+    std::vector< Site* > sites;
     for( std::set< IGlyph* >::iterator 
         i = selection.begin(),
         iEnd = selection.end(); i!=iEnd; ++i )
     {
-        if( const Area* pSite = dynamic_cast< const Area* >( (*i)->getGlyphSpec() ) )
+        if( const Site* pSite = dynamic_cast< const Site* >( (*i)->getGlyphSpec() ) )
         {
-            areas.push_back( const_cast< Area* >( pSite ) );
+            sites.push_back( const_cast< Site* >( pSite ) );
         }
     }
     
     Rect2D transformBounds;
-    getSelectionBounds( areas, transformBounds );
+    getSelectionBounds( sites, transformBounds );
     
-    for( Area* pArea : areas )
+    for( Site* pSite : sites )
     {
-        pArea->cmd_rotateLeft( transformBounds );
+        pSite->cmd_rotateLeft( transformBounds );
     }
 
     interaction_evaluate();
 }
 void Edit::cmd_rotateRight( const std::set< IGlyph* >& selection )
 {
-    std::vector< Area* > areas;
+    std::vector< Site* > areas;
     for( std::set< IGlyph* >::iterator 
         i = selection.begin(),
         iEnd = selection.end(); i!=iEnd; ++i )
     {
-        if( const Area* pSite = dynamic_cast< const Area* >( (*i)->getGlyphSpec() ) )
-            areas.push_back( const_cast< Area* >( pSite ) );
+        if( const Site* pSite = dynamic_cast< const Site* >( (*i)->getGlyphSpec() ) )
+            areas.push_back( const_cast< Site* >( pSite ) );
     }
     
     Rect2D transformBounds;
     getSelectionBounds( areas, transformBounds );
     
-    for( Area* pArea : areas )
+    for( Site* pArea : areas )
     {
         pArea->cmd_rotateRight( transformBounds );
     }
@@ -935,19 +858,19 @@ void Edit::cmd_rotateRight( const std::set< IGlyph* >& selection )
 }
 void Edit::cmd_flipHorizontally( const std::set< IGlyph* >& selection )
 {
-    std::vector< Area* > areas;
+    std::vector< Site* > areas;
     for( std::set< IGlyph* >::iterator 
         i = selection.begin(),
         iEnd = selection.end(); i!=iEnd; ++i )
     {
-        if( const Area* pSite = dynamic_cast< const Area* >( (*i)->getGlyphSpec() ) )
-            areas.push_back( const_cast< Area* >( pSite ) );
+        if( const Site* pSite = dynamic_cast< const Site* >( (*i)->getGlyphSpec() ) )
+            areas.push_back( const_cast< Site* >( pSite ) );
     }
     
     Rect2D transformBounds;
     getSelectionBounds( areas, transformBounds );
     
-    for( Area* pArea : areas )
+    for( Site* pArea : areas )
     {
         pArea->cmd_flipHorizontally( transformBounds );
     }
@@ -956,19 +879,19 @@ void Edit::cmd_flipHorizontally( const std::set< IGlyph* >& selection )
 }
 void Edit::cmd_flipVertically( const std::set< IGlyph* >& selection )
 {
-    std::vector< Area* > areas;
+    std::vector< Site* > areas;
     for( std::set< IGlyph* >::iterator 
         i = selection.begin(),
         iEnd = selection.end(); i!=iEnd; ++i )
     {
-        if( const Area* pSite = dynamic_cast< const Area* >( (*i)->getGlyphSpec() ) )
-            areas.push_back( const_cast< Area* >( pSite ) );
+        if( const Site* pSite = dynamic_cast< const Site* >( (*i)->getGlyphSpec() ) )
+            areas.push_back( const_cast< Site* >( pSite ) );
     }
     
     Rect2D transformBounds;
     getSelectionBounds( areas, transformBounds );
     
-    for( Area* pArea : areas )
+    for( Site* pArea : areas )
     {
         pArea->cmd_flipVertically( transformBounds );
     }
@@ -1039,113 +962,8 @@ void Edit::cmd_editProperties( const Node::PtrCstVector& nodes, const std::strin
     
 std::set< IGlyph* > Edit::generateExtrusion( float fAmount, bool bConvexHull )
 {
-    /*Area::Ptr pParentArea = boost::dynamic_pointer_cast< Area >( m_pSite );
-    VERIFY_RTE_MSG( pParentArea, "Can only extrude area" );
     
-    std::vector< Polygon2D > extrudedContours;
-    {
-        const ConnectionAnalysis& connectionAnalysis = pParentArea->getConnections();
-        
-        struct AreaPoints
-        {
-            Area::Ptr pArea;
-            std::vector< Point > points;
-            int totalBoundaries;
-        };
-        std::vector< AreaPoints > areaPointsArray;
-        std::vector< WallSection > wallSections;
-        
-        for( Site::Ptr pSite : pParentArea->getSpaces() )
-        {
-            if( Area::Ptr pArea = boost::dynamic_pointer_cast< Area >( pSite ) )
-            {
-                {
-                    AreaPoints areaPoints{ pArea };
-                    getAreaPoints( m_strFilePath, connectionAnalysis, pArea, 
-                        areaPoints.points, areaPoints.totalBoundaries );
-                    areaPointsArray.emplace_back( std::move( areaPoints ) );
-                }
-
-                getWallSections( m_strFilePath, 
-                        areaPointsArray.back().points, 
-                        areaPointsArray.back().totalBoundaries, 
-                        wallSections );
-            }
-        }
-        
-        WallSection::ListPtrVector wallSectionLists;
-        getWallSectionLists( wallSections, wallSectionLists );
-        
-        Contour::PtrVector contours;
-        getContours( wallSectionLists, contours );
-        
-        VERIFY_RTE( !contours.empty() );
-        
-        if( bConvexHull )
-        {
-            std::vector< Point2D > allPoints;
-            for( Contour::Ptr pContour : contours )
-            {
-                Polygon2D contourPolygon;
-                pContour->getOuterPolygon( contourPolygon );
-                for( const Point2D& p : contourPolygon )
-                {
-                    allPoints.push_back( p );
-                }
-            }
-            
-            std::vector< wykobi::point2d< float > > convexContour;
-            wykobi::algorithm::convex_hull_graham_scan< wykobi::point2d< float > >( 
-                allPoints.begin(), allPoints.end(), std::back_inserter( convexContour ) );
-                
-            wykobi::polygon< float, 2u > convexPoly( convexContour.size() );
-            std::copy( convexContour.rbegin(), convexContour.rend(), convexPoly.begin() );
-            
-            Polygon2D extrudedContour;
-            offsetSimplePolygon( convexPoly, extrudedContour, fAmount );
-            
-            {
-                const int polyOrientation = wykobi::polygon_orientation( extrudedContour );
-                if( polyOrientation == wykobi::Clockwise )
-                    std::reverse( extrudedContour.begin(), extrudedContour.end() );
-            }
-        
-            extrudedContours.push_back( extrudedContour );
-        }
-        else
-        {
-            for( Contour::Ptr pContour : contours )
-            {
-                Polygon2D contourPolygon;
-                pContour->getOuterPolygon( contourPolygon );
-                
-                Polygon2D extrudedContour;
-                offsetSimplePolygon( contourPolygon, extrudedContour, fAmount );
-                {
-                    const int polyOrientation = wykobi::polygon_orientation( extrudedContour );
-                    if( polyOrientation == wykobi::Clockwise )
-                        std::reverse( extrudedContour.begin(), extrudedContour.end() );
-                }
-                extrudedContours.push_back( extrudedContour );
-            }
-        }
-    }
-    
-    Site::PtrVector newSites;
-    for( const Polygon2D& extrudedContour : extrudedContours )
-    {
-        Area::Ptr pContourArea( new Area( pParentArea, pParentArea->generateNewNodeName( "area" ) ) );
-        pContourArea->init();
-        pParentArea->add( pContourArea );
-        Feature_Contour::Ptr pContour = pContourArea->getContour();
-        pContour->set( extrudedContour );
-        
-        SpaceGlyphs::Ptr pSpaceGlyphs( new SpaceGlyphs( *this, pContourArea, m_glyphFactory ) );
-        m_glyphMap.insert( std::make_pair( pContourArea, pSpaceGlyphs ) );
-        
-        newSites.push_back( pContourArea );
-    }
-    
+    /*
     m_pSite->init();
 
     interaction_evaluate();*/

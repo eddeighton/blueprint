@@ -8,7 +8,7 @@
 #include "blueprint/toolbox.h"
 #include "blueprint/site.h"
 #include "blueprint/cgalSettings.h"
-#include "blueprint/compiler.h"
+//#include "blueprint/compiler.h"
 #include "blueprint/transform.h"
 
 #include "blueprint/serialisation.h"
@@ -53,10 +53,10 @@ TEST( BlueprintTests, Check )
 
 TEST( Transform, Bounds )
 {
-    {
+    /*{
         char c;
         std::cin >> c;
-    }
+    }*/
     
     static const float tol = 0.001f;
     
@@ -87,7 +87,7 @@ TEST( Transform, Bounds )
     ASSERT_NEAR( t1.M12(), 0.0f , tol );
     ASSERT_NEAR( t1.M22(), 1.0f , tol );
 }
-/*
+
 TEST( Serialisation, Points )
 {
     using namespace Ed;
@@ -124,14 +124,14 @@ TEST( Serialisation, Polygons )
         ASSERT_NEAR( i->y, j->y, 0.001f );
     }
 }
-
+/*
 TEST( Toolbox, Check1 )
 {
     const char* pszToolboxPath = getenv( "BLUEPRINT_TOOLBOX_PATH" );
     Blueprint::Toolbox::Ptr pToolbox( new Blueprint::Toolbox( pszToolboxPath ) );
     ASSERT_TRUE( pToolbox->getPalette( "shapes" ) );
 }
-
+*/
 TEST( CGAL, ErrorTest )
 {
     using namespace Blueprint;
@@ -274,95 +274,7 @@ TEST( CGAL, OverlapTest )
 }
 
 
-TEST( CGAL, DataTest )
-{
-    using namespace Blueprint;
-    
-    Arr_with_hist_2 arr;
-    
-    const PointVector interior = 
-    { 
-        Point_2{  0,  0 }, 
-        Point_2{  0, 10 }, 
-        Point_2{ 20, 10 }, 
-        Point_2{ 20,  0 } 
-    };
-    
-    std::vector< Curve_handle > interiorCurves =
-        insertPolygon( arr, interior );
-        
-    const PointVector exterior = 
-    { 
-        Point_2{  5,  0 }, 
-        Point_2{  5, 10 }, 
-        Point_2{ 10, 10 }, 
-        Point_2{ 10,  0 } 
-    };
-    
-    std::vector< Curve_handle > exteriorCurves =
-        insertPolygon( arr, exterior );
-    
-    {
-        for( Arr_with_hist_2::Halfedge_iterator 
-            i = arr.halfedges_begin(),
-            iEnd = arr.halfedges_end();
-            i!=iEnd; ++i )
-        {
-            i->set_data( 0 );
-            //i->twin()->set_data( 0 );
-        }
-        
-        for( Curve_handle ch : interiorCurves )
-        {
-            for( Arr_with_hist_2::Induced_edge_iterator 
-                i       = arr.induced_edges_begin( ch ),
-                iEnd    = arr.induced_edges_end( ch );
-                i!=iEnd; ++i )
-            {
-                int iData = (*i)->data();
-                (*i)->set_data( iData + 1 );
-            }
-        }
-        
-        for( Curve_handle ch : exteriorCurves )
-        {
-            for( Arr_with_hist_2::Induced_edge_iterator 
-                i       = arr.induced_edges_begin( ch ),
-                iEnd    = arr.induced_edges_end( ch );
-                i!=iEnd; ++i )
-            {
-                int iData = (*i)->data();
-                (*i)->set_data( iData + 1 );
-            }
-        }
-    }
-    
-    int iCountOne = 0;
-    int iCountTwo = 0;
-    {
-        for( Arr_with_hist_2::Halfedge_iterator 
-            i = arr.halfedges_begin(),
-            iEnd = arr.halfedges_end();
-            i!=iEnd; ++i )
-        {
-            switch( i->data() )
-            {
-                case 1: ++iCountOne; break;
-                case 2: ++iCountTwo; break;
-                default: break;
-                    //ASSERT_TRUE( false );
-            }
-        }
-    }
-    //       +----+----+----+
-    //       |    |    |    |
-    //       |    |    |    |
-    //       |    |    |    |
-    //       +----+----+----+
-    ASSERT_EQ( iCountOne, 8 );
-    ASSERT_EQ( iCountTwo, 2 );
-}
-
+/*
 static const boost::filesystem::path testFilesFolderPath = getenv( "BLUEPRINT" );
     
 boost::filesystem::path constructPath( const boost::filesystem::path& inputFile, const char* pszExt )
@@ -385,7 +297,6 @@ void loadTest( const boost::filesystem::path& inputFile )
     compiler.generateHTML(   constructPath( inputFile, "__all.html" ) );
     compiler.generateOutput( constructPath( inputFile, "__faces.html" ) );
 }
-
 TEST( CGAL, CompilerTestFiles )
 {
     //{

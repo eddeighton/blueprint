@@ -38,8 +38,7 @@ public:
     enum ToolMode
     {
         eArea,
-        eContour,
-        eConnection
+        eContour
     };
     
     virtual ~IEditContext(){}

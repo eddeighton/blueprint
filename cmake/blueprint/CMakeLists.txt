@@ -36,14 +36,17 @@ set( BLUEPRINT_API
     ${BLUEPRINT_API_DIR}/blueprint/toolbox.h
     ${BLUEPRINT_API_DIR}/blueprint/rasteriser.h
     ${BLUEPRINT_API_DIR}/blueprint/serialisation.h
-    ${BLUEPRINT_API_DIR}/blueprint/basicarea.h
     ${BLUEPRINT_API_DIR}/blueprint/basicFeature.h
-    ${BLUEPRINT_API_DIR}/blueprint/connection.h
     ${BLUEPRINT_API_DIR}/blueprint/blueprint.h
     ${BLUEPRINT_API_DIR}/blueprint/spaceUtils.h
-    ${BLUEPRINT_API_DIR}/blueprint/compiler.h
     ${BLUEPRINT_API_DIR}/blueprint/cgalSettings.h
     ${BLUEPRINT_API_DIR}/blueprint/clip.h
+    ${BLUEPRINT_API_DIR}/blueprint/markup.h
+    ${BLUEPRINT_API_DIR}/blueprint/geometry.h
+    ${BLUEPRINT_API_DIR}/blueprint/space.h
+    ${BLUEPRINT_API_DIR}/blueprint/object.h
+    ${BLUEPRINT_API_DIR}/blueprint/connection.h
+    ${BLUEPRINT_API_DIR}/blueprint/wall.h
     )
     
     
@@ -61,14 +64,15 @@ set( BLUEPRINT_SOURCES_SRC
     ${BLUEPRINT_SRC_DIR}/blueprint/glyph.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/toolbox.cpp
 
-    ${BLUEPRINT_SRC_DIR}/blueprint/basicarea.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/basicFeature.cpp
-    ${BLUEPRINT_SRC_DIR}/blueprint/connection.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/blueprint.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/factory.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/spaceUtils.cpp
-    ${BLUEPRINT_SRC_DIR}/blueprint/compiler.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/clip.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/space.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/object.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/connection.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/wall.cpp
     )
 
 set( BLUEPRINT_SOURCES ${BLUEPRINT_SOURCES_API} ${BLUEPRINT_SOURCES_SRC} )

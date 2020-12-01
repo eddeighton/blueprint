@@ -98,9 +98,9 @@ public:
     virtual void save( Ed::Node& node ) const;
     virtual bool add( Ptr pNewNode );
     virtual void remove( Ptr pNode );
-    //void removeOptional( Ptr pNode );
 
     std::string generateNewNodeName( const std::string& strPrefix ) const;
+    std::string generateNewNodeName( Node::Ptr pCopiedNode ) const;
     
     template< class T >
     boost::optional< T > getProperty( const std::string& strKey ) const

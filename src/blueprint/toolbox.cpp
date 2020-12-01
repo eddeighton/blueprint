@@ -1,8 +1,11 @@
 #include "blueprint/toolbox.h"
 #include "blueprint/factory.h"
 
-#include "blueprint/basicarea.h"
 #include "blueprint/clip.h"
+#include "blueprint/space.h"
+#include "blueprint/wall.h"
+#include "blueprint/connection.h"
+#include "blueprint/object.h"
 
 #include "common/file.hpp"
 #include "common/assert_verify.hpp"
@@ -169,10 +172,30 @@ void Toolbox::reload()
     m_palettes.clear();
     
     //generate defaults...
-    Clip::Ptr pDefaultClip( new Clip( Site::Ptr(), "default" ) );
-    Area::Ptr pDefaultArea( new Area( pDefaultClip, "default" ) );
-    pDefaultClip->add( pDefaultArea );
-    add( "clipboard", pDefaultClip, true );
+    {
+        Clip::Ptr pDefaultClip( new Clip( Site::Ptr(), "space" ) );
+        Space::Ptr pDefaultSpace( new Space( pDefaultClip, "space" ) );
+        pDefaultClip->add( pDefaultSpace );
+        add( "clipboard", pDefaultClip, true );
+    }
+    {
+        Clip::Ptr pDefaultClip( new Clip( Site::Ptr(), "wall" ) );
+        Wall::Ptr pDefaultSpace( new Wall( pDefaultClip, "wall" ) );
+        pDefaultClip->add( pDefaultSpace );
+        add( "clipboard", pDefaultClip, true );
+    }
+    {
+        Clip::Ptr pDefaultClip( new Clip( Site::Ptr(), "object" ) );
+        Object::Ptr pDefaultSpace( new Object( pDefaultClip, "object" ) );
+        pDefaultClip->add( pDefaultSpace );
+        add( "clipboard", pDefaultClip, true );
+    }
+    {
+        Clip::Ptr pDefaultClip( new Clip( Site::Ptr(), "connection" ) );
+        Connection::Ptr pDefaultSpace( new Connection( pDefaultClip, "connection" ) );
+        pDefaultClip->add( pDefaultSpace );
+        add( "clipboard", pDefaultClip, true );
+    }
 
     recursiveLoad( m_rootPath, pathToName( m_rootPath ) );
 }

@@ -2,8 +2,6 @@
 #define BLUEPRINT_25_09_2013
 
 #include "basicFeature.h"
-#include "basicarea.h"
-#include "connection.h"
 
 #include "blueprint/buffer.h"
 #include "blueprint/property.h"
@@ -65,13 +63,11 @@ public:
     }
     virtual const MarkupPath* getPolygon()  const { return nullptr; }
     
-    
     virtual bool canEdit()                  const { return false; }
     virtual void set( float fX, float fY ) {}
 
     //Site
-    virtual bool canEvaluate( const Site::PtrVector& evaluated ) const { return true; }
-    virtual EvaluationResult evaluate( const EvaluationMode& mode, DataBitmap& data );
+    virtual void evaluate( const EvaluationMode& mode, EvaluationResults& results );
     
     virtual bool add( Node::Ptr pNewNode );
     virtual void remove( Node::Ptr pNode );

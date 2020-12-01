@@ -1,20 +1,20 @@
-#ifndef CONNECTION_07_NOV_2020
-#define CONNECTION_07_NOV_2020
+#ifndef SPACE_01_DEC_2020
+#define SPACE_01_DEC_2020
 
 #include "blueprint/site.h"
 
 namespace Blueprint
 {
-    
-class Connection : public Site, public boost::enable_shared_from_this< Connection >
+
+class Space : public Site, public boost::enable_shared_from_this< Space >
 {
 public:
-    typedef boost::shared_ptr< Connection > Ptr;
-    typedef boost::shared_ptr< const Connection > PtrCst;
+    typedef boost::shared_ptr< Space > Ptr;
+    typedef boost::shared_ptr< const Space > PtrCst;
     
     static const std::string& TypeName();
-    Connection( Site::Ptr pParent, const std::string& strName );
-    Connection( PtrCst pOriginal, Site::Ptr pParent, const std::string& strName );
+    Space( Site::Ptr pParent, const std::string& strName );
+    Space( PtrCst pOriginal, Site::Ptr pParent, const std::string& strName );
     virtual Node::Ptr copy( Node::Ptr pParent, const std::string& strName ) const;
     virtual Node::PtrCst getPtr() const { return shared_from_this(); }
     virtual Node::Ptr getPtr() { return shared_from_this(); }
@@ -27,4 +27,4 @@ public:
 
 }
 
-#endif //CONNECTION_07_NOV_2020
+#endif //SPACE_01_DEC_2020
