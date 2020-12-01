@@ -74,8 +74,8 @@ void Blueprint::save( Ed::Node& node ) const
 
 void Blueprint::evaluate( const EvaluationMode& mode, EvaluationResults& results )
 {
-    for( Site::PtrVector::iterator i = m_spaces.begin(),
-        iEnd = m_spaces.end(); i!=iEnd; ++i )
+    for( Site::PtrVector::iterator i = m_sites.begin(),
+        iEnd = m_sites.end(); i!=iEnd; ++i )
         (*i)->evaluate( mode, results );
 }
 

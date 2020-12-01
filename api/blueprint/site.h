@@ -96,14 +96,9 @@ public:
         if( m_pContourPathImpl.get() ) 
             paths.push_back( m_pContourPathImpl.get() ); 
     }
-    virtual void getMarkupPolygonGroups( MarkupPolygonGroup::List& polyGroups )
-    {
-        if( m_pExteriorPolygons.get() )
-            polyGroups.push_back( m_pExteriorPolygons.get() );
-    }
     
     //spaces
-    const Site::PtrVector& getSpaces() const { return m_spaces; }
+    const Site::PtrVector& getSites() const { return m_sites; }
     
     //cmds
     void cmd_rotateLeft( const Rect2D& transformBounds );
@@ -112,23 +107,20 @@ public:
     void cmd_flipVertically( const Rect2D& transformBounds );
     
 protected:
-    using ExteriorGroupImpl = MarkupPolygonGroupImpl< int >;
     using PropertyVector = std::vector< Property::Ptr >;
     
+    Site::WeakPtr m_pSiteParent;
     Feature_Contour::Ptr m_pContour;
     PropertyVector m_properties;
     
-    Site::WeakPtr m_pSiteParent;
     MarkupPath::PathCmdVector m_contourPath;
-    ExteriorGroupImpl::PolyMap m_exteriorPolyMap;
     std::string m_strLabelText;
     boost::optional< wykobi::polygon< float, 2u > > m_polygonCache;
     
     std::unique_ptr< PathImpl > m_pContourPathImpl;
     std::unique_ptr< TextImpl > m_pLabel;
-    std::unique_ptr< ExteriorGroupImpl > m_pExteriorPolygons;
     
-    Site::PtrVector m_spaces;
+    Site::PtrVector m_sites;
 };
 
 }

@@ -70,9 +70,9 @@ public:
     
     //ControlPointCallback
     const GlyphSpec* getParent( int id ) const;
-    float getX( int id ) const { return m_ptOrigin.x; }
-    float getY( int id ) const { return m_ptOrigin.y; }
-    void set( int id, float fX, float fY )
+    float getX( int ) const { return m_ptOrigin.x; }
+    float getY( int ) const { return m_ptOrigin.y; }
+    void set( int, float fX, float fY )
     {
         const float fNewValueX = Map_FloorAverage()( fX );
         const float fNewValueY = Map_FloorAverage()( fY );
@@ -83,7 +83,7 @@ public:
             setModified();
         }
     }
-    const std::string& getName(  int id ) const { return Node::getName(); }
+    const std::string& getName( int ) const { return Node::getName(); }
     
     virtual int getControlPointCount() { return 1; }
     virtual void getControlPoints( ControlPoint::List& controlPoints )
@@ -152,7 +152,7 @@ public:
             }
         }
     }
-    const std::string& getName(  int id ) const { return Node::getName(); }
+    const std::string& getName( int ) const { return Node::getName(); }
     
     void setSinglePoint( float x, float y )
     {
@@ -227,7 +227,7 @@ public:
     virtual float getX( int id ) const;
     virtual float getY( int id ) const;
     virtual void set( int id, float fX, float fY );
-    const std::string& getName( int id ) const { return Node::getName(); }
+    const std::string& getName( int ) const { return Node::getName(); }
     
     virtual int getControlPointCount() { return 1; }
     virtual void getControlPoints( ControlPoint::List& controlPoints )

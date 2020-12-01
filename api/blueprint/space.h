@@ -2,6 +2,7 @@
 #define SPACE_01_DEC_2020
 
 #include "blueprint/site.h"
+#include "blueprint/clipperUtils.h"
 
 namespace Blueprint
 {
@@ -23,6 +24,32 @@ public:
     void init();
     void init( float x, float y );
     
+    //Site
+    virtual void evaluate( const EvaluationMode& mode, EvaluationResults& results );
+    
+    //GlyphSpecProducer
+    virtual void getMarkupPaths( MarkupPath::List& paths ) 
+    { 
+    }
+    virtual void getMarkupPolygonGroups( MarkupPolygonGroup::List& polyGroups )
+    {
+        if( m_pExteriorPolygons.get() )
+            polyGroups.push_back( m_pExteriorPolygons.get() );
+    }
+    
+    //accessors
+    const Polygon2D& getInteriorPolygon() const { return m_interiorPolygon; }
+    const Polygon2D& getExteriorPolygon() const { return m_exteriorPolygon; }
+    
+protected:
+    using ExteriorGroupImpl = MarkupPolygonGroupImpl< int >;
+    
+    Polygon2D m_exteriorPolygon, m_interiorPolygon;
+    ExteriorGroupImpl::PolyMap m_exteriorPolyMap;
+    std::unique_ptr< PathImpl > m_pInteriorContourPathImpl;
+    std::unique_ptr< ExteriorGroupImpl > m_pExteriorPolygons;
+    
+    ClipperLib::Paths m_innerExteriors, m_innerExteriorsCache;
 };
 
 }

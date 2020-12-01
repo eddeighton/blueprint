@@ -68,14 +68,14 @@ void Site::save( Ed::Node& node ) const
 
 void Site::init()
 {
-    m_spaces.clear();
-    for_each( generics::collectIfConvert( m_spaces, Node::ConvertPtrType< Site >(), Node::ConvertPtrType< Site >() ) );
+    m_sites.clear();
+    for_each( generics::collectIfConvert( m_sites, Node::ConvertPtrType< Site >(), Node::ConvertPtrType< Site >() ) );
 
     if( !( m_pContour = get< Feature_Contour >( "contour" ) ) )
     {
         m_pContour = Feature_Contour::Ptr( new Feature_Contour( getPtr(), "contour" ) );
         m_pContour->init();
-        m_pContour->set( wykobi::make_rectangle< float >( -15, -15, 15, 15 ) );
+        m_pContour->set( wykobi::make_rectangle< float >( -16, -16, 16, 16 ) );
         add( m_pContour );
     }
     
@@ -105,17 +105,14 @@ void Site::init()
     if( !m_pLabel.get() )
         m_pLabel.reset( new TextImpl( this, m_strLabelText, 0.0f, 0.0f ) ); 
     
-    if( !m_pExteriorPolygons.get() )
-        m_pExteriorPolygons.reset( new ExteriorGroupImpl( this, m_exteriorPolyMap, false ) );
-    
     GlyphSpecProducer::init();
 }
 
 void Site::evaluate( const EvaluationMode& mode, EvaluationResults& results )
 {
     //bottom up recursion
-    for( PtrVector::iterator i = m_spaces.begin(),
-        iEnd = m_spaces.end(); i!=iEnd; ++i )
+    for( PtrVector::iterator i = m_sites.begin(),
+        iEnd = m_sites.end(); i!=iEnd; ++i )
     {
         (*i)->evaluate( mode, results );
     }
@@ -140,7 +137,7 @@ bool Site::add( Node::Ptr pNewNode )
     if( bAdded )
     {
         if( Site::Ptr pNewSite = boost::dynamic_pointer_cast< Site >( pNewNode ) )
-            m_spaces.push_back( pNewSite );
+            m_sites.push_back( pNewSite );
     }
     return bAdded;
 }
@@ -150,10 +147,10 @@ void Site::remove( Node::Ptr pNode )
     Node::remove( pNode );
     if( Site::Ptr pOldSite = boost::dynamic_pointer_cast< Site >( pNode ) )
     {
-        Site::PtrVector::iterator iFind = std::find( m_spaces.begin(), m_spaces.end(), pOldSite );
-        VERIFY_RTE( iFind != m_spaces.end() );
-        if( iFind != m_spaces.end() )
-            m_spaces.erase( iFind );
+        Site::PtrVector::iterator iFind = std::find( m_sites.begin(), m_sites.end(), pOldSite );
+        VERIFY_RTE( iFind != m_sites.end() );
+        if( iFind != m_sites.end() )
+            m_sites.erase( iFind );
     }
 }
 

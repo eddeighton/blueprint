@@ -292,7 +292,7 @@ void loadTest( const boost::filesystem::path& inputFile )
     Blueprint::Site::Ptr pTest = factory.load( inputFile.string() );
     ASSERT_TRUE( pTest );
     
-    Blueprint::Compiler compiler( pTest->getSpaces() );
+    Blueprint::Compiler compiler( pTest->getSites() );
     
     compiler.generateHTML(   constructPath( inputFile, "__all.html" ) );
     compiler.generateOutput( constructPath( inputFile, "__faces.html" ) );

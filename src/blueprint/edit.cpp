@@ -535,7 +535,7 @@ void Edit::interaction_evaluate()
 
 void Edit::interaction_update()
 {
-    Site::PtrSet sites( m_pSite->getSpaces().begin(), m_pSite->getSpaces().end() );
+    Site::PtrSet sites( m_pSite->getSites().begin(), m_pSite->getSites().end() );
 
     SiteMap removals;
     Site::PtrVector additions;
