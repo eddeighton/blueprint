@@ -1,12 +1,12 @@
 basic_loop<blueprint>
 {
-    area_0000<area>(0,0,East;,false,false)
+    area_0000<space>(0,0,East;,false,false)
     {
         contour<contour>(4,-15,-15,63,-15,63,57,-15,57)
         {
             auto<property>(false)
         }
-        area_0001<area>(6,38,East;,false,false)
+        area_0001<space>(6,38,East;,false,false)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {
@@ -21,7 +21,7 @@ basic_loop<blueprint>
                 }
             }
         }
-        area_0002<area>(38,38,East;,false,false)
+        area_0002<space>(38,38,East;,false,false)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {
@@ -36,7 +36,7 @@ basic_loop<blueprint>
                 }
             }
         }
-        area_0003<area>(6,6,East;,false,true)
+        area_0003<space>(6,6,East;,false,true)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {
@@ -51,7 +51,7 @@ basic_loop<blueprint>
                 }
             }
         }
-        area_0004<area>(38,6,East;,false,true)
+        area_0004<space>(38,6,East;,false,true)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {

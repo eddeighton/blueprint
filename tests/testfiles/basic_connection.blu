@@ -1,12 +1,12 @@
-basic_connection<blueprint>
+basic_connection<blueprint>(0,0,East;,false,false)
 {
-    area_0000<area>(0,0,East;,false,false)
+    area_0000<space>(0,0,East;,false,false)
     {
         contour<contour>(4,-15,-15,63,-15,63,47,-15,47)
         {
             auto<property>(false)
         }
-        area_0001<area>(6,26,East;,false,false)
+        area_0001<space>(6,26,East;,false,false)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {
@@ -17,7 +17,7 @@ basic_connection<blueprint>
                 }
             }
         }
-        area_0002<area>(38,26,East;,false,false)
+        area_0002<space>(38,26,East;,false,false)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {
@@ -28,5 +28,16 @@ basic_connection<blueprint>
                 }
             }
         }
+        conn_0003<connect>(21,25,East;,false,false)
+        {
+            contour<contour>(4,-4,-3,7,-3,7,4,-4,4)
+            {
+                auto<property>(false)
+            }
+        }
+    }
+    contour<contour>(4,-16,-16,16,-16,16,16,-16,16)
+    {
+        auto<property>(false)
     }
 }

@@ -1,12 +1,12 @@
 basic_exterior_connection_nest<blueprint>
 {
-    area_0000<area>(2,2,East;,false,false)
+    area_0000<space>(2,2,East;,false,false)
     {
         contour<contour>(4,-15,5,83,5,83,57,-15,57)
         {
             auto<property>(false)
         }
-        area_0001<area>(14,-6,East;,false,false)
+        area_0001<space>(14,-6,East;,false,false)
         {
             contour<contour>(4,-15,17,57,17,57,57,-15,57)
             {
@@ -16,7 +16,7 @@ basic_exterior_connection_nest<blueprint>
                     type<property>(exterior;)
                 }
             }
-            area_0001<area>(4,38,East;,false,true)
+            area_0001<space>(4,38,East;,false,true)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -35,7 +35,7 @@ basic_exterior_connection_nest<blueprint>
                     }
                 }
             }
-            area_0002<area>(36,38,West;,false,false)
+            area_0002<space>(36,38,West;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {

@@ -23,6 +23,13 @@ public:
     void init();
     void init( float x, float y );
     
+    //Site
+    virtual void evaluate( const EvaluationMode& mode, EvaluationResults& results );
+    
+    virtual Feature_Contour::Ptr getContour() const { return m_pContour; }
+private:
+    Feature_Contour::Ptr m_pContour;
+    
 };
 
 }

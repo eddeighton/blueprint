@@ -173,28 +173,28 @@ void Toolbox::reload()
     
     //generate defaults...
     {
-        Clip::Ptr pDefaultClip( new Clip( Site::Ptr(), "space" ) );
-        Space::Ptr pDefaultSpace( new Space( pDefaultClip, "space" ) );
-        pDefaultClip->add( pDefaultSpace );
-        add( "clipboard", pDefaultClip, true );
-    }
-    {
         Clip::Ptr pDefaultClip( new Clip( Site::Ptr(), "wall" ) );
         Wall::Ptr pDefaultSpace( new Wall( pDefaultClip, "wall" ) );
         pDefaultClip->add( pDefaultSpace );
-        add( "clipboard", pDefaultClip, true );
+        add( "clipboard", pDefaultClip, false );
     }
     {
         Clip::Ptr pDefaultClip( new Clip( Site::Ptr(), "object" ) );
         Object::Ptr pDefaultSpace( new Object( pDefaultClip, "object" ) );
         pDefaultClip->add( pDefaultSpace );
-        add( "clipboard", pDefaultClip, true );
+        add( "clipboard", pDefaultClip, false );
     }
     {
         Clip::Ptr pDefaultClip( new Clip( Site::Ptr(), "connection" ) );
         Connection::Ptr pDefaultSpace( new Connection( pDefaultClip, "connection" ) );
         pDefaultClip->add( pDefaultSpace );
-        add( "clipboard", pDefaultClip, true );
+        add( "clipboard", pDefaultClip, false );
+    }
+    {
+        Clip::Ptr pDefaultClip( new Clip( Site::Ptr(), "space" ) );
+        Space::Ptr pDefaultSpace( new Space( pDefaultClip, "space" ) );
+        pDefaultClip->add( pDefaultSpace );
+        add( "clipboard", pDefaultClip, true ); //ensure space is the default one
     }
 
     recursiveLoad( m_rootPath, pathToName( m_rootPath ) );

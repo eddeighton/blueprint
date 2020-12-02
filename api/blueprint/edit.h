@@ -42,6 +42,7 @@ public:
     };
     
     virtual ~IEditContext(){}
+    virtual void activated() = 0;
     virtual IInteraction::Ptr interaction_start( ToolMode toolMode, float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection ) = 0;
     virtual IInteraction::Ptr interaction_draw( ToolMode toolMode, float x, float y, float qX, float qY, Site::Ptr pSite ) = 0;
     virtual IEditContext* getNestedContext( const std::vector< IGlyph* >& candidates ) = 0;
@@ -78,6 +79,7 @@ public:
     static Edit::Ptr create( GlyphFactory& glyphFactory, Site::Ptr pSite, const std::string& strFilePath = std::string() );
     
     //IEditContext
+    virtual void activated();
     virtual IInteraction::Ptr interaction_start( ToolMode toolMode, float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection );
     virtual IInteraction::Ptr interaction_draw( ToolMode toolMode, float x, float y, float qX, float qY, Site::Ptr pSite );
 
@@ -118,7 +120,7 @@ public:
     std::set< IGlyph* > generateExtrusion( float fAmount, bool bConvexHull );
     void save( const std::set< IGlyph* >& selection, const std::string& strFilePath );
     
-    void setViewMode( bool bBitmap, bool bCellComplex, bool bClearance );
+    void setViewMode( bool bArrangement, bool bCellComplex, bool bClearance );
 protected:
     IInteraction::Ptr cmd_paste( Site::PtrVector sites, float x, float y, float qX, float qY );
 
@@ -131,7 +133,7 @@ protected:
     typedef std::map< Site::Ptr, boost::shared_ptr< SpaceGlyphs > > SiteMap;
     SiteMap m_glyphMap;
 
-    bool m_bViewBitmap, m_bViewCellComplex, m_bViewClearance;
+    static bool m_bViewArrangement, m_bViewCellComplex, m_bViewClearance;
 };
 
 }

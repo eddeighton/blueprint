@@ -1,6 +1,6 @@
 basic<blueprint>
 {
-    area_0000<area>(0,0,East;,false,false)
+    area_0000<space>(0,0,East;,false,false)
     {
         contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
         {

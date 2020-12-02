@@ -73,6 +73,7 @@ set( BLUEPRINT_SOURCES_SRC
     ${BLUEPRINT_SRC_DIR}/blueprint/object.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/connection.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/wall.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/cgal.cpp
     )
 
 set( BLUEPRINT_SOURCES ${BLUEPRINT_SOURCES_API} ${BLUEPRINT_SOURCES_SRC} )

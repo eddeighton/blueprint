@@ -47,6 +47,14 @@ void Space::init()
     if( !m_pExteriorPolygons.get() )
         m_pExteriorPolygons.reset( new ExteriorGroupImpl( this, m_exteriorPolyMap, false ) );
 
+    if( !( m_pContour = get< Feature_Contour >( "contour" ) ) )
+    {
+        m_pContour = Feature_Contour::Ptr( new Feature_Contour( getPtr(), "contour" ) );
+        m_pContour->init();
+        m_pContour->set( wykobi::make_rectangle< float >( -16, -16, 16, 16 ) );
+        add( m_pContour );
+    }
+    
     Site::init();
 }
 
@@ -60,89 +68,105 @@ void Space::init( float x, float y )
     
     m_transform.setTranslation( Map_FloorAverage()( x ), Map_FloorAverage()( y ) );
 }
-    
+
 void Space::evaluate( const EvaluationMode& mode, EvaluationResults& results )
 {
     m_innerExteriors.clear();
     
+    const Polygon2D& polygon = m_pContour->getPolygon();
+
     //bottom up recursion
     for( PtrVector::iterator i = m_sites.begin(),
         iEnd = m_sites.end(); i!=iEnd; ++i )
     {
         (*i)->evaluate( mode, results );
         
-        if( Space::Ptr pSpace = boost::dynamic_pointer_cast< Space >( *i ) )
+        if( mode.bArrangement )
         {
-            ClipperLib::Path inputClipperPath;
-            Polygon2D exteriorPolygon = pSpace->getExteriorPolygon();
-            for( Point2D& pt : exteriorPolygon )
+            if( Space::Ptr pSpace = boost::dynamic_pointer_cast< Space >( *i ) )
             {
-                pSpace->getTransform().transform( pt.x, pt.y );
-                inputClipperPath.push_back( 
-                    ClipperLib::IntPoint( 
-                        static_cast< ClipperLib::cInt >( pt.x * CLIPPER_MAG ), 
-                        static_cast< ClipperLib::cInt >( pt.y * CLIPPER_MAG ) ) ); 
+                ClipperLib::Path inputClipperPath;
+                Polygon2D exteriorPolygon = pSpace->getExteriorPolygon();
+                for( Point2D& pt : exteriorPolygon )
+                {
+                    pSpace->getTransform().transform( pt.x, pt.y );
+                    inputClipperPath.push_back( 
+                        ClipperLib::IntPoint( 
+                            static_cast< ClipperLib::cInt >( pt.x * CLIPPER_MAG ), 
+                            static_cast< ClipperLib::cInt >( pt.y * CLIPPER_MAG ) ) ); 
+                }
+                if( wykobi::polygon_orientation( exteriorPolygon ) == wykobi::Clockwise )
+                    std::reverse( inputClipperPath.begin(), inputClipperPath.end() );
+                m_innerExteriors.push_back( inputClipperPath );
             }
-            if( wykobi::polygon_orientation( exteriorPolygon ) == wykobi::Clockwise )
-                std::reverse( inputClipperPath.begin(), inputClipperPath.end() );
-            m_innerExteriors.push_back( inputClipperPath );
         }
     }
     
-    typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
-    typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
-    
-    const Polygon2D& polygon = m_pContour->getPolygon();
-
-    if( !m_polygonCache || 
-        !( m_polygonCache.get().size() == polygon.size() ) || 
-        !std::equal( polygon.begin(), polygon.end(), m_polygonCache.get().begin() ) || 
-        !( m_innerExteriors.size() == m_innerExteriorsCache.size() ) ||
-        !std::equal( m_innerExteriors.begin(), m_innerExteriors.end(), m_innerExteriorsCache.begin() ) 
-        )
+    if( mode.bArrangement )
     {
-        m_innerExteriorsCache = m_innerExteriors;
-        m_polygonCache = polygon;
-        
-        PathImpl::aggPathToMarkupPath( 
-            m_contourPath, 
-            Adaptor( WykobiPolygonAdaptor( polygon ), true ) );
-        
-        static const double fExtrusionAmt = 2.0;
-        
-        ClipperLib::Path clipperPolygon;
-        toClipperPoly( polygon, clipperPolygon );
-        if( wykobi::polygon_orientation( polygon ) == wykobi::Clockwise )
-            std::reverse( clipperPolygon.begin(), clipperPolygon.end() );
-        
-        ClipperLib::Paths interiorPaths, exteriorPath;
-        extrudePoly( clipperPolygon, -fExtrusionAmt, interiorPaths );
-        extrudePoly( clipperPolygon, fExtrusionAmt,  exteriorPath );
-        
-        fromClipperPolys( interiorPaths, m_interiorPolygon );
-        fromClipperPolys( exteriorPath, m_exteriorPolygon );
-        
-        //calculate the exteriors
+        if( !(m_polygonCache) || 
+            !( m_polygonCache.get().size() == polygon.size() ) || 
+            !std::equal( polygon.begin(), polygon.end(), m_polygonCache.get().begin() ) || 
+            !( m_innerExteriors.size() == m_innerExteriorsCache.size() ) ||
+            !std::equal( m_innerExteriors.begin(), m_innerExteriors.end(), m_innerExteriorsCache.begin() ) 
+            )
         {
-            m_exteriorPolyMap.clear();
-            int iCounter = 0;
-            m_exteriorPolyMap.insert( std::make_pair( iCounter++, m_interiorPolygon ) );
-            ClipperLib::Paths innerExteriorPolygons;
-            if( unionAndClipPolygons( m_innerExteriors, interiorPaths, innerExteriorPolygons ) )
+            m_polygonCache = polygon;
+            m_innerExteriorsCache = m_innerExteriors;
+            
+            typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
+            typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
+            PathImpl::aggPathToMarkupPath( 
+                m_contourPath, 
+                Adaptor( WykobiPolygonAdaptor( polygon ), true ) );
+            
+            static const double fExtrusionAmt = 2.0;
+            
+            ClipperLib::Path interiorPath;
             {
-                for( const ClipperLib::Path& exteriorPolygonPath : innerExteriorPolygons )
+                ClipperLib::Path clipperPolygon;
+                toClipperPoly( polygon, clipperPolygon );
+                if( wykobi::polygon_orientation( polygon ) == wykobi::Clockwise )
+                    std::reverse( clipperPolygon.begin(), clipperPolygon.end() );
+                
+                ClipperLib::Paths interiorPaths, exteriorPath;
+                extrudePoly( clipperPolygon, -fExtrusionAmt, interiorPaths );
+                extrudePoly( clipperPolygon, fExtrusionAmt, exteriorPath );
+                
+                fromClipperPolys( interiorPaths, m_interiorPolygon );
+                fromClipperPolys( exteriorPath, m_exteriorPolygon );
+                
+                if( !interiorPaths.empty() )
+                    interiorPath = interiorPaths.front();
+            }
+            
+            //calculate the exteriors
+            {
+                m_exteriorPolyMap.clear();
+                int iCounter = 0;
+                m_exteriorPolyMap.insert( std::make_pair( iCounter++, m_interiorPolygon ) );
+                ClipperLib::Paths innerExteriorPolygons;
+                if( unionAndClipPolygons( m_innerExteriors, interiorPath, innerExteriorPolygons ) )
                 {
-                    Polygon2D exteriorPolygon;
-                    fromClipperPoly( exteriorPolygonPath, exteriorPolygon );
-                    m_exteriorPolyMap.insert( std::make_pair( iCounter++, exteriorPolygon ) );
+                    for( const ClipperLib::Path& exteriorPolygonPath : innerExteriorPolygons )
+                    {
+                        Polygon2D exteriorPolygon;
+                        fromClipperPoly( exteriorPolygonPath, exteriorPolygon );
+                        m_exteriorPolyMap.insert( std::make_pair( iCounter++, exteriorPolygon ) );
+                    }
+                }
+                else
+                {
+                    //TODO - report error
                 }
             }
-            else
-            {
-                //TODO - report error
-            }
         }
-        
+    }
+    else
+    {
+        m_polygonCache.reset();
+        m_exteriorPolyMap.clear();
+        m_innerExteriorsCache.clear();
     }
 }
 }

@@ -1,47 +1,47 @@
 complex_big<blueprint>
 {
-    area_0000<area>(-112,-248,East;,false,false)
+    area_0000<space>(-112,-248,East;,false,false)
     {
         contour<contour>(7,0,0,656,0,656,512,0,512,-128,384,-128,128,-64,64)
         {
             auto<property>(false)
         }
-        area_0001<area>(-48,304,East;,false,false)
+        area_0001<space>(-48,304,East;,false,false)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {
                 auto<property>(false)
             }
         }
-        area_0002<area>(-48,208,East;,false,false)
+        area_0002<space>(-48,208,East;,false,false)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {
                 auto<property>(false)
             }
         }
-        area_0003<area>(-48,256,East;,false,false)
+        area_0003<space>(-48,256,East;,false,false)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {
                 auto<property>(false)
             }
         }
-        area_0004<area>(-48,352,East;,false,false)
+        area_0004<space>(-48,352,East;,false,false)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {
                 auto<property>(false)
             }
         }
-        area_0005<area>(-48,160,East;,false,false)
+        area_0005<space>(-48,160,East;,false,false)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {
                 auto<property>(false)
             }
         }
-        area_0006<area>(154,318,East;,false,false)
+        area_0006<space>(154,318,East;,false,false)
         {
             contour<contour>(4,-87,-203,359,-203,359,97,-87,97)
             {
@@ -55,13 +55,13 @@ complex_big<blueprint>
                     type<property>(none;)
                 }
             }
-            area_0008<area>(-112,130,East;,false,false)
+            area_0008<space>(-112,130,East;,false,false)
             {
                 contour<contour>(4,25,-145,119,-145,119,-33,25,-33)
                 {
                     auto<property>(true)
                 }
-                area_0007<area>(86,-130,East;,false,false)
+                area_0007<space>(86,-130,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -84,7 +84,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0013<area>(86,-106,East;,false,false)
+                area_0013<space>(86,-106,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -107,7 +107,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0014<area>(86,-74,East;,false,false)
+                area_0014<space>(86,-74,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -130,7 +130,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0015<area>(54,-106,East;,false,false)
+                area_0015<space>(54,-106,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -153,7 +153,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0008<area>(54,-74,East;,false,false)
+                area_0008<space>(54,-74,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -176,7 +176,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0009<area>(54,-130,East;,false,false)
+                area_0009<space>(54,-130,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -199,7 +199,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0010<area>(40,-32,East;,false,false)
+                area_0010<space>(40,-32,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -222,7 +222,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0012<area>(72,-32,East;,false,false)
+                area_0012<space>(72,-32,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -245,7 +245,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0016<area>(104,-32,East;,false,false)
+                area_0016<space>(104,-32,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -269,13 +269,13 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0009<area>(208,-52,East;,false,false)
+            area_0009<space>(208,-52,East;,false,false)
             {
                 contour<contour>(4,17,-151,151,-151,151,-17,17,-17)
                 {
                     auto<property>(true)
                 }
-                area_0001<area>(32,-52,East;,false,false)
+                area_0001<space>(32,-52,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -298,7 +298,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0002<area>(64,-52,East;,false,false)
+                area_0002<space>(64,-52,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -321,7 +321,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0005<area>(104,-32,East;,false,false)
+                area_0005<space>(104,-32,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -344,7 +344,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0007<area>(136,-32,East;,false,false)
+                area_0007<space>(136,-32,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -367,7 +367,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0008<area>(136,-84,East;,false,false)
+                area_0008<space>(136,-84,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -390,7 +390,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0013<area>(136,-136,East;,false,false)
+                area_0013<space>(136,-136,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -413,7 +413,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0014<area>(104,-136,East;,false,false)
+                area_0014<space>(104,-136,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -436,7 +436,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0015<area>(32,-116,East;,false,false)
+                area_0015<space>(32,-116,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -459,7 +459,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0016<area>(64,-116,East;,false,false)
+                area_0016<space>(64,-116,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -482,7 +482,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0011<area>(32,-84,East;,false,false)
+                area_0011<space>(32,-84,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -505,7 +505,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0012<area>(64,-84,East;,false,false)
+                area_0012<space>(64,-84,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -528,7 +528,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0017<area>(104,-84,East;,false,false)
+                area_0017<space>(104,-84,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -552,7 +552,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0012<area>(-60,-44,East;,false,false)
+            area_0012<space>(-60,-44,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -575,7 +575,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0013<area>(-28,-44,East;,false,false)
+            area_0013<space>(-28,-44,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -598,7 +598,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0014<area>(324,32,East;,false,false)
+            area_0014<space>(324,32,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -621,7 +621,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0015<area>(36,-44,East;,false,false)
+            area_0015<space>(36,-44,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -644,13 +644,13 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0016<area>(-4,130,East;,false,false)
+            area_0016<space>(-4,130,East;,false,false)
             {
                 contour<contour>(4,25,-145,119,-145,119,-33,25,-33)
                 {
                     auto<property>(true)
                 }
-                area_0007<area>(86,-130,East;,false,false)
+                area_0007<space>(86,-130,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -673,7 +673,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0013<area>(86,-106,East;,false,false)
+                area_0013<space>(86,-106,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -696,7 +696,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0014<area>(86,-74,East;,false,false)
+                area_0014<space>(86,-74,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -719,7 +719,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0015<area>(54,-106,East;,false,false)
+                area_0015<space>(54,-106,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -742,7 +742,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0008<area>(54,-74,East;,false,false)
+                area_0008<space>(54,-74,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -765,7 +765,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0009<area>(54,-130,East;,false,false)
+                area_0009<space>(54,-130,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -788,7 +788,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0010<area>(40,-32,East;,false,false)
+                area_0010<space>(40,-32,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -811,7 +811,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0012<area>(72,-32,East;,false,false)
+                area_0012<space>(72,-32,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -834,7 +834,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0016<area>(104,-32,East;,false,false)
+                area_0016<space>(104,-32,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -858,13 +858,13 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0017<area>(104,130,East;,false,false)
+            area_0017<space>(104,130,East;,false,false)
             {
                 contour<contour>(4,25,-145,119,-145,119,-33,25,-33)
                 {
                     auto<property>(true)
                 }
-                area_0007<area>(86,-130,East;,false,false)
+                area_0007<space>(86,-130,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -887,7 +887,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0013<area>(86,-106,East;,false,false)
+                area_0013<space>(86,-106,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -910,7 +910,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0014<area>(86,-74,East;,false,false)
+                area_0014<space>(86,-74,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -933,7 +933,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0015<area>(54,-106,East;,false,false)
+                area_0015<space>(54,-106,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -956,7 +956,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0008<area>(54,-74,East;,false,false)
+                area_0008<space>(54,-74,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                     {
@@ -979,7 +979,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0009<area>(54,-130,East;,false,false)
+                area_0009<space>(54,-130,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -1002,7 +1002,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0010<area>(40,-32,East;,false,false)
+                area_0010<space>(40,-32,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -1025,7 +1025,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0012<area>(72,-32,East;,false,false)
+                area_0012<space>(72,-32,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -1048,7 +1048,7 @@ complex_big<blueprint>
                         }
                     }
                 }
-                area_0016<area>(104,-32,East;,false,false)
+                area_0016<space>(104,-32,East;,false,false)
                 {
                     contour<contour>(4,-15,-15,15,-15,15,-1,-15,-1)
                     {
@@ -1072,7 +1072,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0018<area>(36,-148,East;,false,false)
+            area_0018<space>(36,-148,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1095,7 +1095,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0019<area>(4,-148,East;,false,false)
+            area_0019<space>(4,-148,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1118,7 +1118,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0020<area>(-28,-148,East;,false,false)
+            area_0020<space>(-28,-148,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1141,7 +1141,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0021<area>(84,-148,East;,false,false)
+            area_0021<space>(84,-148,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1164,7 +1164,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0022<area>(-16,-96,East;,false,false)
+            area_0022<space>(-16,-96,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1187,7 +1187,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0023<area>(120,-44,East;,false,false)
+            area_0023<space>(120,-44,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1210,7 +1210,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0024<area>(116,-148,East;,false,false)
+            area_0024<space>(116,-148,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1233,7 +1233,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0025<area>(88,-44,East;,false,false)
+            area_0025<space>(88,-44,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1256,7 +1256,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0026<area>(168,-44,East;,false,false)
+            area_0026<space>(168,-44,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1279,7 +1279,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0027<area>(168,-76,East;,false,false)
+            area_0027<space>(168,-76,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1302,7 +1302,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0028<area>(32,-96,East;,false,false)
+            area_0028<space>(32,-96,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1325,7 +1325,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0029<area>(88,-96,East;,false,false)
+            area_0029<space>(88,-96,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1348,7 +1348,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0030<area>(120,-96,East;,false,false)
+            area_0030<space>(120,-96,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1371,7 +1371,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0031<area>(168,-132,East;,false,false)
+            area_0031<space>(168,-132,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1394,7 +1394,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0032<area>(260,-20,East;,false,false)
+            area_0032<space>(260,-20,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1417,7 +1417,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0033<area>(292,-20,East;,false,false)
+            area_0033<space>(292,-20,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1440,7 +1440,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0034<area>(292,32,East;,false,false)
+            area_0034<space>(292,32,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1463,7 +1463,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0035<area>(260,32,East;,false,false)
+            area_0035<space>(260,32,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1486,7 +1486,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0036<area>(292,64,East;,false,false)
+            area_0036<space>(292,64,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {
@@ -1509,7 +1509,7 @@ complex_big<blueprint>
                     }
                 }
             }
-            area_0037<area>(260,64,East;,false,false)
+            area_0037<space>(260,64,East;,false,false)
             {
                 contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
                 {

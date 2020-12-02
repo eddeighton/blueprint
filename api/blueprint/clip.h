@@ -47,6 +47,10 @@ public:
     //Origin
     virtual void set( float fX, float fY ){}
     virtual bool canEdit() const { return false; }
+    
+    //Site
+    virtual Feature_Contour::Ptr getContour() const { return ( Feature_Contour::Ptr() ); }
+    virtual boost::optional< Polygon2D > getContourPolygon() { return ( Polygon2D() ); }
 };
 }
 

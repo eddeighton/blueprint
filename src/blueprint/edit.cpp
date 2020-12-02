@@ -171,47 +171,51 @@ private:
         m_startX = x = Math::quantize_roundUp( x, qX );
         m_startY = y = Math::quantize_roundUp( y, qY );
 
-        Feature_Contour::Ptr pContour = m_site.getContour();
-        m_originalPolygon = pContour->getPolygon();
-        
-        const Point2D pt = wykobi::make_point< float >( m_startX, m_startY );
-        Polygon2D newPoly = m_originalPolygon;
-        newPoly.push_back( pt );
-        pContour->set( newPoly );
-        
-        OnMove( x, y );
+        if( Feature_Contour::Ptr pContour = m_site.getContour() )
+        {
+            m_originalPolygon = pContour->getPolygon();
+            
+            const Point2D pt = wykobi::make_point< float >( m_startX, m_startY );
+            Polygon2D newPoly = m_originalPolygon;
+            newPoly.push_back( pt );
+            pContour->set( newPoly );
+            
+            OnMove( x, y );
+        }
     }
     
 public:
     virtual void OnMove( float x, float y )
     {
-        const float fDeltaX = Math::quantize_roundUp( x, m_qX );
-        const float fDeltaY = Math::quantize_roundUp( y, m_qY );
-        const Point2D pt = wykobi::make_point< float >( fDeltaX, fDeltaY );
-        const SegmentIDRatioPointTuple sirpt =
-            findClosestPointOnContour( m_originalPolygon, pt );
-        
-        unsigned int uiIndex = std::get< 0 >( sirpt );
-        VERIFY_RTE( uiIndex < m_originalPolygon.size() || uiIndex == 0 );
-        if( m_originalPolygon.size() > 0 )
-            uiIndex = ( uiIndex + 1 ) % m_originalPolygon.size();
-        
-        Polygon2D newPoly;
-        for( std::size_t sz = 0U; ( sz != uiIndex ) && ( sz < m_originalPolygon.size() ); ++sz )
-            newPoly.push_back( m_originalPolygon[ sz ] );
-        newPoly.push_back( pt );
-        for( std::size_t sz = uiIndex; sz < m_originalPolygon.size(); ++sz )
-            newPoly.push_back( m_originalPolygon[ sz ] );
-        
-        if( wykobi::polygon_orientation( newPoly ) == wykobi::Clockwise )
-            std::reverse( newPoly.begin(), newPoly.end() );
-        
-        //set all the points without reallocating control points
-        for( std::size_t sz = 0; sz != newPoly.size(); ++sz )
+        if( Feature_Contour::Ptr pContour = m_site.getContour() )
         {
-            m_site.getContour()->set( sz, newPoly[ sz ].x, newPoly[ sz ].y );
+            const float fDeltaX = Math::quantize_roundUp( x, m_qX );
+            const float fDeltaY = Math::quantize_roundUp( y, m_qY );
+            const Point2D pt = wykobi::make_point< float >( fDeltaX, fDeltaY );
+            const SegmentIDRatioPointTuple sirpt =
+                findClosestPointOnContour( m_originalPolygon, pt );
+            
+            unsigned int uiIndex = std::get< 0 >( sirpt );
+            VERIFY_RTE( uiIndex < m_originalPolygon.size() || uiIndex == 0 );
+            if( m_originalPolygon.size() > 0 )
+                uiIndex = ( uiIndex + 1 ) % m_originalPolygon.size();
+            
+            Polygon2D newPoly;
+            for( std::size_t sz = 0U; ( sz != uiIndex ) && ( sz < m_originalPolygon.size() ); ++sz )
+                newPoly.push_back( m_originalPolygon[ sz ] );
+            newPoly.push_back( pt );
+            for( std::size_t sz = uiIndex; sz < m_originalPolygon.size(); ++sz )
+                newPoly.push_back( m_originalPolygon[ sz ] );
+            
+            if( wykobi::polygon_orientation( newPoly ) == wykobi::Clockwise )
+                std::reverse( newPoly.begin(), newPoly.end() );
+            
+            //set all the points without reallocating control points
+            for( std::size_t sz = 0; sz != newPoly.size(); ++sz )
+            {
+                pContour->set( sz, newPoly[ sz ].x, newPoly[ sz ].y );
+            }
         }
-        
     }
     virtual Site::Ptr GetInteractionSite() const
     {
@@ -284,14 +288,15 @@ inline IInteraction::Ptr make_interaction_ptr( Edit* pEdit, IInteraction* pInter
     return IInteraction::Ptr( pInteraction, [ pEdit ]( IInteraction* p ){ pEdit->interaction_end( p ); } );
 }
 
+bool Edit::m_bViewArrangement = false;
+bool Edit::m_bViewCellComplex = false;
+bool Edit::m_bViewClearance = false;
+    
 Edit::Edit( GlyphFactory& glyphFactory, Site::Ptr pSite, const std::string& strFilePath )
     :   m_glyphFactory( glyphFactory ),
         m_pSite( pSite ),
         m_pActiveInteraction( 0u ),
-        m_strFilePath( strFilePath ),
-        m_bViewBitmap( false ),
-        m_bViewCellComplex( false ),
-        m_bViewClearance( false )
+        m_strFilePath( strFilePath )
 {
 }
 
@@ -505,25 +510,26 @@ IEditContext* Edit::getSiteContext( Site::Ptr pSite )
 
 bool Edit::canEdit( IGlyph* pGlyph, ToolType toolType, ToolMode toolMode ) const
 {
-    
     if( pGlyph->getGlyphSpec()->canEdit() )
     {
-        
         if( const GlyphSpecProducer* pGlyphPrd = fromGlyph( pGlyph ) )
         {
             return true;
         }
-        
-        
     }
     return false;
 }
 
 
+void Edit::activated()
+{
+    interaction_evaluate();
+}
+
 void Edit::interaction_evaluate()
 {
     //LOG_PROFILE_BEGIN( edit_interaction_evaluate );
-    const Site::EvaluationMode mode = { m_bViewBitmap, m_bViewCellComplex, m_bViewClearance };
+    const Site::EvaluationMode mode = { m_bViewArrangement, m_bViewCellComplex, m_bViewClearance };
 
     Site::EvaluationResults results;
     m_pSite->evaluate( mode, results );
@@ -778,31 +784,34 @@ void getSelectionBounds( const std::vector< Site* >& sites, Rect2D& transformBou
     bool bFirst = true;
     for( const Site* pArea : sites )
     {
-        Polygon2D poly = pArea->getContour()->getPolygon();
-        for( Point2D& pt : poly )
-            pArea->getTransform().transform( pt.x, pt.y );
-        
-        const Rect2D polyAABB = wykobi::aabb( poly );
-        const Point2D ptTopLeft = wykobi::rectangle_corner( polyAABB, 0 );
-        const Point2D ptBotRight  = wykobi::rectangle_corner( polyAABB, 2 );
-        
-        if( bFirst )
+        if( boost::optional< Polygon2D > polyOpt = pArea->getContourPolygon() )
         {
-            ptBoundsTopLeft     = ptTopLeft;
-            ptBoundsBotRight    = ptBotRight;
-            bFirst = false;
-        }
-        else
-        {
-            if( ptTopLeft.x < ptBoundsTopLeft.x )
-                ptBoundsTopLeft.x = ptTopLeft.x;
-            if( ptTopLeft.y < ptBoundsTopLeft.y )
-                ptBoundsTopLeft.y = ptTopLeft.y;
+            Polygon2D poly = polyOpt.get();
+            for( Point2D& pt : poly )
+                pArea->getTransform().transform( pt.x, pt.y );
+        
+            const Rect2D polyAABB = wykobi::aabb( poly );
+            const Point2D ptTopLeft = wykobi::rectangle_corner( polyAABB, 0 );
+            const Point2D ptBotRight  = wykobi::rectangle_corner( polyAABB, 2 );
             
-            if( ptBotRight.x > ptBoundsBotRight.x )
-                ptBoundsBotRight.x = ptBotRight.x;
-            if( ptBotRight.y > ptBoundsBotRight.y )
-                ptBoundsBotRight.y = ptBotRight.y;
+            if( bFirst )
+            {
+                ptBoundsTopLeft     = ptTopLeft;
+                ptBoundsBotRight    = ptBotRight;
+                bFirst = false;
+            }
+            else
+            {
+                if( ptTopLeft.x < ptBoundsTopLeft.x )
+                    ptBoundsTopLeft.x = ptTopLeft.x;
+                if( ptTopLeft.y < ptBoundsTopLeft.y )
+                    ptBoundsTopLeft.y = ptTopLeft.y;
+                
+                if( ptBotRight.x > ptBoundsBotRight.x )
+                    ptBoundsBotRight.x = ptBotRight.x;
+                if( ptBotRight.y > ptBoundsBotRight.y )
+                    ptBoundsBotRight.y = ptBotRight.y;
+            }
         }
     }
     
@@ -1019,11 +1028,11 @@ void Edit::save( const std::set< IGlyph* >& selection, const std::string& strFil
     factory.save( pBlueprint, strFilePath );
 }
     
-void Edit::setViewMode( bool bBitmap, bool bCellComplex, bool bClearance )
+void Edit::setViewMode( bool bArrangement, bool bCellComplex, bool bClearance )
 {
-    m_bViewBitmap = bBitmap;
-    m_bViewCellComplex = bCellComplex;
-    m_bViewClearance = bClearance;
+    m_bViewArrangement  = bArrangement;
+    m_bViewCellComplex  = bCellComplex;
+    m_bViewClearance    = bClearance;
     
     interaction_evaluate();
 }

@@ -71,14 +71,6 @@ void Site::init()
     m_sites.clear();
     for_each( generics::collectIfConvert( m_sites, Node::ConvertPtrType< Site >(), Node::ConvertPtrType< Site >() ) );
 
-    if( !( m_pContour = get< Feature_Contour >( "contour" ) ) )
-    {
-        m_pContour = Feature_Contour::Ptr( new Feature_Contour( getPtr(), "contour" ) );
-        m_pContour->init();
-        m_pContour->set( wykobi::make_rectangle< float >( -16, -16, 16, 16 ) );
-        add( m_pContour );
-    }
-    
     if( !m_pContourPathImpl.get() )
         m_pContourPathImpl.reset( new PathImpl( m_contourPath, this ) );
     
@@ -115,19 +107,6 @@ void Site::evaluate( const EvaluationMode& mode, EvaluationResults& results )
         iEnd = m_sites.end(); i!=iEnd; ++i )
     {
         (*i)->evaluate( mode, results );
-    }
-    
-    typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
-    typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
-    
-    const Polygon2D& polygon = m_pContour->getPolygon();
-
-    if( !m_polygonCache || 
-        !( m_polygonCache.get().size() == polygon.size() ) || 
-        !std::equal( polygon.begin(), polygon.end(), m_polygonCache.get().begin() ))
-    {
-        PathImpl::aggPathToMarkupPath( m_contourPath, Adaptor( WykobiPolygonAdaptor( polygon ), true ) );
-        m_polygonCache = polygon;
     }
 }
     

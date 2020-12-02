@@ -49,14 +49,16 @@ inline void fromClipperPolys( const ClipperLib::Paths& result, Polygon2D& polygo
 
 inline void extrudePoly( const ClipperLib::Path& inputPolygon, float fAmount, ClipperLib::Paths& result )
 {
+    //ClipperLib::jtSquare
     ClipperLib::ClipperOffset co;
-    co.AddPath( inputPolygon, ClipperLib::jtSquare, ClipperLib::etClosedPolygon );
+    co.MiterLimit = 1000.0;
+    co.AddPath( inputPolygon, ClipperLib::jtMiter, ClipperLib::etClosedPolygon );
     co.Execute( result, fAmount * CLIPPER_MAG );
 }
 
 inline bool unionAndClipPolygons( 
         const ClipperLib::Paths& polygons, 
-        const ClipperLib::Paths& clipPolygons, 
+        const ClipperLib::Path& clipPolygon, 
         ClipperLib::Paths& results )
 {
     ClipperLib::Clipper unionClipper;
@@ -69,7 +71,7 @@ inline bool unionAndClipPolygons(
             ClipperLib::Clipper interiorClip;
             if( interiorClip.AddPaths( unionPaths, ClipperLib::ptSubject, true ) )
             {
-                if( interiorClip.AddPaths( clipPolygons, ClipperLib::ptClip, true ) )
+                if( interiorClip.AddPath( clipPolygon, ClipperLib::ptClip, true ) )
                 {
                     if( interiorClip.Execute( ClipperLib::ctIntersection, results, 
                         ClipperLib::pftPositive, ClipperLib::pftPositive ) )

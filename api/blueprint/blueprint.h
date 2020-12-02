@@ -68,6 +68,7 @@ public:
 
     //Site
     virtual void evaluate( const EvaluationMode& mode, EvaluationResults& results );
+    virtual Feature_Contour::Ptr getContour() const { return ( Feature_Contour::Ptr() ); }
     
     virtual bool add( Node::Ptr pNewNode );
     virtual void remove( Node::Ptr pNode );

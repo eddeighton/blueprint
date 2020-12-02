@@ -184,7 +184,7 @@ public:
     
     virtual int getControlPointCount() 
     { 
-        return m_points.size(); 
+        return static_cast< int >( m_points.size() );
     }
     
     virtual void getControlPoints( ControlPoint::List& controlPoints )

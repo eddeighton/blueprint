@@ -41,9 +41,12 @@ public:
     const Polygon2D& getInteriorPolygon() const { return m_interiorPolygon; }
     const Polygon2D& getExteriorPolygon() const { return m_exteriorPolygon; }
     
-protected:
     using ExteriorGroupImpl = MarkupPolygonGroupImpl< int >;
+    const ExteriorGroupImpl::PolyMap& getInnerAreaExteriorPolygons() const { return m_exteriorPolyMap; }
     
+    virtual Feature_Contour::Ptr getContour() const { return m_pContour; }
+protected:
+    Feature_Contour::Ptr m_pContour;
     Polygon2D m_exteriorPolygon, m_interiorPolygon;
     ExteriorGroupImpl::PolyMap m_exteriorPolyMap;
     std::unique_ptr< PathImpl > m_pInteriorContourPathImpl;

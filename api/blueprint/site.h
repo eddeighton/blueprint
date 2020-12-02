@@ -55,7 +55,7 @@ public:
     };
     struct EvaluationMode
     {
-        bool bBitmap        = false;
+        bool bArrangement   = false;
         bool bCellComplex   = false;
         bool bClearance     = false;
     };
@@ -73,7 +73,6 @@ public:
     {
         return m_pContourPathImpl.get();
     }
-    Feature_Contour::Ptr getContour() const { return m_pContour; }
     virtual void set( float fX, float fY )
     {
         const float fNewValueX = Map_FloorAverage()( fX );
@@ -106,16 +105,19 @@ public:
     void cmd_flipHorizontally( const Rect2D& transformBounds );
     void cmd_flipVertically( const Rect2D& transformBounds );
     
+    
+    virtual Feature_Contour::Ptr getContour() const = 0;
+    boost::optional< Polygon2D > getContourPolygon() const { return m_polygonCache; }
+    
 protected:
     using PropertyVector = std::vector< Property::Ptr >;
+    boost::optional< Polygon2D > m_polygonCache;
     
     Site::WeakPtr m_pSiteParent;
-    Feature_Contour::Ptr m_pContour;
     PropertyVector m_properties;
     
     MarkupPath::PathCmdVector m_contourPath;
     std::string m_strLabelText;
-    boost::optional< wykobi::polygon< float, 2u > > m_polygonCache;
     
     std::unique_ptr< PathImpl > m_pContourPathImpl;
     std::unique_ptr< TextImpl > m_pLabel;

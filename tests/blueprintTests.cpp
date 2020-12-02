@@ -8,8 +8,8 @@
 #include "blueprint/toolbox.h"
 #include "blueprint/site.h"
 #include "blueprint/cgalSettings.h"
-//#include "blueprint/compiler.h"
 #include "blueprint/transform.h"
+#include "blueprint/blueprint.h"
 
 #include "blueprint/serialisation.h"
 
@@ -273,8 +273,6 @@ TEST( CGAL, OverlapTest )
     
 }
 
-
-/*
 static const boost::filesystem::path testFilesFolderPath = getenv( "BLUEPRINT" );
     
 boost::filesystem::path constructPath( const boost::filesystem::path& inputFile, const char* pszExt )
@@ -288,14 +286,28 @@ boost::filesystem::path constructPath( const boost::filesystem::path& inputFile,
 
 void loadTest( const boost::filesystem::path& inputFile )
 {    
-    Blueprint::Factory factory;
-    Blueprint::Site::Ptr pTest = factory.load( inputFile.string() );
-    ASSERT_TRUE( pTest );
-    
-    Blueprint::Compiler compiler( pTest->getSites() );
-    
-    compiler.generateHTML(   constructPath( inputFile, "__all.html" ) );
-    compiler.generateOutput( constructPath( inputFile, "__faces.html" ) );
+    try
+    {
+        Blueprint::Factory factory;
+        Blueprint::Blueprint::Ptr pTest = 
+            boost::dynamic_pointer_cast< ::Blueprint::Blueprint >( 
+                factory.load( inputFile.string() ) );
+        ASSERT_TRUE( pTest );
+        
+        {
+            const Blueprint::Site::EvaluationMode mode = { true, false, false };
+            Blueprint::Site::EvaluationResults results;
+            pTest->evaluate( mode, results );
+        }
+        
+        Blueprint::Compilation compiler( pTest );
+        
+        compiler.render( constructPath( inputFile, ".html" ) );
+    }
+    catch( std::exception& ex )
+    {
+        std::cout << "Error with test file: " << inputFile.string() << " : " << ex.what() << std::endl;
+    }
 }
 TEST( CGAL, CompilerTestFiles )
 {
@@ -329,4 +341,4 @@ TEST( CGAL, CompilerTestFiles )
     {
         loadTest( testFile );
     }
-}*/
+}
