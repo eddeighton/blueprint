@@ -52,7 +52,7 @@ void Connection::init()
     {
         m_pControlPoint.reset( new Feature_Point( getPtr(), "width" ) );
         m_pControlPoint->init();
-        m_pControlPoint->set( 0, 8.0f, 3.0f );
+        m_pControlPoint->set( 0, 3.0f, 8.0f );
         add( m_pControlPoint );
     }
     
@@ -78,8 +78,8 @@ void Connection::evaluate( const EvaluationMode& mode, EvaluationResults& result
     typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
     typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
     
-    const float fWidth                  = Math::quantize( m_pControlPoint->getX( 0 ), 1.0f );
-    const float fConnectionHalfHeight   = Math::quantize( m_pControlPoint->getY( 0 ), 1.0f );
+    const float fWidth                  = fabsf( Math::quantize( m_pControlPoint->getX( 0 ), 1.0f ) );
+    const float fConnectionHalfHeight   = fabsf( Math::quantize( m_pControlPoint->getY( 0 ), 1.0f ) );
     
     m_firstSegment = wykobi::make_segment( 
         -fWidth,    -fConnectionHalfHeight, 
@@ -88,8 +88,16 @@ void Connection::evaluate( const EvaluationMode& mode, EvaluationResults& result
         fWidth,     -fConnectionHalfHeight, 
         fWidth,     fConnectionHalfHeight );
     
-    const Rect2D r = wykobi::make_rectangle( m_firstSegment[ 0 ], m_secondSegment[ 1 ] );
-    const Polygon2D polygon = wykobi::make_polygon( r );
+    Polygon2D polygon;
+    {
+        polygon.push_back( m_firstSegment[ 0 ] );
+        polygon.push_back( m_firstSegment[ 1 ] );
+        polygon.push_back( wykobi::make_point< float >(  -fWidth / 2.0f, fConnectionHalfHeight ) );
+        polygon.push_back( wykobi::make_point< float >(  0.0f,           fConnectionHalfHeight * 1.2f ) );
+        polygon.push_back( wykobi::make_point< float >(  fWidth / 2.0f,  fConnectionHalfHeight ) );
+        polygon.push_back( m_secondSegment[ 1 ] );
+        polygon.push_back( m_secondSegment[ 0 ] );
+    }
     
     if( !(m_polygonCache) || 
         !( m_polygonCache.get().size() == polygon.size() ) || 
@@ -102,6 +110,8 @@ void Connection::evaluate( const EvaluationMode& mode, EvaluationResults& result
         PathImpl::aggPathToMarkupPath( 
             m_contourPath, 
             Adaptor( WykobiPolygonAdaptor( polygon ), true ) );
+    
+    
     
         /*float fExtra = 2.0f;
         
