@@ -51,7 +51,12 @@ void svgLine( Blueprint::Arr_with_hist_2::Halfedge_const_handle h, double minX, 
 
 }
 
-void generateHTML( const boost::filesystem::path& filepath, const Blueprint::Arr_with_hist_2& arr )
+using EdgeVector = std::vector< Blueprint::Arr_with_hist_2::Halfedge_const_handle >;
+using EdgeVectorVector = std::vector< EdgeVector >;
+
+void generateHTML( const boost::filesystem::path& filepath, 
+        const Blueprint::Arr_with_hist_2& arr,
+        const EdgeVectorVector& edgeGroups )
 {
     std::unique_ptr< boost::filesystem::ofstream > os =
         createNewFileStream( filepath );
@@ -103,47 +108,52 @@ void generateHTML( const boost::filesystem::path& filepath, const Blueprint::Arr
     *os << "       <text x=\"" << 10 << "\" y=\"" << 20 << 
                      "\" fill=\"green\"  >Edge Count: " << arr.number_of_edges() << " </text>\n";
                      
-    for( auto i = arr.edges_begin(); i != arr.edges_end(); ++i )
+    int iColour = 0;
+    for( const EdgeVector& edges : edgeGroups )
     {
-        Blueprint::Arr_with_hist_2::Halfedge_const_handle h = i;
-        
-        if( i->target()->point() == i->curve().source() )
-            h = h->twin();
-        
-        svgLine( h, minX, minY, scale, "blue", *os );
-        
+        const char* pszColour = SVG_COLOURS[ iColour ];
+        iColour = ( iColour + 1 ) % SVG_COLOURS.size();
+        for( Blueprint::Arr_with_hist_2::Halfedge_const_handle h : edges )
         {
-            const double startX = ( to_double(  h->source()->point().x() ) - minX ) * scale;
-            const double startY = ( to_double( -h->source()->point().y() ) - minY ) * scale;
-            const double endX   = ( to_double(  h->target()->point().x() ) - minX ) * scale;
-            const double endY   = ( to_double( -h->target()->point().y() ) - minY ) * scale;
+            if( h->target()->point() == h->curve().source() )
+                h = h->twin();
             
-            std::ostringstream osText;
+            svgLine( h, minX, minY, scale, pszColour, *os );
+            
             {
-                const void* pData       = h->data();
-                const void* pTwinData   = h->twin()->data();
-                /*if( const Blueprint::Area* pArea = (const Blueprint::Area*)pData )
+                const double startX = ( to_double(  h->source()->point().x() ) - minX ) * scale;
+                const double startY = ( to_double( -h->source()->point().y() ) - minY ) * scale;
+                const double endX   = ( to_double(  h->target()->point().x() ) - minX ) * scale;
+                const double endY   = ( to_double( -h->target()->point().y() ) - minY ) * scale;
+                
+                std::ostringstream osText;
                 {
-                    osText << "l:" << pArea->getName();
+                    //const void* pData       = h->data();
+                    //const void* pTwinData   = h->twin()->data();
+                    /*if( const Blueprint::Area* pArea = (const Blueprint::Area*)pData )
+                    {
+                        osText << "l:" << pArea->getName();
+                    }
+                    else
+                    {
+                        osText << "l:";
+                    }
+                    if( const Blueprint::Area* pArea = (const Blueprint::Area*)pTwinData )
+                    {
+                        osText << " r:" << pArea->getName();
+                    }
+                    else
+                    {
+                        osText << " r:";
+                    }*/
                 }
-                else
                 {
-                    osText << "l:";
+                    float x = startX + ( endX - startX ) / 2.0f;
+                    float y = startY + ( endY - startY ) / 2.0f;
+                    *os << "       <text x=\"" << x << "\" y=\"" << y << 
+                                     "\" fill=\"green\" transform=\"rotate(30 " << 
+                                        x << "," << y << ")\" >" << osText.str() << " </text>\n";
                 }
-                if( const Blueprint::Area* pArea = (const Blueprint::Area*)pTwinData )
-                {
-                    osText << " r:" << pArea->getName();
-                }
-                else
-                {
-                    osText << " r:";
-                }*/
-            }
-            {
-                float x = startX + ( endX - startX ) / 2.0f;
-                float y = startY + ( endY - startY ) / 2.0f;
-                *os << "       <text x=\"" << x << "\" y=\"" << y << 
-                                 "\" fill=\"green\" transform=\"rotate(30 " << x << "," << y << ")\" >" << osText.str() << " </text>\n";
             }
         }
     }
@@ -269,8 +279,8 @@ void constructConnectionEdges( Arr_with_hist_2& arr, Connection::Ptr pConnection
         m_hDoorStep = arr.insert_at_vertices( segDoorStep, vFirstMid, vSecondMid );
     }
     
-    //m_hDoorStep->set_data( m_pFirstStart->getArea() );
-    //m_hDoorStep->twin()->set_data( m_pSecondStart->getArea() );
+    m_hDoorStep->set_data( (DefaultedBool( true )) );
+    m_hDoorStep->twin()->set_data( (DefaultedBool( true )) );
     
     {
         bool bFound = false;
@@ -411,21 +421,162 @@ Compilation::Compilation( Blueprint::Ptr pBlueprint )
     {
         connect( pSite );
     }
-    
-    for( Arr_with_hist_2::Halfedge_handle h : m_arr.halfedge_handles() )
-    {
-        h->set_data( nullptr );
-        h->twin()->set_data( nullptr );
-    }
-    
-    
-    
 }
     
 void Compilation::render( const boost::filesystem::path& filepath )
 {
-    generateHTML( filepath, m_arr );
+    EdgeVectorVector edgeGroups;
+    std::vector< Arr_with_hist_2::Halfedge_const_handle > edges;
+    for( auto i = m_arr.edges_begin(); i != m_arr.edges_end(); ++i )
+        edges.push_back( i );
+    edgeGroups.push_back( edges );
+    generateHTML( filepath, m_arr, edgeGroups );
 }
 
+void Compilation::renderFloors( const boost::filesystem::path& filepath )
+{
+    EdgeVectorVector edgeGroups;
+
+    using EdgeVector = std::vector< Arr_with_hist_2::Halfedge_const_handle >;
+    for( auto i = m_arr.faces_begin(),
+        iEnd = m_arr.faces_end(); i!=iEnd; ++i )
+    {
+        EdgeVector edges;
+        //for each face determine if it has a doorstep - including only in the holes
+        bool bDoesFaceHaveDoorstep = false;
+        if( !i->is_unbounded() )
+        {
+            Arr_with_hist_2::Ccb_halfedge_const_circulator iter = i->outer_ccb();
+            Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+            do
+            {   
+                edges.push_back( iter );
+                if( iter->data().get() )
+                {
+                    bDoesFaceHaveDoorstep = true;
+                }
+                ++iter;
+            }
+            while( iter != start );
+            
+            if( !bDoesFaceHaveDoorstep )
+            {
+                //search through all holes
+                for( Arr_with_hist_2::Hole_const_iterator 
+                    holeIter = i->holes_begin(),
+                    holeIterEnd = i->holes_end(); 
+                        holeIter != holeIterEnd; ++holeIter )
+                {
+                    Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
+                    Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+                    do
+                    {   
+                        if( iter->data().get() )
+                        {
+                            bDoesFaceHaveDoorstep = true;
+                            break;
+                        }
+                        ++iter;
+                    }
+                    while( iter != start );
+                }
+            }
+        }
+        
+        if( bDoesFaceHaveDoorstep )
+        {
+            for( Arr_with_hist_2::Hole_const_iterator 
+                holeIter = i->holes_begin(),
+                holeIterEnd = i->holes_end(); 
+                    holeIter != holeIterEnd; ++holeIter )
+            {
+                Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
+                Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+                do
+                {   
+                    edges.push_back( iter );
+                    ++iter;
+                }
+                while( iter != start );
+            }
+            edgeGroups.push_back( edges );
+        }
+    }
+    
+    generateHTML( filepath, m_arr, edgeGroups );
+}
+
+
+void Compilation::renderFillers( const boost::filesystem::path& filepath )
+{
+    EdgeVectorVector edgeGroups;
+
+    for( auto i = m_arr.faces_begin(),
+        iEnd = m_arr.faces_end(); i!=iEnd; ++i )
+    {
+        EdgeVector edges;
+        //for each face determine if it has a doorstep - including only in the holes
+        bool bDoesFaceHaveDoorstep = false;
+        if( !i->is_unbounded() )
+        {
+            Arr_with_hist_2::Ccb_halfedge_const_circulator iter = i->outer_ccb();
+            Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+            do
+            {   
+                edges.push_back( iter );
+                if( iter->data().get() )
+                {
+                    bDoesFaceHaveDoorstep = true;
+                }
+                ++iter;
+            }
+            while( iter != start );
+            
+            if( !bDoesFaceHaveDoorstep )
+            {
+                //search through all holes
+                for( Arr_with_hist_2::Hole_const_iterator 
+                    holeIter = i->holes_begin(),
+                    holeIterEnd = i->holes_end(); 
+                        holeIter != holeIterEnd; ++holeIter )
+                {
+                    Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
+                    Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+                    do
+                    {   
+                        if( iter->data().get() )
+                        {
+                            bDoesFaceHaveDoorstep = true;
+                            break;
+                        }
+                        ++iter;
+                    }
+                    while( iter != start );
+                }
+            }
+        }
+        
+        if( !bDoesFaceHaveDoorstep && !i->is_unbounded() )
+        {
+            for( Arr_with_hist_2::Hole_const_iterator 
+                holeIter = i->holes_begin(),
+                holeIterEnd = i->holes_end(); 
+                    holeIter != holeIterEnd; ++holeIter )
+            {
+                Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
+                Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+                do
+                {   
+                    edges.push_back( iter );
+                    ++iter;
+                }
+                while( iter != start );
+            }
+            edgeGroups.push_back( edges );
+        }
+    }
+    
+    generateHTML( filepath, m_arr, edgeGroups );
+}
 
 }

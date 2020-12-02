@@ -1,4 +1,4 @@
-basic_exterior_connection_nest<blueprint>
+basic_exterior_connection_nest<blueprint>(0,0,East;,false,false)
 {
     area_0000<space>(2,2,East;,false,false)
     {
@@ -16,9 +16,9 @@ basic_exterior_connection_nest<blueprint>
                     type<property>(exterior;)
                 }
             }
-            area_0001<space>(4,38,East;,false,true)
+            area_0001<space>(0,37,East;,false,true)
             {
-                contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
+                contour<contour>(4,-15,-15,40,-15,40,15,-15,15)
                 {
                     auto<property>(false)
                     segment_0001<contoursegment>(1,0.5,4)
@@ -32,27 +32,38 @@ basic_exterior_connection_nest<blueprint>
                     segment_0003<contoursegment>(3,0.5,4)
                     {
                         type<property>(exterior;)
+                    }
+                }
+                spac_0001<space>(-8,-2,East;,false,false)
+                {
+                    contour<contour>(4,-7,-7,16,-7,16,9,-7,9)
+                    {
+                        auto<property>(false)
+                    }
+                }
+                spac_0002<space>(35,-2,East;,false,false)
+                {
+                    contour<contour>(4,-16,-7,5,-7,5,9,-16,9)
+                    {
+                        auto<property>(false)
                     }
                 }
             }
-            area_0002<space>(36,38,West;,false,false)
+            conn_0002<connect>(-14,38,North;,false,false)
             {
-                contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
-                {
-                    auto<property>(false)
-                    segment_0001<contoursegment>(1,0.5,4)
-                    {
-                        type<property>(none;)
-                    }
-                    segment_0002<contoursegment>(0,0.5,4)
-                    {
-                        type<property>(none;)
-                    }
-                    segment_0003<contoursegment>(3,0.5,4)
-                    {
-                        type<property>(exterior;)
-                    }
-                }
+                width<point>(3,8)
+            }
+            conn_0003<connect>(40,38,North;,false,false)
+            {
+                width<point>(3,8)
+            }
+            conn_0004<connect>(19,38,North;,false,false)
+            {
+                width<point>(3,4)
+            }
+            conn_0005<connect>(8,38,North;,false,false)
+            {
+                width<point>(3,4)
             }
         }
     }

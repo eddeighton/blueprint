@@ -1,4 +1,4 @@
-basic_exterior_connection<blueprint>
+basic_exterior_connection<blueprint>(0,0,East;,false,false)
 {
     area_0000<space>(2,2,East;,false,false)
     {
@@ -6,7 +6,7 @@ basic_exterior_connection<blueprint>
         {
             auto<property>(false)
         }
-        area_0001<space>(4,38,East;,false,true)
+        area_0001<space>(26,37,East;,false,true)
         {
             contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
             {
@@ -25,24 +25,9 @@ basic_exterior_connection<blueprint>
                 }
             }
         }
-        area_0002<space>(36,38,West;,false,false)
-        {
-            contour<contour>(4,-15,-15,15,-15,15,15,-15,15)
-            {
-                auto<property>(false)
-                segment_0001<contoursegment>(1,0.5,4)
-                {
-                    type<property>(none;)
-                }
-                segment_0002<contoursegment>(0,0.5,4)
-                {
-                    type<property>(none;)
-                }
-                segment_0003<contoursegment>(3,0.5,4)
-                {
-                    type<property>(exterior;)
-                }
-            }
-        }
+    }
+    conn_0001<connect>(13,40,North;,false,false)
+    {
+        width<point>(7,8)
     }
 }

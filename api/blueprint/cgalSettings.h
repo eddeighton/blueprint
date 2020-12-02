@@ -42,7 +42,19 @@ namespace Blueprint
     //typedef Traits_2::Point_2                                       Point_2;
     typedef Traits_2::X_monotone_curve_2                            Segment_2;
 
-    typedef CGAL::Arr_extended_dcel< Traits_2, const void*, const void*, const void* > Dcel;
+    struct DefaultedBool
+    {
+        DefaultedBool(){}
+        DefaultedBool( bool b ) : m_bValue( b ) {}
+        
+        bool get() const { return m_bValue; }
+        void set( bool b ) { m_bValue = b; }
+        
+    private:
+        bool m_bValue = false;
+    };
+    
+    typedef CGAL::Arr_extended_dcel< Traits_2, DefaultedBool, DefaultedBool, DefaultedBool > Dcel;
 
     typedef CGAL::Arrangement_with_history_2< Traits_2, Dcel >      Arr_with_hist_2;
 
@@ -59,6 +71,9 @@ namespace Blueprint
         Compilation( boost::shared_ptr< Blueprint > pBlueprint );
         
         void render( const boost::filesystem::path& filepath );
+        
+        void renderFloors( const boost::filesystem::path& filepath );
+        void renderFillers( const boost::filesystem::path& filepath );
         
     private:
         void recurse( boost::shared_ptr< Site > pSpace );

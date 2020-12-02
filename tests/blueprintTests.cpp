@@ -288,6 +288,7 @@ void loadTest( const boost::filesystem::path& inputFile )
 {    
     try
     {
+        std::cout << "testing: " << inputFile.string() << std::endl;
         Blueprint::Factory factory;
         Blueprint::Blueprint::Ptr pTest = 
             boost::dynamic_pointer_cast< ::Blueprint::Blueprint >( 
@@ -303,6 +304,9 @@ void loadTest( const boost::filesystem::path& inputFile )
         Blueprint::Compilation compiler( pTest );
         
         compiler.render( constructPath( inputFile, ".html" ) );
+        compiler.renderFillers( constructPath( inputFile, "__fillers.html" ) );
+        compiler.renderFloors( constructPath( inputFile, "__floors.html" ) );
+        
     }
     catch( std::exception& ex )
     {
