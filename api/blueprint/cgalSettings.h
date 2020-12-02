@@ -52,7 +52,6 @@ namespace Blueprint
     
     class Blueprint;
     class Site;
-    class Connection;
     
     class Compilation
     {
@@ -63,7 +62,6 @@ namespace Blueprint
         
     private:
         void recurse( boost::shared_ptr< Site > pSpace );
-        void connect( boost::shared_ptr< Connection > pConnection );
         void connect( boost::shared_ptr< Site > pConnection );
         
         boost::shared_ptr< Blueprint > m_pBlueprint;

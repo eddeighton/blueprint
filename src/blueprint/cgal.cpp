@@ -237,135 +237,50 @@ void Compilation::recurse( Site::Ptr pSite )
 }
 
 
-void Compilation::connect( Connection::Ptr pConnection )
+void constructConnectionEdges( Arr_with_hist_2& arr, Connection::Ptr pConnection, 
+        Arr_with_hist_2::Halfedge_handle firstBisectorEdge, 
+        Arr_with_hist_2::Halfedge_handle secondBisectorEdge )
 {
-    //VERIFY_RTE( m_pFirstStart->getArea() ==  m_pFirstEnd->getArea() );
-    //VERIFY_RTE( m_pSecondStart->getArea() == m_pSecondEnd->getArea() );
-    //VERIFY_RTE( m_pFirstStart->getArea() !=  m_pSecondStart->getArea() );
     
-    /*const Blueprint::Point_2 ptFirstStart( m_pFirstStart->getPoint().x, m_pFirstStart->getPoint().y );
-    const Blueprint::Point_2 ptFirstEnd(   m_pFirstEnd->getPoint().x,   m_pFirstEnd->getPoint().y ); 
-    Blueprint::Curve_handle hFirstDoorStep = 
-        CGAL::insert( arr, Blueprint::Segment_2( ptFirstStart, ptFirstEnd ) );
-            
-    const Blueprint::Point_2 ptSecondStart( m_pSecondStart->getPoint().x, m_pSecondStart->getPoint().y );
-    const Blueprint::Point_2 ptSecondEnd(   m_pSecondEnd->getPoint().x,   m_pSecondEnd->getPoint().y ); 
-    Blueprint::Curve_handle hSecondDoorStep = 
-        CGAL::insert( arr, Blueprint::Segment_2( ptSecondStart, ptSecondEnd ) );
+    Arr_with_hist_2::Vertex_handle vFirstStart  = firstBisectorEdge->source();
+    Arr_with_hist_2::Vertex_handle vFirstEnd    = firstBisectorEdge->target();
+    Arr_with_hist_2::Vertex_handle vSecondStart = secondBisectorEdge->source();
+    Arr_with_hist_2::Vertex_handle vSecondEnd   = secondBisectorEdge->target();
+    
+    const Point_2 ptFirstStart  = vFirstStart->point();
+    const Point_2 ptFirstEnd    = vFirstEnd->point();
+    const Point_2 ptSecondStart = vSecondStart->point();
+    const Point_2 ptSecondEnd   = vSecondEnd->point();
+    const Point_2 ptFirstMid    = ptFirstStart  + ( ptFirstEnd - ptFirstStart )   / 2.0;
+    const Point_2 ptSecondMid   = ptSecondStart + ( ptSecondEnd - ptSecondStart ) / 2.0;
         
-    const Blueprint::Point_2 ptFirstMid(  m_pFirstMid->getPoint().x,  m_pFirstMid->getPoint().y );
-    const Blueprint::Point_2 ptSecondMid( m_pSecondMid->getPoint().x, m_pSecondMid->getPoint().y ); 
-            
-    {
-        int iFoundFirstStart = 0,  iFoundFirstEnd = 0;
-        int iFoundSecondStart = 0, iFoundSecondEnd = 0;
-        for( Blueprint::Arr_with_hist_2::Vertex_iterator 
-                i = arr.vertices_begin(),
-                iEnd = arr.vertices_end(); i!=iEnd; ++i )
-        {
-            if( i->point() == ptFirstStart )
-            {
-                ++iFoundFirstStart;
-                m_vFirstStart = i;
-            }
-            if( i->point() == ptFirstEnd )
-            {
-                ++iFoundFirstEnd;
-                m_vFirstEnd = i;
-            }
-            if( i->point() == ptSecondStart )
-            {
-                ++iFoundSecondStart;
-                m_vSecondStart = i;
-            }
-            if( i->point() == ptSecondEnd )
-            {
-                ++iFoundSecondEnd;
-                m_vSecondEnd = i;
-            }
-        }
-        VERIFY_RTE( ( iFoundFirstStart == 1 )   && ( iFoundFirstEnd == 1 ) );
-        VERIFY_RTE( ( iFoundSecondStart == 1 )  && ( iFoundSecondEnd == 1 ) );
-        VERIFY_RTE( ( iFoundFirstStart == 1 )   && ( iFoundFirstEnd == 1 ) );
-        VERIFY_RTE( ( iFoundSecondStart == 1 )  && ( iFoundSecondEnd == 1 ) );
-    }*/
+    Arr_with_hist_2::Halfedge_handle hFirstStartToMid = 
+        arr.split_edge( firstBisectorEdge, ptFirstMid );
+    Arr_with_hist_2::Vertex_handle vFirstMid = hFirstStartToMid->target();
     
-    Arr_with_hist_2::Vertex_handle m_vFirstStart,  m_vFirstEnd;
-    Arr_with_hist_2::Vertex_handle m_vSecondStart, m_vSecondEnd;
-    Arr_with_hist_2::Halfedge_handle m_hDoorStep;
-    
-    const Point_2 ptFirstStart(  0.0, 0.0 );
-    const Point_2 ptFirstEnd(    0.0, 0.0 );
-    const Point_2 ptSecondStart( 0.0, 0.0 );
-    const Point_2 ptSecondEnd(   0.0, 0.0 );
-    const Point_2 ptFirstMid(    0.0, 0.0 );
-    const Point_2 ptSecondMid(   0.0, 0.0 );
-    
-    //create edge to mid points
-    const Segment_2 firstStartToMid(  ptFirstStart,  ptFirstMid );
-    const Segment_2 firstEndToMid(    ptFirstEnd,    ptSecondMid );
-    const Segment_2 secondStartToMid( ptSecondStart, ptSecondMid );
-    const Segment_2 secondEndToMid(   ptSecondEnd,   ptFirstMid );
-    
-    Arr_with_hist_2::Vertex_handle vFirstMid;
-    {
-        if( ptFirstStart < ptFirstMid )
-        {
-            Arr_with_hist_2::Halfedge_handle hFirstStartToMid = 
-                m_arr.insert_from_left_vertex( firstStartToMid, m_vFirstStart );
-            vFirstMid = hFirstStartToMid->target();
-        }
-        else
-        {
-            Arr_with_hist_2::Halfedge_handle hFirstStartToMid = 
-                m_arr.insert_from_right_vertex( firstStartToMid, m_vFirstStart );
-            vFirstMid = hFirstStartToMid->target();
-        }
-    }
-    
-    Arr_with_hist_2::Vertex_handle vSecondMid;
-    {
-        if( ptFirstEnd < ptSecondMid )
-        {
-            Arr_with_hist_2::Halfedge_handle hFirstEndToMid = 
-                m_arr.insert_from_left_vertex( firstEndToMid, m_vFirstEnd );
-            vSecondMid = hFirstEndToMid->target();
-        }
-        else
-        {
-            Arr_with_hist_2::Halfedge_handle hFirstEndToMid = 
-                m_arr.insert_from_right_vertex( firstEndToMid, m_vFirstEnd );
-            vSecondMid = hFirstEndToMid->target();
-        }
-    }
-    
-    {
-        Arr_with_hist_2::Halfedge_handle hSecondStartToMid = 
-            m_arr.insert_at_vertices( secondStartToMid, m_vSecondStart, vSecondMid );
-        Arr_with_hist_2::Halfedge_handle hSecondEndToMid   = 
-            m_arr.insert_at_vertices( secondEndToMid, m_vSecondEnd, vFirstMid );
-    }
+    Arr_with_hist_2::Halfedge_handle hSecondStartToMid = 
+        arr.split_edge( secondBisectorEdge, ptSecondMid );
+    Arr_with_hist_2::Vertex_handle vSecondMid = hSecondStartToMid->target();
     
     //create edge between mid points
+    Arr_with_hist_2::Halfedge_handle m_hDoorStep;
     {
         const Segment_2 segDoorStep( ptFirstMid, ptSecondMid );
-        m_hDoorStep = m_arr.insert_at_vertices( segDoorStep, vFirstMid, vSecondMid );
+        m_hDoorStep = arr.insert_at_vertices( segDoorStep, vFirstMid, vSecondMid );
     }
-    
     
     //m_hDoorStep->set_data( m_pFirstStart->getArea() );
     //m_hDoorStep->twin()->set_data( m_pSecondStart->getArea() );
     
-    //remove edge between m_vFirstStart m_vFirstEnd
     {
         bool bFound = false;
         Arr_with_hist_2::Halfedge_around_vertex_circulator first, iter;
-        first = iter = m_vFirstStart->incident_halfedges();
+        first = iter = vFirstStart->incident_halfedges();
         do
         {
-            if( iter->source() == m_vFirstEnd )
+            if( ( iter->source() == vSecondStart ) || ( iter->source() == vSecondEnd ) )
             {
-                m_arr.remove_edge( iter );
+                arr.remove_edge( iter );
                 bFound = true;
                 break;
             }
@@ -374,17 +289,15 @@ void Compilation::connect( Connection::Ptr pConnection )
         while( iter != first );
         VERIFY_RTE( bFound );
     }
-
-    //remove edge between m_vSecondStart m_vSecondEnd
     {
         bool bFound = false;
         Arr_with_hist_2::Halfedge_around_vertex_circulator first, iter;
-        first = iter = m_vSecondStart->incident_halfedges();
+        first = iter = vFirstEnd->incident_halfedges();
         do
         {
-            if( iter->source() == m_vSecondEnd )
+            if( ( iter->source() == vSecondStart ) || ( iter->source() == vSecondEnd ) )
             {
-                m_arr.remove_edge( iter );
+                arr.remove_edge( iter );
                 bFound = true;
                 break;
             }
@@ -401,32 +314,83 @@ void Compilation::connect( Site::Ptr pSite )
     {
         const Matrix transform = pConnection->getAbsoluteTransform();
     
-        Segment2D firstSeg  = pConnection->getFirstSegment();
-        Segment2D secondSeg = pConnection->getSecondSegment();
-        
-        transform.transform( firstSeg[ 0 ].x, firstSeg[ 0 ].y );
-        transform.transform( firstSeg[ 1 ].x, firstSeg[ 1 ].y );
-        transform.transform( secondSeg[ 0 ].x, secondSeg[ 0 ].y );
-        transform.transform( secondSeg[ 1 ].x, secondSeg[ 1 ].y );
-        
-        Curve_handle firstCurve = CGAL::insert( m_arr, 
-            Segment_2(  Point_2( firstSeg[ 0 ].x, firstSeg[ 0 ].y ),
-                        Point_2( firstSeg[ 1 ].x, firstSeg[ 1 ].y ) ) );
-                        
-        Curve_handle secondCurve = CGAL::insert( m_arr, 
-            Segment_2(  Point_2( secondSeg[ 0 ].x, secondSeg[ 0 ].y ),
-                        Point_2( secondSeg[ 1 ].x, secondSeg[ 1 ].y ) ) );
-                        
-        
         //attempt to find the four connection vertices
+        std::vector< Arr_with_hist_2::Halfedge_handle > toRemove;
+        Arr_with_hist_2::Halfedge_handle firstBisectorEdge, secondBisectorEdge;
+        bool bFoundFirst = false, bFoundSecond = false;
+        {
+            Segment2D firstSeg  = pConnection->getFirstSegment();
+            transform.transform( firstSeg[ 0 ].x, firstSeg[ 0 ].y );
+            transform.transform( firstSeg[ 1 ].x, firstSeg[ 1 ].y );
+            
+            const Point_2 ptFirstStart( firstSeg[ 0 ].x, firstSeg[ 0 ].y );
+            const Point_2 ptFirstEnd( firstSeg[ 1 ].x, firstSeg[ 1 ].y );
+            
+            Curve_handle firstCurve = CGAL::insert( m_arr, 
+                Segment_2( ptFirstStart, ptFirstEnd ) );
+            
+            for( auto   i = m_arr.induced_edges_begin( firstCurve );
+                        i != m_arr.induced_edges_end( firstCurve ); ++i )
+            {
+                Arr_with_hist_2::Halfedge_handle h = *i;
+                
+                if( ( h->source()->point() == ptFirstStart ) || 
+                    ( h->source()->point() == ptFirstEnd   ) || 
+                    ( h->target()->point() == ptFirstStart ) || 
+                    ( h->target()->point() == ptFirstEnd   ) )
+                {
+                    toRemove.push_back( h );
+                }
+                else 
+                {
+                    firstBisectorEdge = h;
+                    VERIFY_RTE( !bFoundFirst );
+                    bFoundFirst = true;
+                }
+            }
+        }
         
+        {
+            Segment2D secondSeg = pConnection->getSecondSegment();
+            transform.transform( secondSeg[ 0 ].x, secondSeg[ 0 ].y );
+            transform.transform( secondSeg[ 1 ].x, secondSeg[ 1 ].y );
+            
+            const Point_2 ptSecondStart( secondSeg[ 1 ].x, secondSeg[ 1 ].y );
+            const Point_2 ptSecondEnd( secondSeg[ 0 ].x, secondSeg[ 0 ].y );
+            
+            Curve_handle secondCurve = CGAL::insert( m_arr, 
+                Segment_2( ptSecondStart, ptSecondEnd ) );
+                
+            for( auto   i = m_arr.induced_edges_begin( secondCurve );
+                        i != m_arr.induced_edges_end( secondCurve ); ++i )
+            {
+                Arr_with_hist_2::Halfedge_handle h = *i;
+                
+                if( ( h->source()->point() == ptSecondStart ) || 
+                    ( h->source()->point() == ptSecondEnd   ) || 
+                    ( h->target()->point() == ptSecondStart ) || 
+                    ( h->target()->point() == ptSecondEnd   ) )
+                {
+                    toRemove.push_back( h );
+                }
+                else 
+                {
+                    secondBisectorEdge = h;
+                    VERIFY_RTE( !bFoundSecond );
+                    bFoundSecond = true;
+                }
+            }
+        }
         
-        //resolve the vertices to opposing areas
+        VERIFY_RTE_MSG( bFoundFirst && bFoundSecond, "Failed to construct connection" );
+        constructConnectionEdges( m_arr, pConnection, firstBisectorEdge, secondBisectorEdge );
         
-        //construct the doorstep
+        //VERIFY_RTE_MSG( toRemove.size() == 4, "Bad connection" );
+        for( Arr_with_hist_2::Halfedge_handle h : toRemove )
+        {
+            m_arr.remove_edge( h );
+        }
         
-        
-        //remove original curves
     }
     
     for( Site::Ptr pNestedSite : pSite->getSites() )

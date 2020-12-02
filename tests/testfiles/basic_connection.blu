@@ -28,12 +28,9 @@ basic_connection<blueprint>(0,0,East;,false,false)
                 }
             }
         }
-        conn_0003<connect>(21,25,East;,false,false)
+        conn_0003<connect>(22,26,North;,false,false)
         {
-            contour<contour>(4,-4,-3,7,-3,7,4,-4,4)
-            {
-                auto<property>(false)
-            }
+            width<point>(6,4)
         }
     }
     contour<contour>(4,-16,-16,16,-16,16,16,-16,16)

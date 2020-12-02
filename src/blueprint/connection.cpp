@@ -103,10 +103,23 @@ void Connection::evaluate( const EvaluationMode& mode, EvaluationResults& result
             m_contourPath, 
             Adaptor( WykobiPolygonAdaptor( polygon ), true ) );
     
-        m_contourPath.push_back( MarkupPath::Cmd( m_firstSegment[ 0 ].x,  m_firstSegment[ 0 ].y,   MarkupPath::Cmd::path_cmd_move_to ) );
-        m_contourPath.push_back( MarkupPath::Cmd( m_firstSegment[ 1 ].x,  m_firstSegment[ 1 ].y,   MarkupPath::Cmd::path_cmd_line_to ) );
-        m_contourPath.push_back( MarkupPath::Cmd( m_secondSegment[ 0 ].x, m_secondSegment[ 0 ].y, MarkupPath::Cmd::path_cmd_move_to ) );
-        m_contourPath.push_back( MarkupPath::Cmd( m_secondSegment[ 1 ].x, m_secondSegment[ 1 ].y, MarkupPath::Cmd::path_cmd_line_to ) );
+        /*float fExtra = 2.0f;
+        
+        m_contourPath.clear();
+        
+        m_contourPath.push_back( MarkupPath::Cmd( m_firstSegment[ 0 ].x,  m_firstSegment[ 0 ].y - 1.0f,   MarkupPath::Cmd::path_cmd_move_to ) );
+        m_contourPath.push_back( MarkupPath::Cmd( m_firstSegment[ 1 ].x,  m_firstSegment[ 1 ].y,   MarkupPath::Cmd::path_cmd_line_to ) );  
+        
+        m_contourPath.push_back( MarkupPath::Cmd( m_secondSegment[ 0 ].x, m_secondSegment[ 0 ].y, MarkupPath::Cmd::path_cmd_move_to ) );    
+        m_contourPath.push_back( MarkupPath::Cmd( m_secondSegment[ 1 ].x, m_secondSegment[ 1 ].y, MarkupPath::Cmd::path_cmd_line_to ) );  
+
+        m_contourPath.push_back( MarkupPath::Cmd( m_firstSegment[ 0 ].x,   m_firstSegment[ 0 ].y - fExtra + ( m_firstSegment[ 1 ].y - m_firstSegment[ 0 ].y ) / 2.0,   MarkupPath::Cmd::path_cmd_move_to ) );   
+        m_contourPath.push_back( MarkupPath::Cmd( m_secondSegment[ 0 ].x,  m_firstSegment[ 0 ].y - fExtra + ( m_firstSegment[ 1 ].y - m_firstSegment[ 0 ].y ) / 2.0,   MarkupPath::Cmd::path_cmd_line_to ) );  
+
+        m_contourPath.push_back( MarkupPath::Cmd( m_firstSegment[ 0 ].x,   m_firstSegment[ 0 ].y + fExtra + ( m_firstSegment[ 1 ].y - m_firstSegment[ 0 ].y ) / 2.0,   MarkupPath::Cmd::path_cmd_move_to ) );   
+        m_contourPath.push_back( MarkupPath::Cmd( m_secondSegment[ 0 ].x,  m_firstSegment[ 0 ].y + fExtra + ( m_firstSegment[ 1 ].y - m_firstSegment[ 0 ].y ) / 2.0,   MarkupPath::Cmd::path_cmd_line_to ) );         
+          */  
+            
     }
 
 }
