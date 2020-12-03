@@ -47,6 +47,7 @@ set( BLUEPRINT_API
     ${BLUEPRINT_API_DIR}/blueprint/object.h
     ${BLUEPRINT_API_DIR}/blueprint/connection.h
     ${BLUEPRINT_API_DIR}/blueprint/wall.h
+    ${BLUEPRINT_API_DIR}/blueprint/clipperUtils.h
     )
     
     

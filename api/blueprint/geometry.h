@@ -38,4 +38,4 @@ namespace Blueprint
 
 }
 
-#endif GEOMETRY_TYPES_01_DEC_2020/
+#endif //GEOMETRY_TYPES_01_DEC_2020

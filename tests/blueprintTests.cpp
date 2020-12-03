@@ -302,6 +302,8 @@ void loadTest( const boost::filesystem::path& inputFile )
         }
         
         Blueprint::Compilation compiler( pTest );
+        Blueprint::Compilation::SpacePolyMap spacePolyMap;
+        compiler.getSpacePolyMap( spacePolyMap );
         
         compiler.render( constructPath( inputFile, ".html" ) );
         compiler.renderFillers( constructPath( inputFile, "__fillers.html" ) );
@@ -315,10 +317,10 @@ void loadTest( const boost::filesystem::path& inputFile )
 }
 TEST( CGAL, CompilerTestFiles )
 {
-    //{
-    //    char c;
-    //    std::cin >> c;
-    //}
+    {
+        char c;
+        std::cin >> c;
+    }
     
     std::vector< boost::filesystem::path > testFiles;
     for( boost::filesystem::directory_iterator iter( testFilesFolderPath / "testfiles" );
