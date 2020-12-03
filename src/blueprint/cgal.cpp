@@ -201,6 +201,9 @@ namespace
         }
         return false;
     }
+            
+
+
 }
 
 namespace Blueprint
@@ -904,6 +907,131 @@ void Compilation::renderFillers( const boost::filesystem::path& filepath )
     }
 
     generateHTML( filepath, m_arr, edgeGroups );
+}
+   
+inline void loaddata( std::istream& is, Point2D& pt )
+{
+    is >> pt.x >> pt.y;
+}
+inline void loaddata( std::istream& is, std::vector< Point2D >& data )
+{
+    std::size_t szSize;
+    is >> szSize;
+    for( std::size_t sz = 0; sz != szSize; ++sz )
+    {
+        Point2D pt;
+        loaddata( is, pt );
+        data.push_back( pt );
+    }
+}
+inline void loaddata( std::istream& is, Polygon2D& data )
+{
+    std::size_t szSize;
+    is >> szSize;
+    for( std::size_t sz = 0; sz != szSize; ++sz )
+    {
+        Point2D pt;
+        loaddata( is, pt );
+        data.push_back( pt );
+    }
+}
+inline void loaddata( std::istream& is, PolygonWithHoles& data )
+{
+    loaddata( is, data.outer );
+    std::size_t szSize;
+    is >> szSize;
+    for( std::size_t sz = 0; sz != szSize; ++sz )
+    {
+        Polygon2D hole;
+        loaddata( is, hole );
+        data.holes.emplace_back( hole );
+    }
+}
+inline void savedata( std::ostream& os, const Point2D& pt )
+{
+    os << pt.x << ' ' << pt.y << '\n';
+}
+         
+inline void savedata( std::ostream& os, const std::vector< Point2D >& data )
+{
+    os << data.size() << '\n';
+    for( const Point2D& pt : data )
+        savedata( os, pt );
+}       
+       
+inline void savedata( std::ostream& os, const Polygon2D& data )
+{
+    os << data.size() << '\n';
+    for( const Point2D& pt : data )
+        savedata( os, pt );
+}
+            
+inline void savedata( std::ostream& os, const PolygonWithHoles& data )
+{
+    savedata( os, data.outer );
+    os << data.holes.size() << '\n';
+    for( const Polygon2D& p : data.holes )
+        savedata( os, p );
+}
+          
+void Compilation::SpacePolyInfo::load( std::istream& is )
+{
+    {
+        std::size_t szSize;
+        is >> szSize;
+        for( std::size_t sz = 0U; sz != szSize; ++sz )
+        {
+            PolygonWithHoles p;
+            loaddata( is, p );
+            floors.emplace_back( p );
+        }
+    }
+    {
+        std::size_t szSize;
+        is >> szSize;
+        for( std::size_t sz = 0U; sz != szSize; ++sz )
+        {
+            Polygon2D p;
+            loaddata( is, p );
+            fillers.emplace_back( p );
+        }
+    }
+    {
+        std::size_t szSize;
+        is >> szSize;
+        for( std::size_t sz = 0U; sz != szSize; ++sz )
+        {
+            std::vector< Point2D > p;
+            loaddata( is, p );
+            walls.emplace_back( p );
+        }
+    }
+    {
+        std::size_t szSize;
+        is >> szSize;
+        for( std::size_t sz = 0U; sz != szSize; ++sz )
+        {
+            Polygon2D p;
+            loaddata( is, p );
+            wallLoops.emplace_back( p );
+        }
+    }
+}
+ 
+void Compilation::SpacePolyInfo::save( std::ostream& os )
+{
+    os << floors.size() << '\n';
+    for( const PolygonWithHoles& data : floors )
+        savedata( os, data );
+    os << fillers.size() << '\n';
+    for( const Polygon2D& data : fillers )
+        savedata( os, data );
+    os << walls.size() << '\n';
+    for( const std::vector< Point2D >& data : walls )
+        savedata( os, data );
+    os << wallLoops.size() << '\n';
+    for( const Polygon2D& data : wallLoops )
+        savedata( os, data );
 }
 
 }

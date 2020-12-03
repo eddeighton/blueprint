@@ -73,6 +73,8 @@ namespace Blueprint
         {
             using Ptr = std::shared_ptr< SpacePolyInfo >;
             
+            void load( std::istream& is );
+            void save( std::ostream& os );
             
             std::vector< PolygonWithHoles > floors;
             std::vector< Polygon2D > fillers;
