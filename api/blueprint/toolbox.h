@@ -77,7 +77,7 @@ public:
     void remove( Palette::Ptr pPalette );
     
     template< typename TValue >
-    void getConfigValue( const std::string& strKey, TValue& value )
+    void getConfigValue( const std::string& strKey, TValue& value ) const
     {
         static std::map< std::string, TValue > cache;
         
@@ -96,8 +96,30 @@ public:
         cache.insert( std::make_pair( strKey, value ) );
     }
     
+    template< typename TValue >
+    void getConfigValueRange( const std::string& strKey, TValue& values ) const
+    {
+        static std::map< std::string, TValue > cache;
+        
+        std::map< std::string, TValue >::const_iterator iFind = cache.find( strKey );
+        if( iFind != cache.end() )
+        {
+            values = iFind->second;
+            return;
+        }
+        
+        boost::optional< const Ed::Node& > findResult = 
+            Ed::find( m_config, strKey );
+        Ed::IShorthandStream is( findResult.get().statement.shorthand.get() );
+        Ed::serialiseIn( is, values );
+        
+        cache.insert( std::make_pair( strKey, values ) );
+    }
+    
 private:
-    void recursiveLoad( const boost::filesystem::path& pathIter, const std::string& strCurrent );
+    void recursiveLoad( const boost::filesystem::path& pathIter, 
+        Ed::FileRef currentLocation, 
+        const std::vector< Ed::FileRef >& ignorFolders );
 private:
     boost::filesystem::path m_rootPath;
     Palette::PtrMap m_palettes;

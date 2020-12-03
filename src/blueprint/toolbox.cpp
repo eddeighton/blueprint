@@ -104,39 +104,6 @@ void Toolbox::Palette::select( Site::Ptr pSite )
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-    
-std::string pathToName( const boost::filesystem::path& p )
-{
-    return p.string();
-    //return p.leaf().replace_extension().string();
-}
-
-void Toolbox::recursiveLoad( const boost::filesystem::path& pathIter, const std::string& strCurrent )
-{
-    using namespace boost::filesystem;
-    for( directory_iterator iter( pathIter ); iter != directory_iterator(); ++iter )
-    {
-        boost::filesystem::path pth = *iter;
-        if( is_regular_file( *iter ) && pth.extension().string() == ".blu" )
-        {
-            //load the file into the current palette
-            Factory factory;
-            Node::PtrVector loadedNodes;
-            factory.load( canonical( absolute( *iter ) ).string(), loadedNodes );
-
-            Site::PtrList clips;
-            std::for_each( loadedNodes.begin(), loadedNodes.end(),
-                generics::collectIfConvert( clips, 
-                    Node::ConvertPtrType< Site >(), Node::ConvertPtrType< Site >() ) );
-            addABunch( strCurrent, clips );
-        }
-        else if( is_directory( *iter ) )
-        {
-            recursiveLoad( *iter, pathToName( *iter ) );
-        }
-    }
-}
-    
 Toolbox::Toolbox( const std::string& strDirectoryPath )
 {
     //recursively load all blueprints under the root directory
@@ -161,6 +128,34 @@ Toolbox::Toolbox( const std::string& strDirectoryPath )
     }
     
     reload();
+}
+    
+Site::Ptr Toolbox::getCurrentItem() const
+{
+    Site::Ptr pItem;
+    if( m_pCurrentPalette )
+        pItem = m_pCurrentPalette->getSelection();
+    return pItem;
+}
+    
+Toolbox::Palette::Ptr Toolbox::getPalette( const std::string& strName ) const
+{
+    Palette::Ptr pResult;
+    Palette::PtrMap::const_iterator iFind = m_palettes.find( strName );
+    if( iFind != m_palettes.end() )
+        pResult = iFind->second;
+    return pResult;
+}
+
+void Toolbox::selectPalette( Palette::Ptr pPalette )
+{
+    m_pCurrentPalette = pPalette;
+}
+
+std::string pathToName( const boost::filesystem::path& p )
+{
+    return p.string();
+    //return p.leaf().replace_extension().string();
 }
 
 void Toolbox::reload()
@@ -196,30 +191,55 @@ void Toolbox::reload()
         pDefaultClip->add( pDefaultSpace );
         add( "clipboard", pDefaultClip, true ); //ensure space is the default one
     }
-
-    recursiveLoad( m_rootPath, pathToName( m_rootPath ) );
-}
     
-Site::Ptr Toolbox::getCurrentItem() const
-{
-    Site::Ptr pItem;
-    if( m_pCurrentPalette )
-        pItem = m_pCurrentPalette->getSelection();
-    return pItem;
+    
+    std::vector< Ed::FileRef > ignoredFolders;
+    getConfigValueRange( ".toolbox.folders.ignor", ignoredFolders );
+
+    Ed::FileRef location;
+    location.push_back( Ed::Identifier( "data" ) );
+    recursiveLoad( m_rootPath, location, ignoredFolders );
 }
 
-Toolbox::Palette::Ptr Toolbox::getPalette( const std::string& strName ) const
+void Toolbox::recursiveLoad( const boost::filesystem::path& pathIter, 
+        Ed::FileRef currentLocation, 
+        const std::vector< Ed::FileRef >& ignorFolders )
 {
-    Palette::Ptr pResult;
-    Palette::PtrMap::const_iterator iFind = m_palettes.find( strName );
-    if( iFind != m_palettes.end() )
-        pResult = iFind->second;
-    return pResult;
-}
+    std::ostringstream os;
+    os << currentLocation;
+    
+    using namespace boost::filesystem;
+    for( directory_iterator iter( pathIter ); iter != directory_iterator(); ++iter )
+    {
+        boost::filesystem::path pth = *iter;
+        if( is_regular_file( *iter ) && pth.extension().string() == ".blu" )
+        {
+            //load the file into the current palette
+            Factory factory;
+            Node::PtrVector loadedNodes;
+            factory.load( canonical( absolute( *iter ) ).string(), loadedNodes );
 
-void Toolbox::selectPalette( Palette::Ptr pPalette )
-{
-    m_pCurrentPalette = pPalette;
+            Site::PtrList clips;
+            std::for_each( loadedNodes.begin(), loadedNodes.end(),
+                generics::collectIfConvert( clips, 
+                    Node::ConvertPtrType< Site >(), Node::ConvertPtrType< Site >() ) );
+                    
+            addABunch( os.str(), clips );
+        }
+        else if( is_directory( *iter ) )
+        {
+            Ed::FileRef nestedDirectory = currentLocation;
+            {
+                const boost::filesystem::path folderPath = *iter;
+                nestedDirectory.push_back( folderPath.leaf().string() );
+            }
+            if( std::find( ignorFolders.begin(), ignorFolders.end(), nestedDirectory )
+                    == ignorFolders.end() )
+            {
+                recursiveLoad( *iter, nestedDirectory, ignorFolders );
+            }
+        }
+    }
 }
 
 void Toolbox::add( const std::string& strName, Site::Ptr pNode, bool bSelect )
