@@ -68,7 +68,7 @@ public:
     
     //origin transform
     Matrix getAbsoluteTransform() const;
-    virtual void setTransform( const Transform& transform );
+    virtual void setTransform( const Matrix& transform );
     virtual const MarkupPath* getMarkupContour() const
     {
         return m_pContourPathImpl.get();

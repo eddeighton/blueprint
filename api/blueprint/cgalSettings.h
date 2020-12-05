@@ -64,6 +64,22 @@ namespace Blueprint
         std::vector< Polygon2D > holes;
     };
     
+    struct Wall
+    {
+        friend class Compilation;
+    public:
+        Wall( bool bClosed, bool bCounterClockwise )
+            :   m_bClosed( bClosed ), 
+                m_bCounterClockwise( bCounterClockwise )
+        {}
+        
+        bool isClosed() const { return m_bClosed; }
+        bool isCounterClockwise() const { return m_bCounterClockwise; }
+        
+        bool m_bClosed, m_bCounterClockwise;
+        Polygon2D points;
+    };
+    
     class Compilation
     {
     public:
@@ -78,8 +94,7 @@ namespace Blueprint
             
             std::vector< PolygonWithHoles > floors;
             std::vector< Polygon2D > fillers;
-            std::vector< std::vector< Point2D > > walls;
-            std::vector< Polygon2D > wallLoops;
+            std::vector< Wall > walls;
         };
         
         using SpacePolyMap = std::map< Space::Ptr, SpacePolyInfo::Ptr >;

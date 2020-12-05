@@ -146,7 +146,7 @@ Matrix Site::getAbsoluteTransform() const
 }
 
 
-void Site::setTransform( const Transform& transform )
+void Site::setTransform( const Matrix& transform )
 { 
     m_transform = transform; 
     setModified();
@@ -155,7 +155,7 @@ void Site::cmd_rotateLeft( const Rect2D& transformBounds )
 {
     const Point2D ptTopLeft = wykobi::rectangle_corner( transformBounds, 0 );
     const Point2D ptBotRight  = wykobi::rectangle_corner( transformBounds, 2 );
-    m_transform.rotateLeft( ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
+    m_transform = Transform::rotateLeft( m_transform, ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
     setModified();
 }
 
@@ -163,7 +163,7 @@ void Site::cmd_rotateRight( const Rect2D& transformBounds )
 {
     const Point2D ptTopLeft = wykobi::rectangle_corner( transformBounds, 0 );
     const Point2D ptBotRight  = wykobi::rectangle_corner( transformBounds, 2 );
-    m_transform.rotateRight( ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
+    m_transform = Transform::rotateRight( m_transform, ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
     setModified();
 }
 
@@ -171,7 +171,7 @@ void Site::cmd_flipHorizontally( const Rect2D& transformBounds )
 {
    const Point2D ptTopLeft = wykobi::rectangle_corner( transformBounds, 0 );
     const Point2D ptBotRight  = wykobi::rectangle_corner( transformBounds, 2 );
-    m_transform.flipHorizontally( ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
+    m_transform = Transform::flipHorizontally( m_transform, ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
     setModified();
 }
 
@@ -179,7 +179,7 @@ void Site::cmd_flipVertically( const Rect2D& transformBounds )
 {
     const Point2D ptTopLeft = wykobi::rectangle_corner( transformBounds, 0 );
     const Point2D ptBotRight  = wykobi::rectangle_corner( transformBounds, 2 );
-    m_transform.flipVertically( ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
+    m_transform = Transform::flipVertically( m_transform, ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
     setModified();
 }
 }

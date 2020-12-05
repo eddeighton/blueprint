@@ -4,6 +4,7 @@
 #include "blueprint/blueprint.h"
 #include "blueprint/space.h"
 #include "blueprint/connection.h"
+#include "blueprint/transform.h"
 
 #include "common/file.hpp"
 
@@ -452,9 +453,28 @@ Compilation::Compilation( Blueprint::Ptr pBlueprint )
     {
         connect( pSite );
     }
+    
+    //record ALL doorsteps
+    std::vector< Arr_with_hist_2::Halfedge_handle > edges;
+    for( auto i = m_arr.edges_begin(); i != m_arr.edges_end(); ++i )
+    {
+        if( i->data().get() )
+        {
+            edges.push_back( i );
+        }
+    }
+    
     for( Site::Ptr pSite : m_pBlueprint->getSites() )
     {
         recursePost( pSite );
+    }
+    
+    for( Arr_with_hist_2::Halfedge_handle i : edges )
+    {
+        if( !i->data().get() )
+        {
+            THROW_RTE( "Doorstep edge lost after recursePost" );
+        }
     }
 }
 
@@ -474,8 +494,10 @@ Point2D getFaceInteriorPoint( Arr_with_hist_2::Face_const_handle hFace )
             to_double( hEdge->target()->point().y() ) );
     const Vector2D vDir = ptTarget - ptSource;
     const Vector2D vNorm =
-        wykobi::make_vector< float >( vDir.y, -vDir.x );
-    const Point2D ptInterior = ptSource + vNorm * 0.1f;
+        wykobi::normalize( 
+            wykobi::make_vector< float >( -vDir.y, vDir.x ) );
+    const Point2D ptMid = ptSource + vDir * 0.5f;
+    const Point2D ptInterior = ptMid + vNorm * 0.1f;
 
     return ptInterior;
 }
@@ -538,22 +560,25 @@ void faceToPolygonWithHoles( Arr_with_hist_2::Face_const_handle hFace, PolygonWi
 void wallSection(
         Arr_with_hist_2::Halfedge_const_handle hStart,
         Arr_with_hist_2::Halfedge_const_handle hEnd,
-        std::vector< Point2D >& wall )
+        Wall& wall )
 {
+    Arr_with_hist_2::Halfedge_const_handle hIter = hStart;
     do
     {
-        wall.push_back(
+        if( hStart != hIter )
+        {
+            VERIFY_RTE_MSG( !hIter->data().get(), "Door step error" );
+        }
+        wall.points.push_back(
             wykobi::make_point< float >(
-                to_double( hStart->target()->point().x() ),
-                to_double( hStart->target()->point().y() ) ) );
-        hStart = hStart->next();
+                to_double( hIter->target()->point().x() ),
+                to_double( hIter->target()->point().y() ) ) );
+        hIter = hIter->next();
     }
-    while( hStart != hEnd );
+    while( hIter != hEnd );
 }
 
-void floorToWalls( Arr_with_hist_2::Face_const_handle hFloor, 
-    std::vector< std::vector< Point2D > >& walls,
-    std::vector< Polygon2D >& wallLoops )
+void floorToWalls( Arr_with_hist_2::Face_const_handle hFloor, std::vector< Wall >& walls )
 {
     using DoorStepVector = std::vector< Arr_with_hist_2::Halfedge_const_handle >;
 
@@ -562,6 +587,7 @@ void floorToWalls( Arr_with_hist_2::Face_const_handle hFloor,
         //find the doorsteps if any
         DoorStepVector doorsteps;
         {
+            //outer ccb winds COUNTERCLOCKWISE around the outer contour
             Arr_with_hist_2::Ccb_halfedge_const_circulator iter = hFloor->outer_ccb();
             Arr_with_hist_2::Ccb_halfedge_const_circulator first = iter;
             do
@@ -584,26 +610,26 @@ void floorToWalls( Arr_with_hist_2::Face_const_handle hFloor,
                 if( iNext == iEnd )
                     iNext = doorsteps.begin();
 
-                std::vector< Point2D > wall;
+                Wall wall( false, true );
                 wallSection( *i, *iNext, wall );
                 walls.emplace_back( wall );
             }
         }
         else
         {
-            Polygon2D wallLoop;
+            Wall wall( true, true );
             Arr_with_hist_2::Ccb_halfedge_const_circulator iter = hFloor->outer_ccb();
             Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
             do
             {
-                wallLoop.push_back(
+                wall.points.push_back(
                     wykobi::make_point< float >(
                         to_double( iter->source()->point().x() ),
                         to_double( iter->source()->point().y() ) ) );
                 ++iter;
             }
             while( iter != start );
-            wallLoops.emplace_back( wallLoop );
+            walls.emplace_back( wall );
         }
     }
 
@@ -614,6 +640,7 @@ void floorToWalls( Arr_with_hist_2::Face_const_handle hFloor,
     {
         DoorStepVector doorsteps;
         {
+            //the hole circulators wind CLOCKWISE around the hole contours
             Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
             Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
             do
@@ -628,58 +655,69 @@ void floorToWalls( Arr_with_hist_2::Face_const_handle hFloor,
         //iterate between each doorstep pair
         if( !doorsteps.empty() )
         {
-            for( DoorStepVector::reverse_iterator i = doorsteps.rbegin(),
-                iNext = doorsteps.rbegin(),
-                iEnd = doorsteps.rend(); i!=iEnd; ++i )
+            for( DoorStepVector::iterator i = doorsteps.begin(),
+                iNext = doorsteps.begin(),
+                iEnd = doorsteps.end(); i!=iEnd; ++i )
             {
                 ++iNext;
                 if( iNext == iEnd )
-                    iNext = doorsteps.rbegin();
+                    iNext = doorsteps.begin();
 
-                std::vector< Point2D > wall;
+                Wall wall( false, false );
                 wallSection( *i, *iNext, wall );
                 walls.emplace_back( wall );
             }
         }
         else
         {
-            Polygon2D hole;
+            Wall wall( true, false );
             Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
             Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
             do
             {
-                hole.push_back(
+                wall.points.push_back(
                     wykobi::make_point< float >(
                         to_double( iter->source()->point().x() ),
                         to_double( iter->source()->point().y() ) ) );
-                --iter;
+                ++iter;
             }
             while( iter != start );
-            wallLoops.emplace_back( hole );
+            walls.emplace_back( wall );
         }
     }
 }
 
 void Compilation::findSpaceFaces( Space::Ptr pSpace, FaceHandleSet& faces, FaceHandleSet& spaceFaces )
 {
-    for( FaceHandleSet::iterator i = faces.begin(); i != faces.end(); )
+    //check orientation
+    Polygon2D spaceContourPolygon = pSpace->getContourPolygon().get();
+    if( wykobi::polygon_orientation( spaceContourPolygon ) == wykobi::Clockwise )
+        std::reverse( spaceContourPolygon.begin(), spaceContourPolygon.end() );
+    const Matrix transform = pSpace->getAbsoluteTransform();
+    for( Point2D& pt : spaceContourPolygon )
+        transform.transform( pt.x, pt.y );
+    
+    std::vector< FaceHandleSet::iterator > removals;
+    for( FaceHandleSet::iterator i = faces.begin(); i != faces.end(); ++i )
     {
         FaceHandle hFace = *i;
-        bool bFound = false;
         if( !hFace->is_unbounded() )
         {
             //does the floor belong to the space?
             const Point2D ptInterior = getFaceInteriorPoint( hFace );
-            if( wykobi::point_in_polygon( ptInterior, pSpace->getContourPolygon().get() ) )
+            if( wykobi::point_in_polygon( ptInterior, spaceContourPolygon ) )
             {
                 spaceFaces.insert( hFace );
-                bFound = true;
+                removals.push_back( i );
             }
         }
-        if( bFound )
-            i = faces.erase( i );
-        else
-            ++i;
+    }
+    
+    for( std::vector< FaceHandleSet::iterator >::reverse_iterator 
+            i = removals.rbegin(),
+            iEnd = removals.rend(); i!=iEnd; ++i )
+    {
+        faces.erase( *i );
     }
 }
 
@@ -719,7 +757,7 @@ void Compilation::recursePolyMap( Site::Ptr pSite, SpacePolyMap& spacePolyMap,
             //determine walls
             for( FaceHandle hFloor : spaceFloors )
             {
-                floorToWalls( hFloor, pSpacePolyInfo->walls, pSpacePolyInfo->wallLoops );
+                floorToWalls( hFloor, pSpacePolyInfo->walls );
             }
 
         }
@@ -913,15 +951,17 @@ inline void loaddata( std::istream& is, Point2D& pt )
 {
     is >> pt.x >> pt.y;
 }
-inline void loaddata( std::istream& is, std::vector< Point2D >& data )
+inline void loaddata( std::istream& is, Wall& data )
 {
+    is >> data.m_bClosed;
+    is >> data.m_bCounterClockwise;
     std::size_t szSize;
     is >> szSize;
     for( std::size_t sz = 0; sz != szSize; ++sz )
     {
         Point2D pt;
         loaddata( is, pt );
-        data.push_back( pt );
+        data.points.push_back( pt );
     }
 }
 inline void loaddata( std::istream& is, Polygon2D& data )
@@ -952,10 +992,12 @@ inline void savedata( std::ostream& os, const Point2D& pt )
     os << pt.x << ' ' << pt.y << '\n';
 }
          
-inline void savedata( std::ostream& os, const std::vector< Point2D >& data )
+inline void savedata( std::ostream& os, const Wall& data )
 {
-    os << data.size() << '\n';
-    for( const Point2D& pt : data )
+    os << data.m_bClosed << '\n';
+    os << data.m_bCounterClockwise << '\n';
+    os << data.points.size() << '\n';
+    for( const Point2D& pt : data.points )
         savedata( os, pt );
 }       
        
@@ -1001,19 +1043,9 @@ void Compilation::SpacePolyInfo::load( std::istream& is )
         is >> szSize;
         for( std::size_t sz = 0U; sz != szSize; ++sz )
         {
-            std::vector< Point2D > p;
+            Wall p( false, false );
             loaddata( is, p );
             walls.emplace_back( p );
-        }
-    }
-    {
-        std::size_t szSize;
-        is >> szSize;
-        for( std::size_t sz = 0U; sz != szSize; ++sz )
-        {
-            Polygon2D p;
-            loaddata( is, p );
-            wallLoops.emplace_back( p );
         }
     }
 }
@@ -1027,10 +1059,7 @@ void Compilation::SpacePolyInfo::save( std::ostream& os )
     for( const Polygon2D& data : fillers )
         savedata( os, data );
     os << walls.size() << '\n';
-    for( const std::vector< Point2D >& data : walls )
-        savedata( os, data );
-    os << wallLoops.size() << '\n';
-    for( const Polygon2D& data : wallLoops )
+    for( const Wall& data : walls )
         savedata( os, data );
 }
 

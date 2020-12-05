@@ -66,8 +66,18 @@ public:
        // matrix.m33 = ( m13 * temp.m31 ) + ( m23 * temp.m32 ) + ( m33 * temp.m33 );
     }
     
-protected:
-
+    void setTranslation( float x, float y )
+    {
+        m31 = x;
+        m32 = y;
+    }
+    
+    void translateBy( float x, float y )
+    {
+        m31 += x;
+        m32 += y;
+    }
+    
     //  m(x,y) for row,column
     //                col 0       col 1       col 2
     float /*row 0*/   m11 = 1.0f, m21= 0.0f,  m31 = 0.0f, 
@@ -98,24 +108,35 @@ public:
         updateMatrix();
     }
     
+    static Matrix inverse( float x, float y, Math::Angle< 8 >::Value angle, bool bMirrorX )
+    {
+        Matrix matrix;
+                
+        {
+            const Transform translation( -x, -y );
+            translation.transform( matrix );
+        }
+        
+        if( bMirrorX )
+        {
+            const Transform mirror( 0, 0, Math::Angle< 8 >::eEast, true, false );
+            mirror.transform( matrix );
+        }
+            
+        if( angle != Math::Angle< 8 >::eEast )
+        {
+            const Transform rotate( 0, 0, 
+                static_cast< Math::Angle< 8 >::Value >( 8 - ( static_cast< int >( angle ) ) ), 
+                false, false );
+            rotate.transform( matrix );
+        }
+        
+        return matrix;
+    }
+    
     inline Math::Angle< 8 >::Value Angle() const { return m_angle; }
     inline bool MirrorX() const { return m_bMirrorX; }
     inline bool MirrorY() const { return m_bMirrorY; }
-    inline bool isWindingInverted() const { return ( m_bMirrorX && !m_bMirrorY ) || ( !m_bMirrorX && m_bMirrorY ); }
-    
-    void setTranslation( float x, float y )
-    {
-        m31 = x;
-        m32 = y;
-        updateMatrix();
-    }
-    
-    void translateBy( float x, float y )
-    {
-        m31 += x;
-        m32 += y;
-        updateMatrix();
-    }
     
     void rotateLeft()
     {
@@ -160,46 +181,32 @@ public:
         return result;
     }
     
-    void rotateLeft( float fMinX, float fMinY, float fMaxX, float fMaxY )
+    static Matrix rotateLeft( const Matrix& existing, float fMinX, float fMinY, float fMaxX, float fMaxY )
     {
-        m_angle = Math::rotate< Math::Angle< 8 > >( m_angle, 1 );
-        
         const Transform transform( 0.0f, 0.0f, 
             Math::rotate< Math::Angle< 8 > >( Math::Angle< 8 >::eEast, 1 ), 
             false, false );
-        
-        const Matrix matrix = transformWithinBounds( *this, transform, fMinX, fMinY, fMaxX, fMaxY );
-        assign( matrix );
+        return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
     }
     
-    void rotateRight( float fMinX, float fMinY, float fMaxX, float fMaxY )
+    static Matrix rotateRight( const Matrix& existing, float fMinX, float fMinY, float fMaxX, float fMaxY )
     {
-        m_angle = Math::rotate< Math::Angle< 8 > >( m_angle, -1 );
-        
         const Transform transform( 0.0f, 0.0f, 
             Math::rotate< Math::Angle< 8 > >( Math::Angle< 8 >::eEast, -1 ), 
             false, false );
-            
-        const Matrix matrix = transformWithinBounds( *this, transform, fMinX, fMinY, fMaxX, fMaxY );
-        assign( matrix );
+        return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
     }
     
-    void flipHorizontally( float fMinX, float fMinY, float fMaxX, float fMaxY )
+    static Matrix flipHorizontally( const Matrix& existing, float fMinX, float fMinY, float fMaxX, float fMaxY )
     {
-        m_bMirrorX = !m_bMirrorX;
         const Transform transform( 0.0f, 0.0f, Math::Angle< 8 >::eEast, true, false );
-            
-        const Matrix matrix = transformWithinBounds( *this, transform, fMinX, fMinY, fMaxX, fMaxY );
-        assign( matrix );
+        return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
     }
     
-    void flipVertically( float fMinX, float fMinY, float fMaxX, float fMaxY )
+    static Matrix flipVertically( const Matrix& existing, float fMinX, float fMinY, float fMaxX, float fMaxY )
     {
-        m_bMirrorY = !m_bMirrorY;
         const Transform transform( 0.0f, 0.0f, Math::Angle< 8 >::eEast, false, true );
-        
-        const Matrix matrix = transformWithinBounds( *this, transform, fMinX, fMinY, fMaxX, fMaxY );
-        assign( matrix );
+        return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
     }
     
 private:
@@ -227,6 +234,30 @@ private:
 
 namespace Ed
 {
+    inline OShorthandStream& operator<<( OShorthandStream& os, const Blueprint::Matrix& v )
+    {
+        os << v.m11
+            << v.m21
+            << v.m31
+            << v.m12
+            << v.m22
+            << v.m32;
+        
+        return os;
+    }
+
+    inline IShorthandStream& operator>>( IShorthandStream& is, Blueprint::Matrix& v )
+    {
+        is >> v.m11
+            >> v.m21
+            >> v.m31
+            >> v.m12
+            >> v.m22
+            >> v.m32;
+        
+        return is;
+    }
+    
     using namespace std::string_literals;
     static const std::string szAngles[] = 
     {
@@ -239,7 +270,7 @@ namespace Ed
         "South"s,
         "SouthEast"s
     };
-        
+    
     inline OShorthandStream& operator<<( OShorthandStream& os, const Blueprint::Transform& v )
     {
         std::ostringstream osAngle;

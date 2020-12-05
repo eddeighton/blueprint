@@ -433,9 +433,12 @@ IInteraction::Ptr Edit::interaction_draw( ToolMode toolMode, float x, float y, f
             {
                 Site::Ptr pClipSiteCopy = *i;
                 
-                Transform transform = pClipSiteCopy->getTransform();
-                transform.translateBy( x, y );
-                pClipSiteCopy->setTransform( transform );
+                Matrix m = pClipSiteCopy->getTransform();
+                {
+                    Transform transform( x, y );
+                    transform.transform( m );
+                }
+                pClipSiteCopy->setTransform( m );
             }
         }
         else if( pSite )
@@ -444,9 +447,12 @@ IInteraction::Ptr Edit::interaction_draw( ToolMode toolMode, float x, float y, f
                 pSite->copy( m_pSite, m_pSite->generateNewNodeName( pSite ) ) );
             pNewSite->init();
             
-            Transform transform = pSite->getTransform();
-            transform.translateBy( x, y );
-            pNewSite->setTransform( transform );
+            Matrix m = pSite->getTransform();
+            {
+                Transform transform( x, y );
+                transform.transform( m );
+            }
+            pNewSite->setTransform( m );
             
             m_pSite->add( pNewSite );
             newSites.insert( pNewSite );

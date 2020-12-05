@@ -51,43 +51,6 @@ TEST( BlueprintTests, Check )
 
 }*/
 
-TEST( Transform, Bounds )
-{
-    /*{
-        char c;
-        std::cin >> c;
-    }*/
-    
-    static const float tol = 0.001f;
-    
-    Blueprint::Transform t1( 3.0f, 4.0f );
-    
-    ASSERT_NEAR( t1.X(),   3.0f, tol );
-    ASSERT_NEAR( t1.Y(),   4.0f, tol );
-    ASSERT_NEAR( t1.M11(), 1.0f, tol );
-    ASSERT_NEAR( t1.M21(), 0.0f, tol );
-    ASSERT_NEAR( t1.M12(), 0.0f, tol );
-    ASSERT_NEAR( t1.M22(), 1.0f, tol );
-    
-    t1.flipVertically( 6.0f, 5.0f, 10.0f, 9.0f  );
-    
-    ASSERT_NEAR( t1.X(),   3.0f  , tol );
-    ASSERT_NEAR( t1.Y(),   10.0f , tol );
-    ASSERT_NEAR( t1.M11(), 1.0f  , tol );
-    ASSERT_NEAR( t1.M21(), 0.0f  , tol );
-    ASSERT_NEAR( t1.M12(), 0.0f  , tol );
-    ASSERT_NEAR( t1.M22(), -1.0f , tol );
-    
-    t1.flipVertically( 6.0f, 5.0f, 10.0f, 9.0f );
-    
-    ASSERT_NEAR( t1.X(),   3.0f , tol );
-    ASSERT_NEAR( t1.Y(),   4.0f , tol );
-    ASSERT_NEAR( t1.M11(), 1.0f , tol );
-    ASSERT_NEAR( t1.M21(), 0.0f , tol );
-    ASSERT_NEAR( t1.M12(), 0.0f , tol );
-    ASSERT_NEAR( t1.M22(), 1.0f , tol );
-}
-
 TEST( Serialisation, Points )
 {
     using namespace Ed;
@@ -315,12 +278,13 @@ void loadTest( const boost::filesystem::path& inputFile )
         std::cout << "Error with test file: " << inputFile.string() << " : " << ex.what() << std::endl;
     }
 }
+
 TEST( CGAL, CompilerTestFiles )
 {
-    {
-        char c;
-        std::cin >> c;
-    }
+    //{
+    //    char c;
+    //    std::cin >> c;
+    //}
     
     std::vector< boost::filesystem::path > testFiles;
     for( boost::filesystem::directory_iterator iter( testFilesFolderPath / "testfiles" );

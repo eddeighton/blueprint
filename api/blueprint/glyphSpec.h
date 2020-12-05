@@ -120,12 +120,12 @@ public:
 class Origin : public GlyphSpecInteractive
 {
 public:
-    virtual const Transform& getTransform() const { return m_transform; }
+    virtual const Matrix& getTransform() const { return m_transform; }
     
     virtual const MarkupPath* getMarkupContour() const = 0;
     
 protected:
-    Transform m_transform;
+    Matrix m_transform;
 };
 
 /*

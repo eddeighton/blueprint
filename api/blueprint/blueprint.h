@@ -52,12 +52,12 @@ public:
     virtual const std::string& getName() const { return Node::getName(); }
 
     //Origin
-    virtual const Transform& getTransform() const 
+    virtual const Matrix& getTransform() const 
     { 
-        static const Transform m_transform;
+        static const Matrix m_transform;
         return m_transform; 
     }
-    virtual void setTransform( const Transform& transform ) 
+    virtual void setTransform( const Matrix& transform ) 
     { 
         ASSERT( false );
     }

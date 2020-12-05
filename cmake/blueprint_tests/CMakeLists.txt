@@ -26,7 +26,8 @@ include( ${BLUEPRINT_ROOT_DIR}/cmake/gtest_include.cmake )
 
 #get the tests
 set( BLUEPRINT_TESTS_SOURCE
-    ${BLUEPRINT_ROOT_DIR}/tests/blueprintTests.cpp )
+    ${BLUEPRINT_ROOT_DIR}/tests/blueprintTests.cpp 
+    ${BLUEPRINT_ROOT_DIR}/tests/transformTests.cpp )
     
 file( GLOB BLUEPRINT_TEST_FILES ${BLUEPRINT_ROOT_DIR}/tests/testfiles/*.blu )
     
