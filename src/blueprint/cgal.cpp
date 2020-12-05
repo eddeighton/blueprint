@@ -521,7 +521,7 @@ void faceToPolygon( Arr_with_hist_2::Face_const_handle hFace, Polygon2D& polygon
 
 void faceToPolygonWithHoles( Arr_with_hist_2::Face_const_handle hFace, PolygonWithHoles& polygon )
 {
-    if( hFace->is_unbounded() )
+    if( !hFace->is_unbounded() )
     {
         Arr_with_hist_2::Ccb_halfedge_const_circulator iter = hFace->outer_ccb();
         Arr_with_hist_2::Ccb_halfedge_const_circulator first = iter;
