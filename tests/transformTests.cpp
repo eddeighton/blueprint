@@ -141,3 +141,65 @@ TEST( Transform, Inverse_Brute )
         }
     }
 }
+
+TEST( Transform, Decompose )
+{
+    static const float tol = 0.001f;
+    
+    for( bool bMirrorX = false; !bMirrorX; bMirrorX = !bMirrorX )
+    {
+        for( bool bMirrorY = false; !bMirrorY; bMirrorY = !bMirrorY )
+        {
+            for( std::size_t sz = 0U; sz != 8; ++sz )
+            {
+                const Math::Angle< 8 >::Value angle = 
+                    static_cast< Math::Angle< 8 >::Value >( sz );
+                
+                for( const std::pair< float, float >& p : points )
+                {
+                    const Blueprint::Transform transform( 
+                        p.first, 
+                        p.second, 
+                        static_cast< Math::Angle< 8 >::Value >( sz ), 
+                        bMirrorX, 
+                        bMirrorY );
+                    
+                    float fTranslateX;
+                    float fTranslateY;
+                    float fScaleX;
+                    float fScaleY;
+                    float fAngle;
+                    transform.decompose( fTranslateX, fTranslateY, fScaleX, fScaleY, fAngle );
+                    
+                    ASSERT_NEAR( fTranslateX, p.first, tol );
+                    ASSERT_NEAR( fTranslateY, p.second, tol );
+                    
+                    if( bMirrorX )
+                    {
+                        ASSERT_NEAR( fScaleX, -1.0f, tol );
+                    }
+                    else
+                    {
+                        ASSERT_NEAR( fScaleX, 1.0f, tol );
+                    }
+                    if( bMirrorY )
+                    {
+                        ASSERT_NEAR( fScaleY, -1.0f, tol );
+                    }
+                    else
+                    {
+                        ASSERT_NEAR( fScaleY, 1.0f, tol );
+                    }
+                    
+                    while( fAngle < 0.0f )
+                        fAngle += MY_PI * 2.0f;
+                    
+                    ASSERT_NEAR( fAngle, Math::toRadians< Math::Angle< 8 > >( angle ), tol );
+                    
+                }
+                
+            }
+        }
+    }
+    
+}

@@ -776,10 +776,19 @@ void Compilation::getSpacePolyMap( SpacePolyMap& spacePolyMap )
         iEnd = m_arr.faces_end(); i!=iEnd; ++i )
     {
         Arr_with_hist_2::Face_const_handle hFace = i;
-        if( doesFaceHaveDoorstep( hFace ) )
-            floorFaces.insert( hFace );
-        else
-            fillerFaces.insert( hFace );
+        //if( !hFace->is_unbounded() && !hFace->is_fictitious() )
+        {
+            if( doesFaceHaveDoorstep( hFace ) )
+                floorFaces.insert( hFace );
+            else 
+            {
+                //fillers cannot have holes
+                if( hFace->holes_begin() == hFace->holes_end() )
+                {
+                    fillerFaces.insert( hFace );
+                }
+            }
+        }
     }
 
 

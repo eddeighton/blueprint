@@ -8,7 +8,7 @@
 
 namespace Blueprint
 {
-static const double CLIPPER_MAG = 10000000.0;
+static const double CLIPPER_MAG = 1000000.0;
 
 inline void toClipperPoly( const Polygon2D& polygon, ClipperLib::Path& path )
 {
@@ -51,7 +51,7 @@ inline void extrudePoly( const ClipperLib::Path& inputPolygon, float fAmount, Cl
 {
     //ClipperLib::jtSquare
     ClipperLib::ClipperOffset co;
-    co.MiterLimit = 1000.0;
+    co.MiterLimit = 100.0;
     co.AddPath( inputPolygon, ClipperLib::jtMiter, ClipperLib::etClosedPolygon );
     co.Execute( result, fAmount * CLIPPER_MAG );
 }

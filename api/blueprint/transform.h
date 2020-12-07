@@ -78,6 +78,20 @@ public:
         m32 += y;
     }
     
+    void decompose( float& fTranslateX, float& fTranslateY, float& scaleX, float& scaleY, float& angle ) const
+    {
+        //convert to transform from matrix
+        //https://stackoverflow.com/questions/45159314/decompose-2d-transformation-matrix
+        
+        fTranslateX = m31;
+        fTranslateY = m32;
+
+        scaleX = sqrt( ( m11 * m11 ) + ( m21 * m21 ) );
+        scaleY = sqrt( ( m12 * m12 ) + ( m22 * m22 ) );
+        
+        angle = atan2( m21, m11 );
+    }
+    
     //  m(x,y) for row,column
     //                col 0       col 1       col 2
     float /*row 0*/   m11 = 1.0f, m21= 0.0f,  m31 = 0.0f, 
@@ -222,8 +236,8 @@ private:
         const float mx = m_bMirrorX ? -1.0f : 1.0f, 
                     my = m_bMirrorY ? -1.0f : 1.0f;
         
-        m11 = dx * mx;      m21 = -dy * mx;
-        m12 = dy * my;      m22 =  dx * my;
+        m11 = dx * mx;      m21 =  dy * mx;
+        m12 = -dy * my;     m22 =  dx * my;
     }
     
     Math::Angle< 8 >::Value m_angle = Math::Angle< 8 >::eEast;
