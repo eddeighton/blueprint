@@ -53,7 +53,8 @@ namespace
 namespace Blueprint
 {
     
-Visibility::Visibility( Compilation& compilation )
+FloorAnalysis::FloorAnalysis( Compilation& compilation )
+    :   m_hFloorFace( nullptr )
 {
     Compilation::FaceHandleSet floorFaces;
     Compilation::FaceHandleSet fillerFaces;
@@ -68,9 +69,28 @@ Visibility::Visibility( Compilation& compilation )
     {
         recurseObjects( pNestedSite );
     }
+    
+    {
+        int iFloorFaceCount = 0;
+        Arr_with_hist_2::Face_handle hOuterFace = m_arr.unbounded_face();
+        for( Arr_with_hist_2::Hole_iterator
+            holeIter = hOuterFace->holes_begin(),
+            holeIterEnd = hOuterFace->holes_end();
+                holeIter != holeIterEnd; ++holeIter )
+        {
+            Arr_with_hist_2::Ccb_halfedge_circulator iter = *holeIter;
+            m_hFloorFace = iter->twin()->face();
+            ++iFloorFaceCount;
+        }
+        VERIFY_RTE_MSG( iFloorFaceCount == 1, "Invalid number of floors: " << iFloorFaceCount );
+    }
+    
+    VERIFY_RTE_MSG( !m_hFloorFace->is_unbounded(), "Floor face is unbounded" );
+    
+    
 }
 
-void Visibility::recurseObjects( Site::Ptr pSite )
+void FloorAnalysis::recurseObjects( Site::Ptr pSite )
 {
     if( Object::Ptr pObject = boost::dynamic_pointer_cast< Object >( pSite ) )
     {
@@ -84,11 +104,91 @@ void Visibility::recurseObjects( Site::Ptr pSite )
     //    
     //}
     
-    
     for( Site::Ptr pNestedSite : pSite->getSites() )
     {
         recurseObjects( pNestedSite );
     }
+}
+
+void FloorAnalysis::render( const boost::filesystem::path& filepath )
+{
+    EdgeVectorVector edgeGroups;
+    
+    {
+        EdgeVector edges;
+        Arr_with_hist_2::Ccb_halfedge_const_circulator iter = m_hFloorFace->outer_ccb();
+        Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+        do
+        {
+            edges.push_back( iter );
+            ++iter;
+        }
+        while( iter != start );
+        edgeGroups.push_back( edges );
+    }
+        
+    {
+        for( Arr_with_hist_2::Hole_const_iterator
+            holeIter = m_hFloorFace->holes_begin(),
+            holeIterEnd = m_hFloorFace->holes_end();
+                holeIter != holeIterEnd; ++holeIter )
+        {
+            EdgeVector edges;
+            Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
+            Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+            do
+            {
+                edges.push_back( iter );
+                ++iter;
+            }
+            while( iter != start );
+            if( !edges.empty() )
+                edgeGroups.push_back( edges );
+        }
+    }
+
+    generateHTML( filepath, m_arr, edgeGroups );
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Visibility::Visibility( FloorAnalysis& floor )
+{
+    Arr_with_hist_2::Face_const_handle hFloor = floor.getFloorFace();
+    
+    {
+        Arr_with_hist_2::Ccb_halfedge_const_circulator iter = hFloor->outer_ccb();
+        Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+        do
+        {
+            CGAL::insert( m_arr,
+                Segment_2( iter->source()->point(),
+                           iter->target()->point() ) );
+            ++iter;
+        }
+        while( iter != start );
+    }
+        
+    {
+        for( Arr_with_hist_2::Hole_const_iterator
+            holeIter = hFloor->holes_begin(),
+            holeIterEnd = hFloor->holes_end();
+                holeIter != holeIterEnd; ++holeIter )
+        {
+            Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
+            Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+            do
+            {
+                CGAL::insert( m_arr,
+                    Segment_2( iter->source()->point(),
+                               iter->target()->point() ) );
+                ++iter;
+            }
+            while( iter != start );
+        }
+    }
+    
 }
 
 void Visibility::render( const boost::filesystem::path& filepath )
@@ -99,9 +199,6 @@ void Visibility::render( const boost::filesystem::path& filepath )
         edges.push_back( i );
     edgeGroups.push_back( edges );
     generateHTML( filepath, m_arr, edgeGroups );
-    
 }
-
-
 
 }

@@ -8,17 +8,30 @@
 namespace Blueprint
 {
     
-class Visibility
+class FloorAnalysis
 {
 public:
-    Visibility( Compilation& compilation );
+    FloorAnalysis( Compilation& compilation );
+    
+    const Arr_with_hist_2::Face_const_handle getFloorFace() const { return m_hFloorFace; }
     
     void render( const boost::filesystem::path& filepath );
 private:
     void recurseObjects( Site::Ptr pSpace );
 
-
     Arr_with_hist_2 m_arr;
+    Arr_with_hist_2::Face_handle m_hFloorFace;
+};
+
+class Visibility
+{
+public:
+    Visibility( FloorAnalysis& floor );
+    
+    void render( const boost::filesystem::path& filepath );
+private:
+    Arr_with_hist_2 m_arr;
+    
 };
 
 }

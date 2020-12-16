@@ -274,7 +274,10 @@ void loadTest( const boost::filesystem::path& inputFile )
         compilation.renderFillers( constructPath( inputFile, "__fillers.html" ) );
         compilation.renderFloors( constructPath( inputFile, "__floors.html" ) );
         
-        Blueprint::Visibility visibility( compilation );
+        Blueprint::FloorAnalysis floor( compilation );
+        floor.render( constructPath( inputFile, "__floor.html" ) );
+        
+        Blueprint::Visibility visibility( floor );
         visibility.render( constructPath( inputFile, "__vis.html" ) );
         
     }
