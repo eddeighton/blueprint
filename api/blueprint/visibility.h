@@ -31,7 +31,7 @@ public:
     void render( const boost::filesystem::path& filepath );
 private:
     Arr_with_hist_2 m_arr;
-    
+    Iso_rectangle_2 m_boundingBox;
 };
 
 }

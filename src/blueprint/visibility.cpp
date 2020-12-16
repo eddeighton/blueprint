@@ -4,6 +4,8 @@
 #include "blueprint/object.h"
 #include "blueprint/blueprint.h"
 
+//#include "common/variant_utils.hpp"
+
 namespace
 {
     void renderFloorFace( Blueprint::Arr_with_hist_2& arr, Blueprint::Arr_with_hist_2::Face_const_handle hFace )
@@ -153,18 +155,65 @@ void FloorAnalysis::render( const boost::filesystem::path& filepath )
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+namespace
+{
+    class ArrObserver : public CGAL::Arr_observer< Arr_with_hist_2 >
+    {
+    public:
+        ArrObserver( Arr_with_hist_2& arr )
+        :     CGAL::Arr_observer< Arr_with_hist_2 >( arr )
+        {
+          
+        }
+
+        virtual void before_split_face( Arr_with_hist_2::Face_handle, Arr_with_hist_2::Halfedge_handle e )
+        {
+        }
+
+        virtual void before_merge_face( Arr_with_hist_2::Face_handle, Arr_with_hist_2::Face_handle, Arr_with_hist_2::Halfedge_handle e)
+        {
+        }
+    };
+
+    //Arr_with_hist_2::Point_2 min( const Arr_with_hist_2::Point_2& left, const Arr_with_hist_2::Point_2& right )
+    //{
+    //    return Arr_with_hist_2::Point_2( std::min( left.x(), right.x() ), std::min( left.y(), right.y() ) );
+    //}
+    //Arr_with_hist_2::Point_2 max( const Arr_with_hist_2::Point_2& left, const Arr_with_hist_2::Point_2& right )
+    //{
+    //    return Arr_with_hist_2::Point_2( std::max( left.x(), right.x() ), std::max( left.y(), right.y() ) );
+    //}
+    //        m_ptMin = min( m_ptMin, min( iter->source()->point(), iter->target()->point() ) );
+    //        m_ptMax = max( m_ptMax, max( iter->source()->point(), iter->target()->point() ) );
+    
+    Segment_2 makeBisector( const Segment_2& edge, const Iso_rectangle_2& rect )
+    {
+        const Line_2 line( edge.source(), edge.target() );
+        
+        VERIFY_RTE_MSG( CGAL::do_intersect( rect, line ), 
+            "bisector does not intersect bounds" );
+        
+        boost::optional< boost::variant< Point_2, Kernel::Segment_2 > > 
+            result = CGAL::intersection< Kernel >( rect, line );
+        VERIFY_RTE_MSG( result, "Bisector intersection failed" );
+        
+        return boost::get< Kernel::Segment_2 >( result.get() );
+    }
+}
+
 Visibility::Visibility( FloorAnalysis& floor )
 {
     Arr_with_hist_2::Face_const_handle hFloor = floor.getFloorFace();
+    
+    std::vector< Segment_2 > segments;
     
     {
         Arr_with_hist_2::Ccb_halfedge_const_circulator iter = hFloor->outer_ccb();
         Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
         do
         {
-            CGAL::insert( m_arr,
-                Segment_2( iter->source()->point(),
-                           iter->target()->point() ) );
+            segments.push_back( Segment_2(  iter->source()->point(),
+                                            iter->target()->point() ) );
             ++iter;
         }
         while( iter != start );
@@ -180,13 +229,30 @@ Visibility::Visibility( FloorAnalysis& floor )
             Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
             do
             {
-                CGAL::insert( m_arr,
-                    Segment_2( iter->source()->point(),
-                               iter->target()->point() ) );
+                segments.push_back( Segment_2(  iter->source()->point(),
+                                                iter->target()->point() ) );
                 ++iter;
             }
             while( iter != start );
         }
+    }
+    
+    //calculate the bounding box
+    m_boundingBox = CGAL::bbox_2( segments.begin(), segments.end() );
+    
+    //for( const Segment_2& segment : segments )
+    //{
+    //    CGAL::insert( m_arr, segment );
+    //}
+    
+    //ArrObserver observer( m_arr );
+    
+    //calculate the AABB
+    
+    for( const Segment_2& segment : segments )
+    {
+        Segment_2 bisector = makeBisector( segment, m_boundingBox );
+        Arr_with_hist_2::Curve_handle hCurve = CGAL::insert( m_arr, bisector );
     }
     
 }

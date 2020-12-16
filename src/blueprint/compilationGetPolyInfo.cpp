@@ -10,6 +10,19 @@
 namespace
 {
     
+    inline Blueprint::Point2D make_source_point( Blueprint::Arr_with_hist_2::Halfedge_const_handle halfedge )
+    {
+        return wykobi::make_point< float >(
+                CGAL::to_double( halfedge->source()->point().x() ),
+                CGAL::to_double( halfedge->source()->point().y() ) );
+    }
+    inline Blueprint::Point2D make_target_point( Blueprint::Arr_with_hist_2::Halfedge_const_handle halfedge )
+    {
+        return wykobi::make_point< float >(
+                CGAL::to_double( halfedge->target()->point().x() ),
+                CGAL::to_double( halfedge->target()->point().y() ) );
+    }
+    
         
     Blueprint::Point2D getFaceInteriorPoint( Blueprint::Arr_with_hist_2::Face_const_handle hFace )
     {
@@ -17,14 +30,9 @@ namespace
         Blueprint::Arr_with_hist_2::Halfedge_const_handle hEdge = halfedgeCirculator;
 
         //deterine an interior point of the face
-        const Blueprint::Point2D ptSource =
-            wykobi::make_point< float >(
-                to_double( hEdge->source()->point().x() ),
-                to_double( hEdge->source()->point().y() ) );
-        const Blueprint::Point2D ptTarget =
-            wykobi::make_point< float >(
-                to_double( hEdge->target()->point().x() ),
-                to_double( hEdge->target()->point().y() ) );
+        const Blueprint::Point2D ptSource = make_source_point( hEdge );
+        const Blueprint::Point2D ptTarget = make_target_point( hEdge );
+        
         const Blueprint::Vector2D vDir = ptTarget - ptSource;
         const Blueprint::Vector2D vNorm =
             wykobi::normalize( 
@@ -43,10 +51,7 @@ namespace
         Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator first = iter;
         do
         {
-            polygon.push_back(
-                wykobi::make_point< float >(
-                    to_double( iter->source()->point().x() ),
-                    to_double( iter->source()->point().y() ) ) );
+            polygon.push_back( make_source_point( iter ) );
             ++iter;
         }
         while( iter != first );
@@ -60,10 +65,7 @@ namespace
             Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator first = iter;
             do
             {
-                polygon.outer.push_back(
-                    wykobi::make_point< float >(
-                        to_double( iter->source()->point().x() ),
-                        to_double( iter->source()->point().y() ) ) );
+                polygon.outer.push_back( make_source_point( iter ) );
                 ++iter;
             }
             while( iter != first );
@@ -79,10 +81,7 @@ namespace
             Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
             do
             {
-                hole.push_back(
-                    wykobi::make_point< float >(
-                        to_double( iter->source()->point().x() ),
-                        to_double( iter->source()->point().y() ) ) );
+                hole.push_back( make_source_point( iter ) );
                 --iter;
             }
             while( iter != start );
@@ -102,10 +101,7 @@ namespace
             {
                 VERIFY_RTE_MSG( !hIter->data().get(), "Door step error" );
             }
-            wall.points.push_back(
-                wykobi::make_point< float >(
-                    to_double( hIter->target()->point().x() ),
-                    to_double( hIter->target()->point().y() ) ) );
+            wall.points.push_back( make_target_point( hIter ) );
             hIter = hIter->next();
         }
         while( hIter != hEnd );
@@ -155,10 +151,7 @@ namespace
                 Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
                 do
                 {
-                    wall.points.push_back(
-                        wykobi::make_point< float >(
-                            to_double( iter->source()->point().x() ),
-                            to_double( iter->source()->point().y() ) ) );
+                    wall.points.push_back( make_source_point( iter ) );
                     ++iter;
                 }
                 while( iter != start );
@@ -208,10 +201,7 @@ namespace
                 Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
                 do
                 {
-                    wall.points.push_back(
-                        wykobi::make_point< float >(
-                            to_double( iter->source()->point().x() ),
-                            to_double( iter->source()->point().y() ) ) );
+                    wall.points.push_back( make_source_point( iter ) );
                     ++iter;
                 }
                 while( iter != start );

@@ -18,22 +18,15 @@ namespace
         "black"
     };
 
-    inline double to_double( const CGAL::Quotient< CGAL::MP_Float >& q )
-    {
-        return
-            CGAL::INTERN_MP_FLOAT::to_double( q.numerator() ) /
-            CGAL::INTERN_MP_FLOAT::to_double( q.denominator() );
-    }
-
     void svgLine( Blueprint::Arr_with_hist_2::Halfedge_const_handle h, double minX, double minY, double scale, const char* pszColour, std::ostream& os )
     {
         if( h->target()->point() == h->curve().source() )
             h = h->twin();
 
-        const double startX = ( to_double(  h->source()->point().x() ) - minX ) * scale;
-        const double startY = ( to_double( -h->source()->point().y() ) - minY ) * scale;
-        const double endX   = ( to_double(  h->target()->point().x() ) - minX ) * scale;
-        const double endY   = ( to_double( -h->target()->point().y() ) - minY ) * scale;
+        const double startX = ( CGAL::to_double(  h->source()->point().x() ) - minX ) * scale;
+        const double startY = ( -CGAL::to_double( h->source()->point().y() ) - minY ) * scale;
+        const double endX   = ( CGAL::to_double(  h->target()->point().x() ) - minX ) * scale;
+        const double endY   = ( -CGAL::to_double( h->target()->point().y() ) - minY ) * scale;
 
         std::ostringstream osEdge;
         osEdge <<
@@ -61,7 +54,7 @@ namespace Blueprint
         std::unique_ptr< boost::filesystem::ofstream > os =
             createNewFileStream( filepath );
 
-        double scale = 10.0;
+        double scale = 16.0;
         double  minX = std::numeric_limits< double >::max(),
                 minY = std::numeric_limits< double >::max();
         double  maxX = -std::numeric_limits< double >::max(),
@@ -69,8 +62,8 @@ namespace Blueprint
         for( auto i = arr.edges_begin(); i != arr.edges_end(); ++i )
         {
             {
-                const double x = to_double( i->source()->point().x() );
-                const double y = to_double( -i->source()->point().y() );
+                const double x = CGAL::to_double( i->source()->point().x() );
+                const double y = -CGAL::to_double( i->source()->point().y() );
                 if( x < minX ) minX = x;
                 if( y < minY ) minY = y;
                 if( x > maxX ) maxX = x;
@@ -78,8 +71,8 @@ namespace Blueprint
             }
 
             {
-                const double x = to_double( i->target()->point().x() );
-                const double y = to_double( -i->target()->point().y() );
+                const double x = CGAL::to_double( i->target()->point().x() );
+                const double y = -CGAL::to_double( i->target()->point().y() );
                 if( x < minX ) minX = x;
                 if( y < minY ) minY = y;
                 if( x > maxX ) maxX = x;
@@ -121,10 +114,10 @@ namespace Blueprint
                 svgLine( h, minX, minY, scale, pszColour, *os );
 
                 {
-                    const double startX = ( to_double(  h->source()->point().x() ) - minX ) * scale;
-                    const double startY = ( to_double( -h->source()->point().y() ) - minY ) * scale;
-                    const double endX   = ( to_double(  h->target()->point().x() ) - minX ) * scale;
-                    const double endY   = ( to_double( -h->target()->point().y() ) - minY ) * scale;
+                    const double startX = ( CGAL::to_double(  h->source()->point().x() ) - minX ) * scale;
+                    const double startY = ( -CGAL::to_double( h->source()->point().y() ) - minY ) * scale;
+                    const double endX   = ( CGAL::to_double(  h->target()->point().x() ) - minX ) * scale;
+                    const double endY   = ( -CGAL::to_double( h->target()->point().y() ) - minY ) * scale;
 
                     std::ostringstream osText;
                     {
