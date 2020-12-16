@@ -10,6 +10,8 @@
 #include "blueprint/cgalSettings.h"
 #include "blueprint/transform.h"
 #include "blueprint/blueprint.h"
+#include "blueprint/compilation.h"
+#include "blueprint/visibility.h"
 
 #include "blueprint/serialisation.h"
 
@@ -264,13 +266,16 @@ void loadTest( const boost::filesystem::path& inputFile )
             pTest->evaluate( mode, results );
         }
         
-        Blueprint::Compilation compiler( pTest );
+        Blueprint::Compilation compilation( pTest );
         Blueprint::Compilation::SpacePolyMap spacePolyMap;
-        compiler.getSpacePolyMap( spacePolyMap );
+        compilation.getSpacePolyMap( spacePolyMap );
         
-        compiler.render( constructPath( inputFile, ".html" ) );
-        compiler.renderFillers( constructPath( inputFile, "__fillers.html" ) );
-        compiler.renderFloors( constructPath( inputFile, "__floors.html" ) );
+        compilation.render( constructPath( inputFile, ".html" ) );
+        compilation.renderFillers( constructPath( inputFile, "__fillers.html" ) );
+        compilation.renderFloors( constructPath( inputFile, "__floors.html" ) );
+        
+        Blueprint::Visibility visibility( compilation );
+        visibility.render( constructPath( inputFile, "__vis.html" ) );
         
     }
     catch( std::exception& ex )

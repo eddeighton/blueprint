@@ -2,9 +2,6 @@
 #ifndef CGAL_SETINGS_26_NOV_2020
 #define CGAL_SETINGS_26_NOV_2020
 
-#include "blueprint/geometry.h"
-#include "blueprint/transform.h"
-#include "blueprint/space.h"
 
 #include <CGAL/Cartesian.h>
 //#include <CGAL/Simple_cartesian.h>
@@ -17,12 +14,6 @@
 //#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Boolean_set_operations_2.h>
 
-#include "boost/shared_ptr.hpp"
-#include "boost/filesystem/path.hpp"
-
-#include <memory>
-#include <map>
-#include <vector>
 
 namespace Blueprint
 {
@@ -54,75 +45,6 @@ namespace Blueprint
     typedef CGAL::Arrangement_with_history_2< Traits_2, Dcel >      Arr_with_hist_2;
     typedef Arr_with_hist_2::Curve_handle                           Curve_handle;
     typedef CGAL::Arr_simple_point_location< Arr_with_hist_2 >      Point_location;
-
-    
-    class Blueprint;
-    
-    struct PolygonWithHoles
-    {
-        Polygon2D outer;
-        std::vector< Polygon2D > holes;
-    };
-    
-    struct Wall
-    {
-        friend class Compilation;
-    public:
-        Wall( bool bClosed, bool bCounterClockwise )
-            :   m_bClosed( bClosed ), 
-                m_bCounterClockwise( bCounterClockwise )
-        {}
-        
-        bool isClosed() const { return m_bClosed; }
-        bool isCounterClockwise() const { return m_bCounterClockwise; }
-        
-        bool m_bClosed, m_bCounterClockwise;
-        Polygon2D points;
-    };
-    
-    class Compilation
-    {
-    public:
-        Compilation( boost::shared_ptr< Blueprint > pBlueprint );
-        
-        struct SpacePolyInfo
-        {
-            using Ptr = std::shared_ptr< SpacePolyInfo >;
-            
-            void load( std::istream& is );
-            void save( std::ostream& os );
-            
-            std::vector< PolygonWithHoles > floors;
-            std::vector< Polygon2D > fillers;
-            std::vector< Wall > walls;
-        };
-        
-        using SpacePolyMap = std::map< Space::Ptr, SpacePolyInfo::Ptr >;
-        
-        void getSpacePolyMap( SpacePolyMap& spacePolyMap );
-        
-        
-        //html svg utilities
-        void render( const boost::filesystem::path& filepath );
-        void renderFloors( const boost::filesystem::path& filepath );
-        void renderFillers( const boost::filesystem::path& filepath );
-        
-    private:
-        void renderContour( const Matrix& transform, Polygon2D poly, int iOrientation );
-        void recurse( Site::Ptr pSpace );
-        void recursePost( Site::Ptr pSpace );
-        void connect( Site::Ptr pConnection );
-        
-        using FaceHandle = Arr_with_hist_2::Face_const_handle;
-        using FaceHandleSet = std::set< FaceHandle >;
-        
-        void findSpaceFaces( Space::Ptr pSpace, FaceHandleSet& faces, FaceHandleSet& spaceFaces );
-        void recursePolyMap( Site::Ptr pSite, SpacePolyMap& spacePolyMap, 
-            FaceHandleSet& floorFaces, FaceHandleSet& fillerFaces );
-        
-        boost::shared_ptr< Blueprint > m_pBlueprint;
-        Arr_with_hist_2 m_arr;
-    };
 
 }
 

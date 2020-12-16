@@ -48,6 +48,9 @@ set( BLUEPRINT_API
     ${BLUEPRINT_API_DIR}/blueprint/connection.h
     ${BLUEPRINT_API_DIR}/blueprint/wall.h
     ${BLUEPRINT_API_DIR}/blueprint/clipperUtils.h
+    ${BLUEPRINT_API_DIR}/blueprint/spacePolyInfo.h
+    ${BLUEPRINT_API_DIR}/blueprint/compilation.h
+    ${BLUEPRINT_API_DIR}/blueprint/visibility.h
     )
     
     
@@ -74,7 +77,11 @@ set( BLUEPRINT_SOURCES_SRC
     ${BLUEPRINT_SRC_DIR}/blueprint/object.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/connection.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/wall.cpp
-    ${BLUEPRINT_SRC_DIR}/blueprint/cgal.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/spacePolyInfo.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/svgUtils.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/compilation.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/compilationGetPolyInfo.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/visibility.cpp
     )
 
 set( BLUEPRINT_SOURCES ${BLUEPRINT_SOURCES_API} ${BLUEPRINT_SOURCES_SRC} )
