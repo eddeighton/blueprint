@@ -110,8 +110,8 @@ void Compilation::renderContour( Arr_with_hist_2& arr, const Matrix& transform, 
 
         //Curve_handle ch =
         CGAL::insert( arr,
-            Segment_2(  Point_2( i->x,      i->y ),
-                        Point_2( iNext->x,  iNext->y ) ) );
+            Curve_2(  Point_2( i->x,      i->y ),
+                      Point_2( iNext->x,  iNext->y ) ) );
     }
 }
 
@@ -183,7 +183,7 @@ void constructConnectionEdges( Arr_with_hist_2& arr, Connection::Ptr pConnection
     //create edge between mid points
     Arr_with_hist_2::Halfedge_handle m_hDoorStep;
     {
-        const Segment_2 segDoorStep( ptFirstMid, ptSecondMid );
+        const Curve_2 segDoorStep( ptFirstMid, ptSecondMid );
         m_hDoorStep = arr.insert_at_vertices( segDoorStep, vFirstMid, vSecondMid );
     }
 
@@ -245,7 +245,7 @@ void Compilation::connect( Site::Ptr pSite )
             const Point_2 ptFirstEnd( firstSeg[ 1 ].x, firstSeg[ 1 ].y );
 
             Curve_handle firstCurve = CGAL::insert( m_arr,
-                Segment_2( ptFirstStart, ptFirstEnd ) );
+                Curve_2( ptFirstStart, ptFirstEnd ) );
 
             for( auto   i = m_arr.induced_edges_begin( firstCurve );
                         i != m_arr.induced_edges_end( firstCurve ); ++i )
@@ -277,7 +277,7 @@ void Compilation::connect( Site::Ptr pSite )
             const Point_2 ptSecondEnd( secondSeg[ 0 ].x, secondSeg[ 0 ].y );
 
             Curve_handle secondCurve = CGAL::insert( m_arr,
-                Segment_2( ptSecondStart, ptSecondEnd ) );
+                Curve_2( ptSecondStart, ptSecondEnd ) );
 
             for( auto   i = m_arr.induced_edges_begin( secondCurve );
                         i != m_arr.induced_edges_end( secondCurve ); ++i )
@@ -347,7 +347,9 @@ void Compilation::render( const boost::filesystem::path& filepath )
     for( auto i = m_arr.edges_begin(); i != m_arr.edges_end(); ++i )
         edges.push_back( i );
     edgeGroups.push_back( edges );
-    generateHTML( filepath, m_arr, edgeGroups );
+    
+    SVGStyle style;
+    generateHTML( filepath, m_arr, edgeGroups, style );
 }
 
 
@@ -421,7 +423,8 @@ void Compilation::renderFloors( const boost::filesystem::path& filepath )
         }
     }
 
-    generateHTML( filepath, m_arr, edgeGroups );
+    SVGStyle style;
+    generateHTML( filepath, m_arr, edgeGroups, style );
 }
 
 
@@ -494,7 +497,8 @@ void Compilation::renderFillers( const boost::filesystem::path& filepath )
         }
     }
 
-    generateHTML( filepath, m_arr, edgeGroups );
+    SVGStyle style;
+    generateHTML( filepath, m_arr, edgeGroups, style );
 }
    
 

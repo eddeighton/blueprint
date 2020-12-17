@@ -71,11 +71,24 @@ void Space::init( float x, float y )
 
 void Space::evaluate( const EvaluationMode& mode, EvaluationResults& results )
 {
-    m_innerExteriors.clear();
-    
     const Polygon2D& polygon = m_pContour->getPolygon();
+    
+    //calculate the site contour path
+    if( !(m_polygonCache) || 
+        !( m_polygonCache.get().size() == polygon.size() ) || 
+        !std::equal( polygon.begin(), polygon.end(), m_polygonCache.get().begin() ) )
+    {
+        m_polygonCache = polygon;
+
+        typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
+        typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
+        PathImpl::aggPathToMarkupPath( 
+            m_contourPath, 
+            Adaptor( WykobiPolygonAdaptor( polygon ), true ) );
+    }
 
     //bottom up recursion
+    m_innerExteriors.clear();
     for( PtrVector::iterator i = m_sites.begin(),
         iEnd = m_sites.end(); i!=iEnd; ++i )
     {
@@ -86,46 +99,33 @@ void Space::evaluate( const EvaluationMode& mode, EvaluationResults& results )
             if( Space::Ptr pSpace = boost::dynamic_pointer_cast< Space >( *i ) )
             {
                 ClipperLib::Path inputClipperPath;
-                Polygon2D exteriorPolygon = pSpace->getExteriorPolygon();
-                for( Point2D& pt : exteriorPolygon )
-                {
-                    pSpace->getTransform().transform( pt.x, pt.y );
-                    inputClipperPath.push_back( 
-                        ClipperLib::IntPoint( 
-                            static_cast< ClipperLib::cInt >( pt.x * CLIPPER_MAG ), 
-                            static_cast< ClipperLib::cInt >( pt.y * CLIPPER_MAG ) ) ); 
-                }
-                if( wykobi::polygon_orientation( exteriorPolygon ) == wykobi::Clockwise )
-                    std::reverse( inputClipperPath.begin(), inputClipperPath.end() );
+                toClipperPoly( pSpace->getExteriorPolygon(), pSpace->getTransform(), 
+                    wykobi::CounterClockwise, inputClipperPath );
                 m_innerExteriors.push_back( inputClipperPath );
             }
         }
     }
-    
+
     if( mode.bArrangement )
     {
-        if( !(m_polygonCache) || 
-            !( m_polygonCache.get().size() == polygon.size() ) || 
-            !std::equal( polygon.begin(), polygon.end(), m_polygonCache.get().begin() ) || 
+        //m_exteriorPolygonCache is a cache of the site polygon to detect if need to recalculate the exterior polygon
+        if( !(m_exteriorPolygonCache) || 
+            !( m_exteriorPolygonCache.get().size() == polygon.size() ) || 
+            !std::equal( polygon.begin(), polygon.end(), m_exteriorPolygonCache.get().begin() ) ||
+            
             !( m_innerExteriors.size() == m_innerExteriorsCache.size() ) ||
             !std::equal( m_innerExteriors.begin(), m_innerExteriors.end(), m_innerExteriorsCache.begin() ) 
             )
         {
-            m_polygonCache = polygon;
+            m_exteriorPolygonCache = polygon;
             m_innerExteriorsCache = m_innerExteriors;
-            
-            typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
-            typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
-            PathImpl::aggPathToMarkupPath( 
-                m_contourPath, 
-                Adaptor( WykobiPolygonAdaptor( polygon ), true ) );
             
             static const double fExtrusionAmt = 2.0;
             
             ClipperLib::Path interiorPath;
             {
                 ClipperLib::Path clipperPolygon;
-                toClipperPoly( polygon, clipperPolygon );
+                toClipperPoly( polygon, wykobi::CounterClockwise, clipperPolygon );
                 if( wykobi::polygon_orientation( polygon ) == wykobi::Clockwise )
                     std::reverse( clipperPolygon.begin(), clipperPolygon.end() );
                 
@@ -137,7 +137,10 @@ void Space::evaluate( const EvaluationMode& mode, EvaluationResults& results )
                 fromClipperPolys( exteriorPath, m_exteriorPolygon );
                 
                 if( !interiorPaths.empty() )
+                {
                     interiorPath = interiorPaths.front();
+                    //std::reverse( interiorPath.begin(), interiorPath.end() );
+                }
             }
             
             //calculate the exteriors
@@ -164,7 +167,7 @@ void Space::evaluate( const EvaluationMode& mode, EvaluationResults& results )
     }
     else
     {
-        m_polygonCache.reset();
+        m_exteriorPolygonCache.reset();
         m_exteriorPolyMap.clear();
         m_innerExteriorsCache.clear();
     }

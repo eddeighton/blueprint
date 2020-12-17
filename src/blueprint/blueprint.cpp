@@ -1,6 +1,4 @@
 
-#include "blueprint/edit.h"
-
 #include "blueprint/blueprint.h"
 #include "blueprint/spaceUtils.h"
 
@@ -8,14 +6,6 @@
 
 #include "common/compose.hpp"
 #include "common/assert_verify.hpp"
-
-#include "wykobi.hpp"
-#include "wykobi_algorithm.hpp"
-
-#include <boost/numeric/conversion/bounds.hpp>
-
-#include <algorithm>
-#include <iomanip>
 
 namespace Blueprint
 {
@@ -36,7 +26,7 @@ Blueprint::Blueprint( const std::string& strName )
 Blueprint::Blueprint( PtrCst pOriginal, Node::Ptr pNotUsed, const std::string& strName )
     :   Site( pOriginal, Ptr(), strName )
 {
-    ASSERT( !pNotUsed );
+    VERIFY_RTE( !pNotUsed );
 }
 
 Node::Ptr Blueprint::copy( Node::Ptr pParent, const std::string& strName ) const
@@ -48,7 +38,6 @@ void Blueprint::init()
 {
     Site::init();
 }
-
 
 bool Blueprint::add( Node::Ptr pNewNode )
 {
@@ -78,8 +67,5 @@ void Blueprint::evaluate( const EvaluationMode& mode, EvaluationResults& results
         iEnd = m_sites.end(); i!=iEnd; ++i )
         (*i)->evaluate( mode, results );
 }
-
-
-
 
 }

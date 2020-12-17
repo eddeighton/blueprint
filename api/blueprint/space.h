@@ -52,6 +52,7 @@ protected:
     std::unique_ptr< PathImpl > m_pInteriorContourPathImpl;
     std::unique_ptr< ExteriorGroupImpl > m_pExteriorPolygons;
     
+    boost::optional< Polygon2D > m_exteriorPolygonCache;
     ClipperLib::Paths m_innerExteriors, m_innerExteriorsCache;
 };
 

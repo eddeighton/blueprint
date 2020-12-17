@@ -244,69 +244,7 @@ static unsigned int calculateIndexOnPolygon( const wykobi::polygon< float, 2 >& 
     }
     return iter.index();
 }
-    /*
-template< class StrokeType >
-static void aggStrokeToClipperPoly( StrokeType& stroke, ClipperLib::Clipper& clipper, ClipperLib::Polygons& solution,
-                            float fOffsetX = 0.0f, float fOffsetY = 0.0f, float fScale = 1.0f )
-{
-    using namespace Logic::Shared;
-
-    //convert to clipper polygon
-    ClipperLib::Polygon clipperPoly;
-    {
-        double x, y;
-        unsigned cmd;
-        stroke.rewind(0);
-        while( true )
-        {
-            cmd = stroke.vertex(&x, &y);
-            if( agg::is_line_to( cmd ) )
-            {
-                clipperPoly.push_back( 
-                    ClipperLib::IntPoint( 
-                        static_cast< ClipperLib::long64 >( ( ( x  * fScale ) + fOffsetX ) * CLIPPER_MAG ), 
-                        static_cast< ClipperLib::long64 >( ( ( y  * fScale ) + fOffsetY ) * CLIPPER_MAG ) ) );
-            }
-            else if( agg::is_move_to( cmd ) )
-            {
-                if( !clipperPoly.empty() ) 
-                {
-                    clipper.AddPolygon( clipperPoly, ClipperLib::ptSubject );
-                    clipperPoly.clear();
-                }
-                clipperPoly.push_back( 
-                    ClipperLib::IntPoint( 
-                        static_cast< ClipperLib::long64 >( ( ( x  * fScale ) + fOffsetX ) * CLIPPER_MAG ), 
-                        static_cast< ClipperLib::long64 >( ( ( y  * fScale ) + fOffsetY ) * CLIPPER_MAG ) ) );
-            }
-            else if( agg::is_close( cmd ) )
-            {
-                if( !clipperPoly.empty() ) 
-                {
-                    clipperPoly.push_back( clipperPoly.front() );
-                    clipper.AddPolygon( clipperPoly, ClipperLib::ptSubject );
-                    clipperPoly.clear();
-                }
-            }
-            else if( agg::is_stop( cmd ) )
-            {
-                if( !clipperPoly.empty() ) 
-                {
-                    clipper.AddPolygon( clipperPoly, ClipperLib::ptSubject );
-                    clipperPoly.clear();
-                }
-                break;
-            }
-            else
-            {
-                throw std::runtime_error( "Unknown vertex command" );
-            }
-        }
-    }
-
-    //run clipper to produce polygon set
-    clipper.Execute( ClipperLib::ctUnion, solution, ClipperLib::pftPositive, ClipperLib::pftPositive ); 
-}*/
+ 
 
 
 /*
@@ -333,48 +271,6 @@ static void generatePathPolygons( const TPathType& path, float fOffsetX = 0.0f, 
         stroke.line_join( static_cast< agg::line_join_e >( join ) );*/
     
 /*
-static const double CLIPPER_MAG = 1000000.0;
-
-static void offsetSimplePolygon( const wykobi::polygon< float, 2u >& polygon, wykobi::polygon< float, 2u >& result, float fAmt )
-{
-    ClipperLib::Paths in;
-    
-    if( polygon.size() != 0U )
-    {
-        ClipperLib::Path clipperPathIn;
-        for( wykobi::polygon< float, 2u >::const_iterator 
-            i = polygon.begin(),
-            iEnd = polygon.end(); i!=iEnd; ++i )
-        {
-            clipperPathIn.push_back( 
-                ClipperLib::IntPoint( 
-                    static_cast< ClipperLib::cInt >( i->x * CLIPPER_MAG ), 
-                    static_cast< ClipperLib::cInt >( i->y * CLIPPER_MAG ) ) );
-        }
-
-        clipperPathIn.push_back( clipperPathIn.front() );
-        in.push_back( clipperPathIn );
-        //ClipperLib::OffsetPaths( in, in, fAmt * CLIPPER_MAG, ClipperLib::jtRound, ClipperLib::etClosed );
-        
-        ClipperLib::ClipperOffset co;// = new ClipperLib::ClipperOffset();
-        co.AddPaths( in, ClipperLib::jtSquare, ClipperLib::etClosedPolygon );
-        co.Execute( in, fAmt * CLIPPER_MAG );
-    }
-    
-    //ClipperLib::OffsetPaths( in, in, fAmt * CLIPPER_MAG, ClipperLib::jtSquare, ClipperLib::etClosed );
-    if( !in.empty() )
-    {
-        for( ClipperLib::Path::const_iterator 
-            j = in[0].begin(), jEnd = in[0].end(); j!=jEnd; ++j )
-        {
-            result.push_back( 
-                wykobi::make_point< float >(static_cast<float>(j->X / CLIPPER_MAG),
-                                            static_cast<float>(j->Y / CLIPPER_MAG) ) );
-        }
-    }
-    else
-        result = polygon;
-}
 
 static void getOuterContours( 
     const std::vector< std::vector< std::pair< float, float > > >& contour, 

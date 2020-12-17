@@ -1,0 +1,21 @@
+basic_diagonal_2<blueprint>(1,0,0,0,1,0)
+{
+    spac_0000<space>(1,0,16,0,1,-16)
+    {
+        contour<contour>(4,-32,48,-32,-16,32,-16,32,48)
+        {
+            auto<property>(false)
+        }
+        copy_0001<space>(1,0,0,0,1,12)
+        {
+            contour<contour>(6,-16,-8,-8,-16,8,-16,16,-8,16,16,-16,16)
+            {
+                auto<property>(false)
+            }
+        }
+        conn_0002<connect>(1,0,0,0,1,26)
+        {
+            width<point>(3,8)
+        }
+    }
+}

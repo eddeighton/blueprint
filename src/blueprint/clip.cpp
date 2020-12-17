@@ -1,7 +1,5 @@
 #include "blueprint/clip.h"
 
-#include "blueprint/edit.h"
-
 #include "ed/ed.hpp"
 
 #include "common/rounding.hpp"

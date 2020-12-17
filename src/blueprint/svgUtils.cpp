@@ -18,7 +18,9 @@ namespace
         "black"
     };
 
-    void svgLine( Blueprint::Arr_with_hist_2::Halfedge_const_handle h, double minX, double minY, double scale, const char* pszColour, std::ostream& os )
+    void svgLine( const Blueprint::SVGStyle& style, Blueprint::Arr_with_hist_2::Halfedge_const_handle h, 
+        double minX, double minY, double scale, const char* pszColour, 
+        std::ostream& os )
     {
         if( h->target()->point() == h->curve().source() )
             h = h->twin();
@@ -34,9 +36,20 @@ namespace
             ( startX + ( endX - startX ) / 2.0 ) << "," << ( startY + ( endY - startY ) / 2.0 ) << " " <<
             endX << "," << endY;
 
-        os << "       <polyline points=\"" << osEdge.str() << "\" style=\"fill:none;stroke:" << pszColour << ";stroke-width:1\" marker-mid=\"url(#mid)\" />\n";
-        os << "       <circle cx=\"" << startX << "\" cy=\"" << startY << "\" r=\"3\" stroke=\"" << pszColour << "\" stroke-width=\"1\" fill=\"" << pszColour << "\" />\n";
-        os << "       <circle cx=\"" << endX << "\" cy=\"" << endY << "\" r=\"3\" stroke=\"" << pszColour << "\" stroke-width=\"1\" fill=\"" << pszColour << "\" />\n";
+        if( style.bArrows )
+        {
+            os << "       <polyline points=\"" << osEdge.str() << "\" style=\"fill:none;stroke:" << pszColour << ";stroke-width:1\" marker-mid=\"url(#mid)\" />\n";
+        }
+        else
+        {
+            os << "       <polyline points=\"" << osEdge.str() << "\" style=\"fill:none;stroke:" << pszColour << ";stroke-width:1\" />\n";
+        }
+        
+        if( style.bDots )
+        {
+            os << "       <circle cx=\"" << startX << "\" cy=\"" << startY << "\" r=\"3\" stroke=\"" << pszColour << "\" stroke-width=\"1\" fill=\"" << pszColour << "\" />\n";
+            os << "       <circle cx=\"" << endX << "\" cy=\"" << endY << "\" r=\"3\" stroke=\"" << pszColour << "\" stroke-width=\"1\" fill=\"" << pszColour << "\" />\n";
+        }
 
     }
 
@@ -49,7 +62,8 @@ namespace Blueprint
 {
     void generateHTML( const boost::filesystem::path& filepath,
             const Arr_with_hist_2& arr,
-            const EdgeVectorVector& edgeGroups )
+            const EdgeVectorVector& edgeGroups,
+            const SVGStyle& style )
     {
         std::unique_ptr< boost::filesystem::ofstream > os =
             createNewFileStream( filepath );
@@ -98,8 +112,10 @@ namespace Blueprint
         *os << "      </defs>\n";
         *os << "       <text x=\"" << 10 << "\" y=\"" << 10 <<
                          "\" fill=\"green\"  >Vertex Count: " << arr.number_of_vertices() << " </text>\n";
-        *os << "       <text x=\"" << 10 << "\" y=\"" << 20 <<
+        *os << "       <text x=\"" << 10 << "\" y=\"" << 30 <<
                          "\" fill=\"green\"  >Edge Count: " << arr.number_of_edges() << " </text>\n";
+        *os << "       <text x=\"" << 10 << "\" y=\"" << 50 <<
+                         "\" fill=\"green\"  >Face Count: " << arr.number_of_faces() << " </text>\n";
 
         int iColour = 0;
         for( const EdgeVector& edges : edgeGroups )
@@ -111,7 +127,7 @@ namespace Blueprint
                 if( h->target()->point() == h->curve().source() )
                     h = h->twin();
 
-                svgLine( h, minX, minY, scale, pszColour, *os );
+                svgLine( style, h, minX, minY, scale, pszColour, *os );
 
                 {
                     const double startX = ( CGAL::to_double(  h->source()->point().x() ) - minX ) * scale;

@@ -4,6 +4,8 @@
 #include "blueprint/object.h"
 #include "blueprint/blueprint.h"
 
+#include "CGAL/Arr_landmarks_point_location.h"
+
 //#include "common/variant_utils.hpp"
 
 namespace
@@ -19,8 +21,8 @@ namespace
                 //test if the edge is a doorstep
                 if( !iter->data().get() )
                 {
-                    CGAL::insert( arr,
-                        Blueprint::Segment_2( iter->source()->point(),
+                    CGAL::insert( arr, 
+                        Blueprint::Curve_2( iter->source()->point(),
                                               iter->target()->point() ) );
                 }
                 ++iter;
@@ -41,8 +43,8 @@ namespace
                 //test if the edge is a doorstep
                 if( !iter->data().get() )
                 {
-                    CGAL::insert( arr,
-                        Blueprint::Segment_2( iter->source()->point(),
+                    CGAL::insert( arr, 
+                        Blueprint::Curve_2( iter->source()->point(),
                                               iter->target()->point() ) );
                 }
                 ++iter;
@@ -50,11 +52,59 @@ namespace
             while( iter != start );
         }
     }
+    
+    class ArrObserver : public CGAL::Arr_observer< Blueprint::Arr_with_hist_2 >
+    {
+    public:
+        ArrObserver( Blueprint::Arr_with_hist_2& arr )
+        :     CGAL::Arr_observer< Blueprint::Arr_with_hist_2 >( arr )
+        {
+        }
+        
+        virtual void after_split_face( 
+            Blueprint::Arr_with_hist_2::Face_handle f, 
+            Blueprint::Arr_with_hist_2::Face_handle new_f, bool is_hole )
+        {
+            new_f->set_data( f->data() );
+        }
+    };
 }
 
 namespace Blueprint
 {
     
+/*
+class FloorAnalysis::FloorTest : public CGAL::Arr_landmarks_point_location< Arr_with_hist_2 >
+{
+public:
+    using VertexHandle = 
+        Arr_with_hist_2::Vertex_const_handle;
+
+    FloorTest( const Arr_with_hist_2& arr )
+        :   Arr_landmarks_point_location< Arr_with_hist_2 >( arr )
+    {
+        
+    }
+    
+    bool testSegment( VertexHandle v1, VertexHandle v2 )
+    {
+        Halfedge_set crossed_edges;
+    
+        result_type result = 
+            _walk_from_vertex( v1, v2->point(), crossed_edges );
+            
+        VERIFY_RTE( boost::get< VertexHandle >( result ) == v2 );
+        
+        return crossed_edges.empty();
+    }
+    
+    ::Blueprint::Segment_2 getBisector( VertexHandle v1, VertexHandle v2)
+    {
+        ::Blueprint::Segment_2 result( v1->point(), v2->point() );
+        return result;
+    }
+};
+    */
 FloorAnalysis::FloorAnalysis( Compilation& compilation )
     :   m_hFloorFace( nullptr )
 {
@@ -89,7 +139,36 @@ FloorAnalysis::FloorAnalysis( Compilation& compilation )
     
     VERIFY_RTE_MSG( !m_hFloorFace->is_unbounded(), "Floor face is unbounded" );
     
+    m_hFloorFace->set_data( (DefaultedBool( true )) );
     
+    //paranoia check
+    {
+        for( auto i = m_arr.faces_begin(),
+            iEnd = m_arr.faces_end(); i!=iEnd; ++i )
+        {
+            if( i != m_hFloorFace )
+            {
+                VERIFY_RTE( !i->data().get() );
+            }
+        }
+    }
+    
+    VERIFY_RTE( m_arr.is_valid() );
+    
+    //calculate the bounding box
+    {
+        std::vector< Segment_2 > outerSegments;
+        Arr_with_hist_2::Ccb_halfedge_const_circulator iter = m_hFloorFace->outer_ccb();
+        Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+        do
+        {
+            outerSegments.push_back( iter->curve() );
+            ++iter;
+        }
+        while( iter != start );
+        
+        m_boundingBox = CGAL::bbox_2( outerSegments.begin(), outerSegments.end() );
+    }
 }
 
 void FloorAnalysis::recurseObjects( Site::Ptr pSite )
@@ -112,6 +191,277 @@ void FloorAnalysis::recurseObjects( Site::Ptr pSite )
     }
 }
 
+inline bool isInFloor( Arr_with_hist_2::Halfedge_const_handle h )
+{
+    const bool bIsFloorEdge = 
+        h->face()->data().get() || 
+        h->twin()->face()->data().get(); 
+    return bIsFloorEdge;
+}
+
+bool FloorAnalysis::isWithinFloor( VertexHandle v1, VertexHandle v2 ) const
+{
+    ArrObserver observer( m_arr );
+    
+    Curve_handle hCurve =
+        CGAL::insert( m_arr, Curve_2( v1->point(), v2->point() ) );
+        
+    bool bIsOnlyFloorFaces = true;
+    for( auto i = m_arr.induced_edges_begin( hCurve ),
+              iEnd = m_arr.induced_edges_end( hCurve );
+              i != iEnd; ++i )
+    {
+        Arr_with_hist_2::Halfedge_handle h = *i;
+        if( !isInFloor( h ) )
+        {
+            bIsOnlyFloorFaces = false;
+            break;
+        }
+    }
+    
+    CGAL::remove_curve( m_arr, hCurve );
+    
+    return bIsOnlyFloorFaces;
+}
+
+Segment_2 makeBisector( const Segment_2& edge, const Rect_2& rect )
+{
+    const Line_2 line( edge.source(), edge.target() );
+    
+    VERIFY_RTE_MSG( CGAL::do_intersect( rect, line ), 
+        "bisector does not intersect bounds" );
+    
+    boost::optional< boost::variant< Point_2, Segment_2 > > 
+        result = CGAL::intersection< Kernel >( rect, line );
+    VERIFY_RTE_MSG( result, "Bisector intersection failed" );
+    
+    return boost::get< Segment_2 >( result.get() );
+}
+
+boost::optional< Curve_2 > FloorAnalysis::getFloorBisector( VertexHandle v1, VertexHandle v2, bool bKeepSingleEnded ) const
+{
+    const Kernel::Segment_2 segment( v1->point(), v2->point() );
+    boost::optional< Curve_2 > result;
+    
+    if( segment.squared_length() > 0.0 )
+    {
+        const Kernel::Segment_2 bisector = makeBisector( segment, m_boundingBox );
+    
+        ArrObserver observer( m_arr );
+        
+        Curve_handle hCurveSegment =
+            CGAL::insert( m_arr, Curve_2( segment.source(), segment.target() ) );
+            
+        Curve_handle hCurve =
+            CGAL::insert( m_arr, Curve_2( bisector.source(), bisector.target() ) );
+            
+        using HalfEdgeHandle = Arr_with_hist_2::Halfedge_const_handle;
+        using HalfEdgeHandleSet = std::set< HalfEdgeHandle >;
+        
+        HalfEdgeHandleSet edgesSet;
+        {
+            for( auto i = m_arr.induced_edges_begin( hCurveSegment ),
+                      iEnd = m_arr.induced_edges_end( hCurveSegment );
+                      i != iEnd; ++i )
+            {
+                edgesSet.insert( *i );
+            }
+            for( auto i = m_arr.induced_edges_begin( hCurve ),
+                      iEnd = m_arr.induced_edges_end( hCurve );
+                      i != iEnd; ++i )
+            {
+                edgesSet.insert( *i );
+            }
+        }
+        
+        using HalfEdgeHandleVector = std::vector< HalfEdgeHandle >;
+        HalfEdgeHandleVector orderedEdges( edgesSet.begin(), edgesSet.end() );
+        {
+            std::transform( orderedEdges.begin(), orderedEdges.end(), orderedEdges.begin(),
+                [ bisector]( HalfEdgeHandle edge ) -> HalfEdgeHandle
+                {
+                    if( CGAL::has_smaller_distance_to_point( 
+                        bisector.source(), 
+                        edge->source()->point(), 
+                        edge->target()->point() ) )
+                    {
+                        return edge;
+                    }
+                    else
+                    {
+                        return edge->twin();
+                    }
+                });
+            
+            std::sort( orderedEdges.begin(), orderedEdges.end(), 
+                [ bisector ]( HalfEdgeHandle left, HalfEdgeHandle right )
+                {
+                    return CGAL::has_smaller_distance_to_point( 
+                        bisector.source(), 
+                        left->source()->point(), 
+                        right->source()->point() );
+                } );
+        }
+            
+        //find region within original segment
+        HalfEdgeHandleVector left, inside, right;
+        {
+            int iState = 0;
+            for( HalfEdgeHandleVector::iterator 
+                    i = orderedEdges.begin(),
+                    iEnd = orderedEdges.end(); i!=iEnd; ++i )
+            {
+                HalfEdgeHandle h = *i;
+                VERIFY_RTE( h->source()->point() != h->target()->point() );
+                switch( iState )
+                {
+                    case 0:
+                        if( h->source()->point() == segment.source() )
+                        {
+                            iState = 1;
+                            inside.push_back( h );
+                        }
+                        else
+                        {
+                            left.push_back( h );
+                        }
+                        break;
+                    case 1:
+                        if( h->source()->point() == segment.target() )
+                        {
+                            iState = 2;
+                            right.push_back( h );
+                        }
+                        else
+                        {
+                            inside.push_back( h );
+                        }
+                        break;
+                    case 2:
+                        {
+                            right.push_back( h );
+                        }
+                        break;
+                }
+            }
+        }
+        std::ostringstream os;
+        /*{
+            for( HalfEdgeHandleVector::iterator 
+                    i = orderedEdges.begin(),
+                    iEnd = orderedEdges.end(); i!=iEnd; ++i )
+            {
+                HalfEdgeHandle h = *i;
+                os << "halfedge: " << h->source()->point() << " : " << h->target()->point() << "\n";
+            }
+        }*/
+        VERIFY_RTE_MSG( !left.empty() || ( segment.source() == bisector.source() ), 
+            "Empty left segment: " << segment.source() << " bisector: " << bisector.source() << "\n" << os.str() );
+        VERIFY_RTE_MSG( !inside.empty(), 
+            "Empty inside segment: " << segment << " bisector: " << bisector << "\n" << os.str() );
+        VERIFY_RTE_MSG( !right.empty() || ( segment.target() == bisector.target() ), 
+            "Empty right segment: " << segment.target() << " bisector: " << bisector.target() << "\n" << os.str() );
+        
+        //test the inside is full within the floor
+        bool bInvalid = true;
+        for( HalfEdgeHandleVector::iterator 
+                i = inside.begin(),
+                iEnd = inside.end(); i!=iEnd; ++i )
+        {
+            HalfEdgeHandle h = *i;
+            if( !isInFloor( h ) )
+            {
+                bInvalid = true;
+                break;
+            }
+        }
+        
+        if( bInvalid )
+        {
+            //find the last edges within floor on both sides
+            HalfEdgeHandle hFirst = inside.front(), hLast = inside.back();
+            for( HalfEdgeHandleVector::reverse_iterator 
+                    i = left.rbegin(),
+                    iEnd = left.rend(); i!=iEnd; ++i )
+            {
+                HalfEdgeHandle h = *i;
+                if( isInFloor( h ) )
+                {
+                    hFirst = h;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            
+            for( HalfEdgeHandleVector::iterator 
+                    i = right.begin(),
+                    iEnd = right.end(); i!=iEnd; ++i )
+            {
+                HalfEdgeHandle h = *i;
+                if( isInFloor( h ) )
+                {
+                    hLast = h;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            
+            //insiste on the bisector extending beyond the originating segment
+            if( bKeepSingleEnded )
+            {
+                if( ( hFirst != inside.front() ) || ( hLast != inside.back() ) )
+                {
+                    result = Curve_2( hFirst->source()->point(), hLast->target()->point() );
+                }
+            }
+            else
+            {
+                if( ( hFirst != inside.front() ) && ( hLast != inside.back() ) )
+                {
+                    result = Curve_2( hFirst->source()->point(), hLast->target()->point() );
+                }
+            }
+        }
+        
+        CGAL::remove_curve( m_arr, hCurve );
+        CGAL::remove_curve( m_arr, hCurveSegment );
+    }
+    
+    
+    return result;
+}
+
+boost::optional< Curve_2 > FloorAnalysis::getFloorBisector( const Segment_2& segment, bool bKeepSingleEnded ) const
+{
+    VertexHandle v1, v2;
+    bool bFoundSource = false, bFoundTarget = false;
+    for( auto i = m_arr.vertices_begin(),
+        iEnd = m_arr.vertices_end(); i!=iEnd; ++i )
+    {
+        if( i->point() == segment.source() )
+        {
+            VERIFY_RTE( !bFoundSource );
+            v1 = i;
+            bFoundSource = true;
+        }
+        if( i->point() == segment.target() )
+        {
+            VERIFY_RTE( !bFoundTarget );
+            v2 = i;
+            bFoundTarget = true;
+        }
+    }
+    VERIFY_RTE( bFoundSource );
+    VERIFY_RTE( bFoundTarget );
+    VERIFY_RTE( v1 != v2 );
+    
+    return getFloorBisector( v1, v2, bKeepSingleEnded );
+}
+    
 void FloorAnalysis::render( const boost::filesystem::path& filepath )
 {
     EdgeVectorVector edgeGroups;
@@ -149,72 +499,45 @@ void FloorAnalysis::render( const boost::filesystem::path& filepath )
         }
     }
 
-    generateHTML( filepath, m_arr, edgeGroups );
+    SVGStyle style;
+    generateHTML( filepath, m_arr, edgeGroups, style );
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-namespace
-{
-    class ArrObserver : public CGAL::Arr_observer< Arr_with_hist_2 >
-    {
-    public:
-        ArrObserver( Arr_with_hist_2& arr )
-        :     CGAL::Arr_observer< Arr_with_hist_2 >( arr )
-        {
-          
-        }
-
-        virtual void before_split_face( Arr_with_hist_2::Face_handle, Arr_with_hist_2::Halfedge_handle e )
-        {
-        }
-
-        virtual void before_merge_face( Arr_with_hist_2::Face_handle, Arr_with_hist_2::Face_handle, Arr_with_hist_2::Halfedge_handle e)
-        {
-        }
-    };
-
-    //Arr_with_hist_2::Point_2 min( const Arr_with_hist_2::Point_2& left, const Arr_with_hist_2::Point_2& right )
-    //{
-    //    return Arr_with_hist_2::Point_2( std::min( left.x(), right.x() ), std::min( left.y(), right.y() ) );
-    //}
-    //Arr_with_hist_2::Point_2 max( const Arr_with_hist_2::Point_2& left, const Arr_with_hist_2::Point_2& right )
-    //{
-    //    return Arr_with_hist_2::Point_2( std::max( left.x(), right.x() ), std::max( left.y(), right.y() ) );
-    //}
-    //        m_ptMin = min( m_ptMin, min( iter->source()->point(), iter->target()->point() ) );
-    //        m_ptMax = max( m_ptMax, max( iter->source()->point(), iter->target()->point() ) );
-    
-    Segment_2 makeBisector( const Segment_2& edge, const Iso_rectangle_2& rect )
-    {
-        const Line_2 line( edge.source(), edge.target() );
-        
-        VERIFY_RTE_MSG( CGAL::do_intersect( rect, line ), 
-            "bisector does not intersect bounds" );
-        
-        boost::optional< boost::variant< Point_2, Kernel::Segment_2 > > 
-            result = CGAL::intersection< Kernel >( rect, line );
-        VERIFY_RTE_MSG( result, "Bisector intersection failed" );
-        
-        return boost::get< Kernel::Segment_2 >( result.get() );
-    }
-}
-
 Visibility::Visibility( FloorAnalysis& floor )
+    :   m_floor( floor )
 {
-    Arr_with_hist_2::Face_const_handle hFloor = floor.getFloorFace();
+    Arr_with_hist_2::Face_const_handle hFloor = m_floor.getFloorFace();
     
-    std::vector< Segment_2 > segments;
+    std::vector< Curve_2 > segments;
+    
+    using VertexVector = 
+        std::vector< Arr_with_hist_2::Vertex_const_handle >;
+    VertexVector interiorPoints, allPoints;
     
     {
         Arr_with_hist_2::Ccb_halfedge_const_circulator iter = hFloor->outer_ccb();
         Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
         do
         {
-            segments.push_back( Segment_2(  iter->source()->point(),
+            segments.push_back( Curve_2(  iter->source()->point(),
                                             iter->target()->point() ) );
+                                            
+            Arr_with_hist_2::Ccb_halfedge_const_circulator prev = iter;               
             ++iter;
+            
+            const CGAL::Orientation turn =
+                CGAL::orientation( 
+                    prev->source()->point(),
+                    prev->target()->point(),
+                    iter->target()->point() );
+            if( turn == CGAL::NEGATIVE )
+            {
+                interiorPoints.push_back( prev->target() );
+            } 
+            allPoints.push_back( prev->target() );
         }
         while( iter != start );
     }
@@ -229,32 +552,67 @@ Visibility::Visibility( FloorAnalysis& floor )
             Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
             do
             {
-                segments.push_back( Segment_2(  iter->source()->point(),
+                segments.push_back( Curve_2(  iter->source()->point(),
                                                 iter->target()->point() ) );
+                                                
+                Arr_with_hist_2::Ccb_halfedge_const_circulator prev = iter;  
                 ++iter;
+                
+                const CGAL::Orientation turn =
+                    CGAL::orientation( 
+                        prev->source()->point(),
+                        prev->target()->point(),
+                        iter->target()->point() );
+                if( turn == CGAL::NEGATIVE )
+                {
+                    interiorPoints.push_back( prev->target() );
+                } 
+                allPoints.push_back( prev->target() );
             }
             while( iter != start );
         }
     }
     
-    //calculate the bounding box
-    m_boundingBox = CGAL::bbox_2( segments.begin(), segments.end() );
-    
-    //for( const Segment_2& segment : segments )
-    //{
-    //    CGAL::insert( m_arr, segment );
-    //}
-    
-    //ArrObserver observer( m_arr );
-    
-    //calculate the AABB
-    
-    for( const Segment_2& segment : segments )
+    for( const Curve_2& segment : segments )
     {
-        Segment_2 bisector = makeBisector( segment, m_boundingBox );
-        Arr_with_hist_2::Curve_handle hCurve = CGAL::insert( m_arr, bisector );
+        CGAL::insert( m_arr, segment );
     }
     
+    for( const Curve_2& segment : segments )
+    {
+        if( boost::optional< Curve_2 > bisectorOpt = 
+            m_floor.getFloorBisector( segment, true ) )
+        {
+            CGAL::insert( m_arr, bisectorOpt.get() );
+        }
+    }
+    
+    //determine the set of interior vertices VertexVector
+    auto    i       = interiorPoints.begin(),
+            iEnd    = interiorPoints.end() - 1U,
+            j       = interiorPoints.begin(),
+            jEnd    = interiorPoints.end();
+        
+    for( ; i != iEnd; ++i )
+    {
+        for( j = i + 1U; j != jEnd; ++j )
+        {
+            Arr_with_hist_2::Vertex_const_handle v1 = *i;
+            Arr_with_hist_2::Vertex_const_handle v2 = *j;
+            if( v1 != v2 )
+            {
+                if( m_floor.isWithinFloor( v1, v2 ) )
+                {
+                    if( boost::optional< Curve_2 > bisectorOpt = 
+                        m_floor.getFloorBisector( v1, v2, false ) )
+                    {
+                        CGAL::insert( m_arr, bisectorOpt.get() );
+                    }
+                } 
+            }
+            
+        }
+    }
 }
 
 void Visibility::render( const boost::filesystem::path& filepath )
@@ -264,7 +622,13 @@ void Visibility::render( const boost::filesystem::path& filepath )
     for( auto i = m_arr.edges_begin(); i != m_arr.edges_end(); ++i )
         edges.push_back( i );
     edgeGroups.push_back( edges );
-    generateHTML( filepath, m_arr, edgeGroups );
+    
+    SVGStyle style;
+    {
+        style.bDots = false;
+        style.bArrows = false;
+    }
+    generateHTML( filepath, m_arr, edgeGroups, style );
 }
 
 }

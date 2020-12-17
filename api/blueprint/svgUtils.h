@@ -13,10 +13,16 @@ namespace Blueprint
     using EdgeVector = std::vector< Arr_with_hist_2::Halfedge_const_handle >;
     using EdgeVectorVector = std::vector< EdgeVector >;
     
+    struct SVGStyle
+    {
+        bool bDots = true;
+        bool bArrows = true;
+    };
     
     void generateHTML( const boost::filesystem::path& filepath,
             const Arr_with_hist_2& arr,
-            const EdgeVectorVector& edgeGroups );
+            const EdgeVectorVector& edgeGroups,
+            const SVGStyle& style );
 
 }
 

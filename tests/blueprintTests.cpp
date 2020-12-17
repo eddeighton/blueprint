@@ -133,7 +133,7 @@ TEST( CGAL, BasicTest )
     Point_2 p1(0, 0), 
             p2(0, 4);
     
-    Segment_2 s1( p1, p2 );
+    Curve_2 s1( p1, p2 );
     
     Curve_handle ch = CGAL::insert( arr, s1 );
     
@@ -158,7 +158,7 @@ namespace
                 iNext = polygon.begin();
             
             interiorCurves.push_back( 
-                CGAL::insert( arr, Blueprint::Segment_2( *i, *iNext ) ) );
+                CGAL::insert( arr, Blueprint::Curve_2( *i, *iNext ) ) );
         }
         return interiorCurves;
     }
