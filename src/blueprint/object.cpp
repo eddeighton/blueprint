@@ -2,6 +2,7 @@
 
 #include "blueprint/object.h"
 #include "blueprint/rasteriser.h"
+#include "blueprint/cgalUtils.h"
 
 #include "common/assert_verify.hpp"
 
@@ -47,31 +48,26 @@ std::string Object::getStatement() const
 
 void Object::init()
 {
-    THROW_RTE( "TODO" );
-    /*
     if( !( m_pContour = get< Feature_Contour >( "contour" ) ) )
     {
         m_pContour = Feature_Contour::Ptr( new Feature_Contour( getPtr(), "contour" ) );
         m_pContour->init();
-        m_pContour->set( wykobi::make_rectangle< Float >( -16, -16, 16, 16 ) );
-        add( m_pContour );
-    }
-    
-    Site::init();*/
-}
-
-void Object::init( Float x, Float y )
-{
-    //if( bEmptyContour )
-    {
-        m_pContour = Feature_Contour::Ptr( new Feature_Contour( shared_from_this(), "contour" ) );
-        m_pContour->init();
+        m_pContour->set( Utils::getDefaultPolygon() );
         add( m_pContour );
     }
     
     Site::init();
+}
+
+void Object::init( Float x, Float y )
+{
+    m_pContour = Feature_Contour::Ptr( new Feature_Contour( shared_from_this(), "contour" ) );
+    m_pContour->init();
+    add( m_pContour );
     
-    m_transform.setTranslation( Map_FloorAverage()( x ), Map_FloorAverage()( y ) );
+    Site::init();
+    
+    setTranslation( m_transform, Map_FloorAverage()( x ), Map_FloorAverage()( y ) );
 }
     
 void Object::evaluate( const EvaluationMode& mode, EvaluationResults& results )
@@ -82,26 +78,12 @@ void Object::evaluate( const EvaluationMode& mode, EvaluationResults& results )
     {
         (*i)->evaluate( mode, results );
     }
-    
-    
-    typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
-    typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
-    
+        
     const Polygon& polygon = m_pContour->getPolygon();
-    
-    if( !m_polygonCache ||
-        !( m_polygonCache.get().size() == polygon.size() ) || 
-        !std::equal( polygon.begin(), polygon.end(), m_polygonCache.get().begin() ) )
+    if( m_contourPolygon != polygon )
     {
-        m_polygonCache = polygon;
-        /*
-        typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
-        typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
-        PathImpl::aggPathToMarkupPath( 
-            m_contourPath, 
-            Adaptor( WykobiPolygonAdaptor( polygon ), true ) );*/
+        m_contourPolygon = polygon;
     }
-
 }
     
 

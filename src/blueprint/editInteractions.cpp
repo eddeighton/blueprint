@@ -1,7 +1,7 @@
 
 #include "blueprint/editInteractions.h"
 #include "blueprint/editBase.h"
-#include "blueprint/spaceUtils.h"
+#include "blueprint/cgalUtils.h"
 
 namespace Blueprint
 {
@@ -41,7 +41,12 @@ Interaction::Interaction( EditBase& edit, IEditContext::ToolMode toolMode,
                 if( m_edit.canEdit( p, IEditContext::eSelect, m_toolMode ) )
                 {
                     m_interacted.push_back( *i );
-                    m_initialValues.push_back( InitialValue( p->getOrigin()->getTransform().X(), p->getOrigin()->getTransform().Y() ) );
+                    
+                    const Vector v = getTranslation( p->getOrigin()->getTransform() );
+                    
+                    m_initialValues.push_back( 
+                        InitialValue( CGAL::to_double( v.x() ), 
+                                      CGAL::to_double( v.y() ) ) );
                 }
             }
         }
@@ -53,7 +58,10 @@ Interaction::Interaction( EditBase& edit, IEditContext::ToolMode toolMode,
                 if( m_edit.canEdit( p, IEditContext::eSelect, m_toolMode ) )
                 {
                     m_interacted.push_back( *i );
-                    m_initialValues.push_back( InitialValue( p->getControlPoint()->getX(), p->getControlPoint()->getY() ) );
+                    m_initialValues.push_back( 
+                        InitialValue( 
+                            CGAL::to_double( p->getControlPoint()->getX() ), 
+                            CGAL::to_double( p->getControlPoint()->getY() ) ) );
                 }
             }
         }
@@ -133,13 +141,12 @@ void Polygon_Interaction::OnMove( Float x, Float y )
         const Float fDeltaX = Math::quantize_roundUp( x, m_qX );
         const Float fDeltaY = Math::quantize_roundUp( y, m_qY );
         const Point pt( fDeltaX, fDeltaY );
-        //const SegmentIDRatioPointTuple sirpt =
-        //    findClosestPointOnContour( m_originalPolygon, pt );
         
-        unsigned int uiIndex = 0;//std::get< 0 >( sirpt );
+        unsigned int uiIndex = Utils::getClosestPoint( m_originalPolygon, pt );
+        
         VERIFY_RTE( uiIndex < m_originalPolygon.size() || uiIndex == 0 );
-        if( m_originalPolygon.size() > 0 )
-            uiIndex = ( uiIndex + 1 ) % m_originalPolygon.size();
+        //if( m_originalPolygon.size() > 0 )
+        //    uiIndex = ( uiIndex + 1 ) % m_originalPolygon.size();
         
         Polygon newPoly;
         for( std::size_t sz = 0U; ( sz != uiIndex ) && ( sz < m_originalPolygon.size() ); ++sz )
@@ -148,8 +155,10 @@ void Polygon_Interaction::OnMove( Float x, Float y )
         for( std::size_t sz = uiIndex; sz < m_originalPolygon.size(); ++sz )
             newPoly.push_back( m_originalPolygon[ sz ] );
         
-        if( !newPoly.is_counterclockwise_oriented() )
+        if( !newPoly.is_empty() && newPoly.is_simple() && !newPoly.is_counterclockwise_oriented() )
+        {
             std::reverse( newPoly.begin(), newPoly.end() );
+        }
         
         //set all the points without reallocating control points
         for( std::size_t sz = 0; sz != newPoly.size(); ++sz )

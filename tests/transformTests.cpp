@@ -5,13 +5,10 @@
 
 #include <gtest/gtest.h>
 #include <iostream>
-
+/*
 TEST( Transform, Bounds )
 {
-    /*{
-        char c;
-        std::cin >> c;
-    }*/
+    
     
     static const Blueprint::Float tol = 0.001;
     
@@ -107,10 +104,6 @@ TEST( Transform, Inverse )
 
 TEST( Transform, Inverse_Brute )
 {
-    /*{
-        char c;
-        std::cin >> c;
-    }*/
     
     static const Blueprint::Float tol = 0.001;
     
@@ -201,4 +194,4 @@ TEST( Transform, Decompose )
         }
     }
     
-}
+}*/

@@ -86,7 +86,7 @@ Compilation::Compilation( Blueprint::Ptr pBlueprint )
     }
 }
 
-void Compilation::renderContour( Arrangement& arr, const Matrix& transform, Polygon2D poly, int iOrientation )
+void Compilation::renderContour( Arrangement& arr, const Transform& transform, Polygon poly, int iOrientation )
 {
     THROW_RTE( "TODO" );
     //transform to absolute coordinates
@@ -118,9 +118,10 @@ void Compilation::renderContour( Arrangement& arr, const Matrix& transform, Poly
 
 void Compilation::recurse( Site::Ptr pSite )
 {
-    if( Space::Ptr pSpace = boost::dynamic_pointer_cast< Space >( pSite ) )
+    THROW_RTE( "TODO" );
+    /*if( Space::Ptr pSpace = boost::dynamic_pointer_cast< Space >( pSite ) )
     {
-        const Matrix transform = pSpace->getAbsoluteTransform();
+        const Transform transform = pSpace->getAbsoluteTransform();
 
         //render the interior polygon
         renderContour( m_arr, transform, pSpace->getInteriorPolygon(), wykobi::CounterClockwise );
@@ -137,7 +138,7 @@ void Compilation::recurse( Site::Ptr pSite )
     for( Site::Ptr pNestedSite : pSite->getSites() )
     {
         recurse( pNestedSite );
-    }
+    }*/
 }
 
 void Compilation::recursePost( Site::Ptr pSite )
@@ -145,7 +146,7 @@ void Compilation::recursePost( Site::Ptr pSite )
     THROW_RTE( "TODO" );
     if( Space::Ptr pSpace = boost::dynamic_pointer_cast< Space >( pSite ) )
     {
-        const Matrix transform = pSpace->getAbsoluteTransform();
+        const Transform transform = pSpace->getAbsoluteTransform();
 
         //render the site polygon
         //renderContour( m_arr, transform, pSpace->getContourPolygon().get(), wykobi::CounterClockwise );
@@ -234,7 +235,7 @@ void Compilation::connect( Site::Ptr pSite )
     /*
     if( Connection::Ptr pConnection = boost::dynamic_pointer_cast< Connection >( pSite ) )
     {
-        const Matrix transform = pConnection->getAbsoluteTransform();
+        const Transform transform = pConnection->getAbsoluteTransform();
 
         //attempt to find the four connection vertices
         std::vector< Arrangement::Halfedge_handle > toRemove;

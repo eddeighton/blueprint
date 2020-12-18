@@ -8,12 +8,9 @@
 #include "blueprint/property.h"
 #include "blueprint/dataBitmap.h"
 #include "blueprint/factory.h"
-#include "blueprint/spaceUtils.h"
 
 #include "common/assert_verify.hpp"
 #include "common/rounding.hpp"
-
-#include "wykobi_algorithm.hpp"
 
 #include <sstream>
 #include <map>

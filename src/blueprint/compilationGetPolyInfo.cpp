@@ -7,6 +7,8 @@
 #include "blueprint/transform.h"
 #include "blueprint/compilation.h"
 
+#include <vector>
+
 namespace
 {
     /*
@@ -88,14 +90,14 @@ namespace
             polygon.holes.emplace_back( hole );
         }
     }*/
-
+/*
     void wallSection(
             Blueprint::Arrangement::Halfedge_const_handle hStart,
             Blueprint::Arrangement::Halfedge_const_handle hEnd,
             Blueprint::Wall& wall )
     {
         THROW_RTE( "TODO" );
-        /*
+        
         Blueprint::Arrangement::Halfedge_const_handle hIter = hStart;
         do
         {
@@ -106,13 +108,13 @@ namespace
             wall.points.push_back( make_target_point( hIter ) );
             hIter = hIter->next();
         }
-        while( hIter != hEnd );*/
-    }
-
+        while( hIter != hEnd );
+    }*/
+/*
     void floorToWalls( Blueprint::Arrangement::Face_const_handle hFloor, std::vector< Blueprint::Wall >& walls )
     {
         THROW_RTE( "TODO" );
-        /*
+        
         using DoorStepVector = std::vector< Blueprint::Arrangement::Halfedge_const_handle >;
 
         if( !hFloor->is_unbounded() )
@@ -211,8 +213,8 @@ namespace
                 while( iter != start );
                 walls.emplace_back( wall );
             }
-        }*/
-    }
+        }
+    }*/
 
 }
 
@@ -228,7 +230,7 @@ void Compilation::findSpaceFaces( Space::Ptr pSpace, FaceHandleSet& faces, FaceH
     Polygon2D spaceContourPolygon = pSpace->getContourPolygon().get();
     if( wykobi::polygon_orientation( spaceContourPolygon ) == wykobi::Clockwise )
         std::reverse( spaceContourPolygon.begin(), spaceContourPolygon.end() );
-    const Matrix transform = pSpace->getAbsoluteTransform();
+    const Transform transform = pSpace->getAbsoluteTransform();
     for( Point2D& pt : spaceContourPolygon )
         transform.transform( pt.x, pt.y );
     
@@ -255,13 +257,13 @@ void Compilation::findSpaceFaces( Space::Ptr pSpace, FaceHandleSet& faces, FaceH
         faces.erase( *i );
     }*/
 }
-
+/*
 void Compilation::recursePolyMap( Site::Ptr pSite, SpacePolyMap& spacePolyMap,
         FaceHandleSet& floorFaces, FaceHandleSet& fillerFaces )
 {
     
     THROW_RTE( "TODO" );
-    /*
+    
     //bottom up recursion
     for( Site::Ptr pNestedSite : pSite->getSites() )
     {
@@ -302,10 +304,10 @@ void Compilation::recursePolyMap( Site::Ptr pSite, SpacePolyMap& spacePolyMap,
 
         spacePolyMap.insert( std::make_pair( pSpace, pSpacePolyInfo ) );
 
-    }*/
+    }
 
-}
-
+}*/
+/*
 void Compilation::getSpacePolyMap( SpacePolyMap& spacePolyMap )
 {
     //get all the floors and faces
@@ -317,6 +319,6 @@ void Compilation::getSpacePolyMap( SpacePolyMap& spacePolyMap )
         recursePolyMap( pSite, spacePolyMap, floorFaces, fillerFaces );
     }
 
-}
+}*/
 
 }

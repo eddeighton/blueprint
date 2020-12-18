@@ -1,6 +1,7 @@
 
 #include "blueprint/wall.h"
 #include "blueprint/rasteriser.h"
+#include "blueprint/cgalUtils.h"
 
 namespace Blueprint
 {
@@ -44,17 +45,15 @@ std::string Wall::getStatement() const
 
 void Wall::init()
 {
-    THROW_RTE( "TODO" );
-    /*
     if( !( m_pContour = get< Feature_Contour >( "contour" ) ) )
     {
         m_pContour = Feature_Contour::Ptr( new Feature_Contour( getPtr(), "contour" ) );
         m_pContour->init();
-        m_pContour->set( wykobi::make_rectangle< Float >( -16, -16, 16, 16 ) );
+        m_pContour->set( Utils::getDefaultPolygon() );
         add( m_pContour );
     }
     
-    Site::init();*/
+    Site::init();
 }
 
 void Wall::init( Float x, Float y )
@@ -65,7 +64,7 @@ void Wall::init( Float x, Float y )
     
     Site::init();
     
-    m_transform.setTranslation( Map_FloorAverage()( x ), Map_FloorAverage()( y ) );
+    setTranslation( m_transform, Map_FloorAverage()( x ), Map_FloorAverage()( y ) );
 }
     
     
@@ -78,25 +77,11 @@ void Wall::evaluate( const EvaluationMode& mode, EvaluationResults& results )
         (*i)->evaluate( mode, results );
     }
     
-    
-    typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
-    typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
-    
     const Polygon& polygon = m_pContour->getPolygon();
-    
-    if( !m_polygonCache || 
-        !( m_polygonCache.get().size() == polygon.size() ) || 
-        !std::equal( polygon.begin(), polygon.end(), m_polygonCache.get().begin() ) )
+    if( polygon != m_contourPolygon )
     {
-        m_polygonCache = polygon;
-        
-        /*typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
-        typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
-        PathImpl::aggPathToMarkupPath( 
-            m_contourPath, 
-            Adaptor( WykobiPolygonAdaptor( polygon ), true ) );*/
+        m_contourPolygon = polygon;
     }
-
 }
   
 }

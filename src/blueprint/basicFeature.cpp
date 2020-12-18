@@ -3,7 +3,6 @@
 
 #include "blueprint/factory.h"
 #include "blueprint/serialisation.h"
-#include "blueprint/spaceUtils.h"
 
 #include "ed/ed.hpp"
 

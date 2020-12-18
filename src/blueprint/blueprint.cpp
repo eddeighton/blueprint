@@ -1,6 +1,5 @@
 
 #include "blueprint/blueprint.h"
-#include "blueprint/spaceUtils.h"
 
 #include "ed/ed.hpp"
 

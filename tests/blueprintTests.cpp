@@ -267,8 +267,8 @@ void loadTest( const boost::filesystem::path& inputFile )
         }
         
         Blueprint::Compilation compilation( pTest );
-        Blueprint::Compilation::SpacePolyMap spacePolyMap;
-        compilation.getSpacePolyMap( spacePolyMap );
+        //Blueprint::Compilation::SpacePolyMap spacePolyMap;
+        //compilation.getSpacePolyMap( spacePolyMap );
         
         compilation.render( constructPath( inputFile, ".html" ) );
         compilation.renderFillers( constructPath( inputFile, "__fillers.html" ) );

@@ -81,7 +81,7 @@ public:
             setModified();
         }
     }
-    const std::string& getName( int ) const { return Node::getName(); }
+    //const std::string& getName( int ) const { return Node::getName(); }
     
     virtual int getControlPointCount() { return 1; }
     virtual void getControlPoints( ControlPoint::List& controlPoints )
@@ -119,7 +119,7 @@ public:
     bool isAutoCalculate() const;
 
     const Polygon& getPolygon() const { return m_polygon; }
-    const std::string& getName( int ) const { return Node::getName(); }
+    //const std::string& getName( int ) const { return Node::getName(); }
     
     //ControlPointCallback
     const GlyphSpec* getParent( int id ) const;

@@ -72,7 +72,7 @@ void Site::init()
     for_each( generics::collectIfConvert( m_sites, Node::ConvertPtrType< Site >(), Node::ConvertPtrType< Site >() ) );
 
     if( !m_pContourPathImpl.get() )
-        m_pContourPathImpl.reset( new PathImpl( m_contourPath, this ) );
+        m_pContourPathImpl.reset( new SimplePolygonMarkup( this, m_contourPolygon, true ) );
     
     m_strLabelText.clear();
     m_properties.clear();
@@ -133,53 +133,47 @@ void Site::remove( Node::Ptr pNode )
     }
 }
 
-Matrix Site::getAbsoluteTransform() const
+Transform Site::getAbsoluteTransform() const
 {
-    Matrix transform;
+    Transform transform;
     Site::PtrCst pIter = boost::dynamic_pointer_cast< const Site >( getPtr() );
     while( pIter )
     {
-        pIter->getTransform().transform( transform );
+        transform = pIter->getTransform() * transform;
         pIter = boost::dynamic_pointer_cast< const Site >( pIter->Node::getParent() );
     }
     return transform;
 }
 
 
-void Site::setTransform( const Matrix& transform )
+void Site::setTransform( const Transform& transform )
 { 
     m_transform = transform; 
     setModified();
 }
-void Site::cmd_rotateLeft( const Rect2D& transformBounds )
+
+void Site::cmd_rotateLeft( const Rect& transformBounds )
 {
-    const Point2D ptTopLeft = wykobi::rectangle_corner( transformBounds, 0 );
-    const Point2D ptBotRight  = wykobi::rectangle_corner( transformBounds, 2 );
-    m_transform = Transform::rotateLeft( m_transform, ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
+    m_transform = rotateLeft( m_transform, transformBounds );
     setModified();
 }
 
-void Site::cmd_rotateRight( const Rect2D& transformBounds )
+void Site::cmd_rotateRight( const Rect& transformBounds )
 {
-    const Point2D ptTopLeft = wykobi::rectangle_corner( transformBounds, 0 );
-    const Point2D ptBotRight  = wykobi::rectangle_corner( transformBounds, 2 );
-    m_transform = Transform::rotateRight( m_transform, ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
+    m_transform = rotateRight( m_transform, transformBounds );
     setModified();
 }
 
-void Site::cmd_flipHorizontally( const Rect2D& transformBounds )
+void Site::cmd_flipHorizontally( const Rect& transformBounds )
 {
-   const Point2D ptTopLeft = wykobi::rectangle_corner( transformBounds, 0 );
-    const Point2D ptBotRight  = wykobi::rectangle_corner( transformBounds, 2 );
-    m_transform = Transform::flipHorizontally( m_transform, ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
+    m_transform = flipHorizontally( m_transform, transformBounds );
     setModified();
 }
 
-void Site::cmd_flipVertically( const Rect2D& transformBounds )
+void Site::cmd_flipVertically( const Rect& transformBounds )
 {
-    const Point2D ptTopLeft = wykobi::rectangle_corner( transformBounds, 0 );
-    const Point2D ptBotRight  = wykobi::rectangle_corner( transformBounds, 2 );
-    m_transform = Transform::flipVertically( m_transform, ptTopLeft.x, ptTopLeft.y, ptBotRight.x, ptBotRight.y );
+    m_transform = flipVertically( m_transform, transformBounds );
     setModified();
 }
+
 }

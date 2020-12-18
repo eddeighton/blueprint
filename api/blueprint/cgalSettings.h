@@ -36,7 +36,7 @@ namespace Blueprint
     //typedef CGAL::Exact_predicates_exact_constructions_kernel     Kernel;
     //typedef CGAL::Exact_predicates_inexact_constructions_kernel   Kernel;
     
-    //typedef Kernel::Aff_transformation_2                            Transform;
+    typedef Kernel::Aff_transformation_2                            Transform;
     typedef Kernel::Line_2                                          Line;
     typedef Kernel::Point_2                                         Point;
     typedef Kernel::Ray_2                                           Ray;

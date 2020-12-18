@@ -3,7 +3,7 @@
 
 namespace Blueprint
 {
-
+/*
 inline void loaddata( std::istream& is, Point2D& pt )
 {
     is >> pt.x >> pt.y;
@@ -121,6 +121,6 @@ void SpacePolyInfo::save( std::ostream& os )
     for( const Wall& data : walls )
         savedata( os, data );
 }
-
+*/
 
 }

@@ -11,7 +11,7 @@
 
 namespace Blueprint
 {
-
+/*
 struct PolygonWithHoles
 {
     Polygon2D outer;
@@ -38,14 +38,14 @@ struct SpacePolyInfo
 {
     using Ptr = std::shared_ptr< SpacePolyInfo >;
     
-    void load( std::istream& is );
-    void save( std::ostream& os );
+    //void load( std::istream& is );
+    //void save( std::ostream& os );
     
     std::vector< PolygonWithHoles > floors;
     std::vector< Polygon2D > fillers;
     std::vector< Wall > walls;
 };
-
+*/
 }
 
 #endif //SPACE_POLY_INFO_15_DEC_2020

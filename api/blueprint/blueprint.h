@@ -52,16 +52,15 @@ public:
     virtual const std::string& getName() const { return Node::getName(); }
 
     //Origin
-    virtual const Matrix& getTransform() const 
+    virtual const Transform& getTransform() const 
     { 
-        static const Matrix m_transform;
+        static const Transform m_transform;
         return m_transform; 
     }
-    virtual void setTransform( const Matrix& transform ) 
+    virtual void setTransform( const Transform& transform ) 
     { 
         ASSERT( false );
     }
-    virtual const MarkupPath* getPolygon()  const { return nullptr; }
     
     virtual bool canEdit()                  const { return false; }
     virtual void set( Float fX, Float fY ) {}

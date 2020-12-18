@@ -68,9 +68,9 @@ public:
     virtual const GlyphSpec* getParent() const { return m_pSiteParent.lock().get(); }
     
     //origin transform
-    Matrix getAbsoluteTransform() const;
-    virtual void setTransform( const Matrix& transform );
-    virtual const MarkupPath* getMarkupContour() const
+    Transform getAbsoluteTransform() const;
+    virtual void setTransform( const Transform& transform );
+    virtual const MarkupPolygonGroup* getMarkupContour() const
     {
         return m_pContourPathImpl.get();
     }
@@ -78,9 +78,9 @@ public:
     {
         const Float fNewValueX = Map_FloorAverage()( fX );
         const Float fNewValueY = Map_FloorAverage()( fY );
-        if( ( m_transform.X() != fNewValueX ) || ( m_transform.Y() != fNewValueY ) )
+        if( getTranslation( m_transform ) != Vector( fNewValueX, fNewValueY ) )
         {
-            m_transform.setTranslation( fNewValueX, fNewValueY );
+            setTranslation( m_transform, fNewValueX, fNewValueY );
             setModified();
         }
     }
@@ -91,36 +91,30 @@ public:
         if( m_pLabel.get() ) 
             text.push_back( m_pLabel.get() ); 
     }
-    virtual void getMarkupPaths( MarkupPath::List& paths ) 
-    { 
-        if( m_pContourPathImpl.get() ) 
-            paths.push_back( m_pContourPathImpl.get() ); 
-    }
     
     //spaces
     const Site::PtrVector& getSites() const { return m_sites; }
     
     //cmds
-    void cmd_rotateLeft( const Rect2D& transformBounds );
-    void cmd_rotateRight( const Rect2D& transformBounds );
-    void cmd_flipHorizontally( const Rect2D& transformBounds );
-    void cmd_flipVertically( const Rect2D& transformBounds );
+    void cmd_rotateLeft( const Rect& transformBounds );
+    void cmd_rotateRight( const Rect& transformBounds );
+    void cmd_flipHorizontally( const Rect& transformBounds );
+    void cmd_flipVertically( const Rect& transformBounds );
     
     
     virtual Feature_Contour::Ptr getContour() const = 0;
-    boost::optional< Polygon > getContourPolygon() const { return m_polygonCache; }
+    const Polygon& getContourPolygon() const { return m_contourPolygon; }
     
 protected:
     using PropertyVector = std::vector< Property::Ptr >;
-    boost::optional< Polygon > m_polygonCache;
     
     Site::WeakPtr m_pSiteParent;
     PropertyVector m_properties;
     
-    MarkupPath::PathCmdVector m_contourPath;
+    Polygon m_contourPolygon;
     std::string m_strLabelText;
     
-    std::unique_ptr< PathImpl > m_pContourPathImpl;
+    std::unique_ptr< SimplePolygonMarkup > m_pContourPathImpl;
     std::unique_ptr< TextImpl > m_pLabel;
     
     Site::PtrVector m_sites;

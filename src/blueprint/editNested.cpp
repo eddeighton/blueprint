@@ -42,15 +42,6 @@ EditNested::EditNested( EditMain& editMain, IEditContext& parentContext, Site::P
         if( IGlyph::Ptr pMarkupGlyph = m_glyphFactory.createMarkupText( *i, m_pMainGlyph ) )
             m_markup.insert( std::make_pair( *i, pMarkupGlyph ) );
     }
-
-    MarkupPath::List paths;
-    m_pSite->getMarkupPaths( paths );
-    for( MarkupPath::List::const_iterator i = paths.begin(),
-        iEnd = paths.end(); i!=iEnd; ++i )
-    {
-        if( IGlyph::Ptr pMarkupGlyph = m_glyphFactory.createMarkupPath( *i, m_pMainGlyph ) )
-            m_markup.insert( std::make_pair( *i, pMarkupGlyph ) );
-    }
     
     MarkupPolygonGroup::List polyGroups;
     m_pSite->getMarkupPolygonGroups( polyGroups );

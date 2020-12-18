@@ -63,17 +63,6 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
-class GlyphPath : public IGlyph
-{
-public:
-    GlyphPath( MarkupPath* pMarkupPath, IGlyph::Ptr pParent )
-        :   IGlyph( pMarkupPath, pParent )
-    {}
-    const MarkupPath* getMarkupPath() const { return dynamic_cast< const MarkupPath* >( m_pGlyphSpec ); }
-};
-
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
 class GlyphPolygonGroup : public IGlyph
 {
 public:
@@ -101,7 +90,6 @@ class GlyphFactory
 public:
     virtual IGlyph::Ptr createControlPoint( ControlPoint* pControlPoint, IGlyph::Ptr pParent ) = 0;
     virtual IGlyph::Ptr createOrigin( Origin* pOrigin, IGlyph::Ptr pParent ) = 0;
-    virtual IGlyph::Ptr createMarkupPath( MarkupPath* pMarkupPath, IGlyph::Ptr pParent ) = 0;
     virtual IGlyph::Ptr createMarkupPolygonGroup( MarkupPolygonGroup* pMarkupPolygonGroup, IGlyph::Ptr pParent ) = 0;
     virtual IGlyph::Ptr createMarkupText( MarkupText* pMarkupText, IGlyph::Ptr pParent ) = 0;
 };

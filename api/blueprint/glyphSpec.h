@@ -19,71 +19,30 @@ namespace Parser
 
 namespace Blueprint
 {
+    
 class Factory;
 class Blueprint;
-
-
 
 class GlyphSpec
 {
 public:
     virtual ~GlyphSpec(){}
     virtual const GlyphSpec* getParent() const = 0;
-    virtual const std::string& getName() const = 0;
+    //virtual const std::string& getName() const = 0;
     virtual bool canEdit() const = 0;
 };
 
-class MarkupPath : public GlyphSpec
-{
-public:
-    typedef std::list< MarkupPath* > List;
-    struct Cmd
-    {
-        enum PathCmds : unsigned int //from agg directly - agg_basics.h
-        {
-            path_cmd_stop     = 0,        //----path_cmd_stop    
-            path_cmd_move_to  = 1,        //----path_cmd_move_to 
-            path_cmd_line_to  = 2,        //----path_cmd_line_to 
-            path_cmd_curve3   = 3,        //----path_cmd_curve3  
-            path_cmd_curve4   = 4,        //----path_cmd_curve4  
-            path_cmd_curveN   = 5,        //----path_cmd_curveN
-            path_cmd_catrom   = 6,        //----path_cmd_catrom
-            path_cmd_ubspline = 7,        //----path_cmd_ubspline
-            path_cmd_end_poly = 0x0F,     //----path_cmd_end_poly
-            path_cmd_mask     = 0x0F      //----path_cmd_mask   
-        };
-
-        enum PathFlags
-        {
-            path_flags_none  = 0,         //----path_flags_none 
-            path_flags_ccw   = 0x10,      //----path_flags_ccw  
-            path_flags_cw    = 0x20,      //----path_flags_cw   
-            path_flags_close = 0x40,      //----path_flags_close
-            path_flags_mask  = 0xF0       //----path_flags_mask 
-        };
-
-        Float x,y;
-        unsigned int cmd;
-        Cmd( Float _x, Float _y, unsigned int _cmd )
-            : x( _x ), y( _y ), cmd( _cmd )
-        {}
-    };
-    typedef std::vector< Cmd > PathCmdVector;
-    virtual const PathCmdVector& getCmds() const = 0;
-    virtual bool canEdit() const { return false; }
-};
+using MarkupPoint = std::pair< Float, Float >;
+using MarkupPolygon = std::vector< MarkupPoint >;
 
 class MarkupPolygonGroup : public GlyphSpec
 {
 public:
     typedef std::list< MarkupPolygonGroup* > List;
     
-    using Point = std::pair< Float, Float >;
-    using Polygon = std::vector< Point >;
-    
     virtual bool isPolygonsFilled() const = 0;
     virtual std::size_t getTotalPolygons() const = 0;
-    virtual void getPolygon( std::size_t szIndex, Polygon& polygon ) const = 0;
+    virtual void getPolygon( std::size_t szIndex, MarkupPolygon& polygon ) const = 0;
     
     virtual bool canEdit() const { return false; }
 };
@@ -122,12 +81,12 @@ public:
 class Origin : public GlyphSpecInteractive
 {
 public:
-    virtual const Matrix& getTransform() const { return m_transform; }
+    virtual const Transform& getTransform() const { return m_transform; }
     
-    virtual const MarkupPath* getMarkupContour() const = 0;
+    virtual const MarkupPolygonGroup* getMarkupContour() const = 0;
     
 protected:
-    Matrix m_transform;
+    Transform m_transform;
 };
 
 /*

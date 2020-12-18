@@ -6,16 +6,14 @@
 #include "blueprint/clip.h"
 #include "blueprint/space.h"
 #include "blueprint/blueprint.h"
+#include "blueprint/cgalUtils.h"
 
 #include "blueprint/property.h"
 #include "blueprint/dataBitmap.h"
 #include "blueprint/factory.h"
-#include "blueprint/spaceUtils.h"
 
 #include "common/assert_verify.hpp"
 #include "common/rounding.hpp"
-
-#include "wykobi_algorithm.hpp"
 
 #include <sstream>
 #include <map>
@@ -129,13 +127,7 @@ IInteraction::Ptr EditBase::interaction_draw( ToolMode toolMode, Float x, Float 
                 iEnd = newSites.end(); i!=iEnd; ++i )
             {
                 Site::Ptr pClipSiteCopy = *i;
-                
-                Matrix m = pClipSiteCopy->getTransform();
-                {
-                    Transform transform( x, y );
-                    transform.transform( m );
-                }
-                pClipSiteCopy->setTransform( m );
+                pClipSiteCopy->setTransform( translate( Vector( x, y ) ) * pClipSiteCopy->getTransform() );
             }
         }
         else if( pSite )
@@ -144,12 +136,7 @@ IInteraction::Ptr EditBase::interaction_draw( ToolMode toolMode, Float x, Float 
                 pSite->copy( m_pSite, m_pSite->generateNewNodeName( pSite ) ) );
             pNewSite->init();
             
-            Matrix m = pSite->getTransform();
-            {
-                Transform transform( x, y );
-                transform.transform( m );
-            }
-            pNewSite->setTransform( m );
+            pNewSite->setTransform( translate( Vector( x, y ) ) * pSite->getTransform() );
             
             m_pSite->add( pNewSite );
             newSites.insert( pNewSite );
@@ -486,52 +473,6 @@ IInteraction::Ptr EditBase::cmd_paste( Site::PtrVector sites, Float x, Float y, 
     return pNewInteraction;
 }
 
-void getSelectionBounds( const std::vector< Site* >& sites, Rect2D& transformBounds )
-{
-    THROW_RTE( "TODO" );
-    /*
-    Point2D ptBoundsTopLeft, ptBoundsBotRight;
-    
-    bool bFirst = true;
-    for( const Site* pArea : sites )
-    {
-        if( boost::optional< Polygon2D > polyOpt = pArea->getContourPolygon() )
-        {
-            Polygon2D poly = polyOpt.get();
-            for( Point2D& pt : poly )
-                pArea->getTransform().transform( pt.x, pt.y );
-        
-            const Rect2D polyAABB = wykobi::aabb( poly );
-            const Point2D ptTopLeft = wykobi::rectangle_corner( polyAABB, 0 );
-            const Point2D ptBotRight  = wykobi::rectangle_corner( polyAABB, 2 );
-            
-            if( bFirst )
-            {
-                ptBoundsTopLeft     = ptTopLeft;
-                ptBoundsBotRight    = ptBotRight;
-                bFirst = false;
-            }
-            else
-            {
-                if( ptTopLeft.x < ptBoundsTopLeft.x )
-                    ptBoundsTopLeft.x = ptTopLeft.x;
-                if( ptTopLeft.y < ptBoundsTopLeft.y )
-                    ptBoundsTopLeft.y = ptTopLeft.y;
-                
-                if( ptBotRight.x > ptBoundsBotRight.x )
-                    ptBoundsBotRight.x = ptBotRight.x;
-                if( ptBotRight.y > ptBoundsBotRight.y )
-                    ptBoundsBotRight.y = ptBotRight.y;
-            }
-        }
-    }
-    
-    transformBounds = 
-        wykobi::make_rectangle< Float >( 
-            ptBoundsTopLeft, 
-            ptBoundsBotRight );*/
-}
-
 void EditBase::cmd_rotateLeft( const std::set< IGlyph* >& selection )
 {
     std::vector< Site* > sites;
@@ -545,8 +486,8 @@ void EditBase::cmd_rotateLeft( const std::set< IGlyph* >& selection )
         }
     }
     
-    Rect2D transformBounds;
-    getSelectionBounds( sites, transformBounds );
+    Rect transformBounds;
+    Utils::getSelectionBounds( sites, transformBounds );
     
     for( Site* pSite : sites )
     {
@@ -566,8 +507,8 @@ void EditBase::cmd_rotateRight( const std::set< IGlyph* >& selection )
             areas.push_back( const_cast< Site* >( pSite ) );
     }
     
-    Rect2D transformBounds;
-    getSelectionBounds( areas, transformBounds );
+    Rect transformBounds;
+    Utils::getSelectionBounds( areas, transformBounds );
     
     for( Site* pArea : areas )
     {
@@ -587,8 +528,8 @@ void EditBase::cmd_flipHorizontally( const std::set< IGlyph* >& selection )
             areas.push_back( const_cast< Site* >( pSite ) );
     }
     
-    Rect2D transformBounds;
-    getSelectionBounds( areas, transformBounds );
+    Rect transformBounds;
+    Utils::getSelectionBounds( areas, transformBounds );
     
     for( Site* pArea : areas )
     {
@@ -608,8 +549,8 @@ void EditBase::cmd_flipVertically( const std::set< IGlyph* >& selection )
             areas.push_back( const_cast< Site* >( pSite ) );
     }
     
-    Rect2D transformBounds;
-    getSelectionBounds( areas, transformBounds );
+    Rect transformBounds;
+    Utils::getSelectionBounds( areas, transformBounds );
     
     for( Site* pArea : areas )
     {

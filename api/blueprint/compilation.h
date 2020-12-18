@@ -23,8 +23,8 @@ namespace Blueprint
     public:
         Compilation( boost::shared_ptr< Blueprint > pBlueprint );
         
-        static void renderContour( Arrangement& arr, const Matrix& transform, 
-            Polygon2D poly, int iOrientation );
+        static void renderContour( Arrangement& arr, const Transform& transform, 
+            Polygon poly, int iOrientation );
         
         boost::shared_ptr< Blueprint > getBlueprint() const { return m_pBlueprint; }
         
@@ -32,8 +32,8 @@ namespace Blueprint
         using FaceHandleSet = std::set< FaceHandle >;
         void getFaces( FaceHandleSet& floorFaces, FaceHandleSet& fillerFaces );
         
-        using SpacePolyMap = std::map< Space::Ptr, SpacePolyInfo::Ptr >;
-        void getSpacePolyMap( SpacePolyMap& spacePolyMap );
+        //using SpacePolyMap = std::map< Space::Ptr, SpacePolyInfo::Ptr >;
+        //void getSpacePolyMap( SpacePolyMap& spacePolyMap );
         
         //html svg utilities
         void render( const boost::filesystem::path& filepath );
@@ -48,8 +48,8 @@ namespace Blueprint
         
         
         void findSpaceFaces( Space::Ptr pSpace, FaceHandleSet& faces, FaceHandleSet& spaceFaces );
-        void recursePolyMap( Site::Ptr pSite, SpacePolyMap& spacePolyMap, 
-            FaceHandleSet& floorFaces, FaceHandleSet& fillerFaces );
+        //void recursePolyMap( Site::Ptr pSite, SpacePolyMap& spacePolyMap, 
+        //    FaceHandleSet& floorFaces, FaceHandleSet& fillerFaces );
         
         boost::shared_ptr< Blueprint > m_pBlueprint;
         Arrangement m_arr;

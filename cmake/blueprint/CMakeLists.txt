@@ -10,10 +10,10 @@ include( ${BLUEPRINT_ROOT_DIR}/cmake/cgal_include.cmake )
 include( ${BLUEPRINT_ROOT_DIR}/cmake/agg_include.cmake )
 
 #get wykobi
-include( ${BLUEPRINT_ROOT_DIR}/cmake/wykobi_include.cmake )
+#include( ${BLUEPRINT_ROOT_DIR}/cmake/wykobi_include.cmake )
 
 #get clipper
-include( ${BLUEPRINT_ROOT_DIR}/cmake/clipper_include.cmake )
+#include( ${BLUEPRINT_ROOT_DIR}/cmake/clipper_include.cmake )
 
 #get common
 include( ${BLUEPRINT_ROOT_DIR}/cmake/common_include.cmake )
@@ -26,8 +26,8 @@ set( BLUEPRINT_API
     ${BLUEPRINT_API_DIR}/blueprint/blueprint.h
     ${BLUEPRINT_API_DIR}/blueprint/buffer.h
     ${BLUEPRINT_API_DIR}/blueprint/cgalSettings.h
+    ${BLUEPRINT_API_DIR}/blueprint/cgalUtils.h
     ${BLUEPRINT_API_DIR}/blueprint/clip.h
-    ${BLUEPRINT_API_DIR}/blueprint/clipperUtils.h
     ${BLUEPRINT_API_DIR}/blueprint/compilation.h
     ${BLUEPRINT_API_DIR}/blueprint/connection.h
     ${BLUEPRINT_API_DIR}/blueprint/dataBitmap.h
@@ -49,7 +49,6 @@ set( BLUEPRINT_API
     ${BLUEPRINT_API_DIR}/blueprint/site.h
     ${BLUEPRINT_API_DIR}/blueprint/space.h
     ${BLUEPRINT_API_DIR}/blueprint/spacePolyInfo.h
-    ${BLUEPRINT_API_DIR}/blueprint/spaceUtils.h
     ${BLUEPRINT_API_DIR}/blueprint/toolbox.h
     ${BLUEPRINT_API_DIR}/blueprint/transform.h
     ${BLUEPRINT_API_DIR}/blueprint/visibility.h
@@ -64,8 +63,8 @@ set( BLUEPRINT_SOURCES_API
 set( BLUEPRINT_SOURCES_SRC
     ${BLUEPRINT_SRC_DIR}/blueprint/basicFeature.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/blueprint.cpp
+    ${BLUEPRINT_SRC_DIR}/blueprint/cgalUtils.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/clip.cpp
-    ${BLUEPRINT_SRC_DIR}/blueprint/clipperUtils.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/compilation.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/compilationGetPolyInfo.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/connection.cpp
@@ -82,7 +81,6 @@ set( BLUEPRINT_SOURCES_SRC
     ${BLUEPRINT_SRC_DIR}/blueprint/site.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/space.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/spacePolyInfo.cpp
-    ${BLUEPRINT_SRC_DIR}/blueprint/spaceUtils.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/svgUtils.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/toolbox.cpp
     ${BLUEPRINT_SRC_DIR}/blueprint/visibility.cpp
@@ -107,8 +105,8 @@ link_boost( blueprintlib iostreams )
 link_boost( blueprintlib serialization )
 link_cgal( blueprintlib )
 link_agg( blueprintlib )
-link_wykobi( blueprintlib )
-link_clipper( blueprintlib )
+#link_wykobi( blueprintlib )
+#link_clipper( blueprintlib )
 link_common( blueprintlib )
 link_ed( blueprintlib )
 link_agg( blueprintlib )

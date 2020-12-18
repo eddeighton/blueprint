@@ -2,6 +2,7 @@
 
 #include "blueprint/connection.h"
 #include "blueprint/rasteriser.h"
+#include "blueprint/cgalUtils.h"
 
 #include "common/assert_verify.hpp"
 #include "common/rounding.hpp"
@@ -63,7 +64,7 @@ void Connection::init( Float x, Float y )
 {
     Site::init();
     
-    m_transform.setTranslation( Map_FloorAverage()( x ), Map_FloorAverage()( y ) );
+    setTranslation( m_transform, Map_FloorAverage()( x ), Map_FloorAverage()( y ) );
 }
     
 void Connection::evaluate( const EvaluationMode& mode, EvaluationResults& results )
@@ -74,46 +75,32 @@ void Connection::evaluate( const EvaluationMode& mode, EvaluationResults& result
     {
         (*i)->evaluate( mode, results );
     }
+        
+    const Float fWidth                  = fabs( Math::quantize< Float >( m_pControlPoint->getX( 0 ), 1.0 ) );
+    const Float fConnectionHalfHeight   = fabs( Math::quantize< Float >( m_pControlPoint->getY( 0 ), 1.0 ) );
     
-    typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
-    typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
-    
-    const float fWidth                  = fabsf( Math::quantize< Float >( m_pControlPoint->getX( 0 ), 1.0f ) );
-    const float fConnectionHalfHeight   = fabsf( Math::quantize< Float >( m_pControlPoint->getY( 0 ), 1.0f ) );
-    
-    m_firstSegment = wykobi::make_segment( 
-        -fWidth,    -fConnectionHalfHeight, 
-        -fWidth,    fConnectionHalfHeight );
-    m_secondSegment = wykobi::make_segment( 
-        fWidth,     -fConnectionHalfHeight, 
-        fWidth,     fConnectionHalfHeight );
+    m_firstSegment = Segment( 
+        Point( -fWidth,    -fConnectionHalfHeight ), 
+        Point( -fWidth,    fConnectionHalfHeight ) );
+    m_secondSegment = Segment( 
+        Point( fWidth,     -fConnectionHalfHeight ), 
+        Point( fWidth,     fConnectionHalfHeight ) );
     
     Polygon polygon;
-    /*{
+    {
         polygon.push_back( m_firstSegment[ 0 ] );
         polygon.push_back( m_firstSegment[ 1 ] );
-        polygon.push_back( wykobi::make_point< float >(  -fWidth / 2.0f, fConnectionHalfHeight ) );
-        polygon.push_back( wykobi::make_point< float >(  0.0f,           fConnectionHalfHeight * 1.2f ) );
-        polygon.push_back( wykobi::make_point< float >(  fWidth / 2.0f,  fConnectionHalfHeight ) );
+        polygon.push_back( Point(  -fWidth / 2.0, fConnectionHalfHeight ) );
+        polygon.push_back( Point(  0.0,           fConnectionHalfHeight * 1.2 ) );
+        polygon.push_back( Point(  fWidth / 2.0,  fConnectionHalfHeight ) );
         polygon.push_back( m_secondSegment[ 1 ] );
         polygon.push_back( m_secondSegment[ 0 ] );
-    }*/
+    }
     
-    if( !(m_polygonCache) || 
-        !( m_polygonCache.get().size() == polygon.size() ) || 
-        !std::equal( polygon.begin(), polygon.end(), m_polygonCache.get().begin() ) )
+    if( m_contourPolygon != polygon )
     {
-        m_polygonCache = polygon;
-        
-        /*
-        typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
-        typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
-        PathImpl::aggPathToMarkupPath( 
-            m_contourPath, 
-            Adaptor( WykobiPolygonAdaptor( polygon ), true ) );
-        */
-    
-    
+        m_contourPolygon = polygon;
+           
         /*Float fExtra = 2.0f;
         
         m_contourPath.clear();

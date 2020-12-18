@@ -27,15 +27,15 @@ public:
     //Site
     virtual void evaluate( const EvaluationMode& mode, EvaluationResults& results );
     
-    const Segment2D& getFirstSegment() const { return m_firstSegment; }
-    const Segment2D& getSecondSegment() const { return m_secondSegment; }
+    const Segment& getFirstSegment() const { return m_firstSegment; }
+    const Segment& getSecondSegment() const { return m_secondSegment; }
     
     virtual Feature_Contour::Ptr getContour() const { return ( Feature_Contour::Ptr() ); }
     
     
 private:
     Feature_Point::Ptr m_pControlPoint;
-    Segment2D m_firstSegment, m_secondSegment;
+    Segment m_firstSegment, m_secondSegment;
 };
 
 }

@@ -1,6 +1,7 @@
 
 #include "blueprint/space.h"
 #include "blueprint/rasteriser.h"
+#include "blueprint/cgalUtils.h"
 
 namespace Blueprint
 {
@@ -44,8 +45,6 @@ std::string Space::getStatement() const
 
 void Space::init()
 {
-    THROW_RTE( "TODO" );
-    /*
     if( !m_pExteriorPolygons.get() )
         m_pExteriorPolygons.reset( new ExteriorGroupImpl( this, m_exteriorPolyMap, false ) );
 
@@ -53,11 +52,11 @@ void Space::init()
     {
         m_pContour = Feature_Contour::Ptr( new Feature_Contour( getPtr(), "contour" ) );
         m_pContour->init();
-        m_pContour->set( wykobi::make_rectangle< float >( -16, -16, 16, 16 ) );
+        m_pContour->set( Utils::getDefaultPolygon() );
         add( m_pContour );
     }
     
-    Site::init();*/
+    Site::init();
 }
 
 void Space::init( float x, float y )
@@ -68,35 +67,26 @@ void Space::init( float x, float y )
     
     Site::init();
     
-    m_transform.setTranslation( Map_FloorAverage()( x ), Map_FloorAverage()( y ) );
+    setTranslation( m_transform, Map_FloorAverage()( x ), Map_FloorAverage()( y ) );
 }
 
 void Space::evaluate( const EvaluationMode& mode, EvaluationResults& results )
 {
     const Polygon& polygon = m_pContour->getPolygon();
-    /*
     //calculate the site contour path
-    if( !(m_polygonCache) || 
-        !( m_polygonCache.get().size() == polygon.size() ) || 
-        !std::equal( polygon.begin(), polygon.end(), m_polygonCache.get().begin() ) )
+    if( m_contourPolygon != polygon )
     {
-        m_polygonCache = polygon;
-
-        typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
-        typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
-        PathImpl::aggPathToMarkupPath( 
-            m_contourPath, 
-            Adaptor( WykobiPolygonAdaptor( polygon ), true ) );
+        m_contourPolygon = polygon;
     }
 
     //bottom up recursion
-    m_innerExteriors.clear();
+    //m_innerExteriors.clear();
     for( PtrVector::iterator i = m_sites.begin(),
         iEnd = m_sites.end(); i!=iEnd; ++i )
     {
         (*i)->evaluate( mode, results );
         
-        if( mode.bArrangement )
+        /*if( mode.bArrangement )
         {
             if( Space::Ptr pSpace = boost::dynamic_pointer_cast< Space >( *i ) )
             {
@@ -105,9 +95,10 @@ void Space::evaluate( const EvaluationMode& mode, EvaluationResults& results )
                     wykobi::CounterClockwise, inputClipperPath );
                 m_innerExteriors.push_back( inputClipperPath );
             }
-        }
+        }*/
     }
 
+    /*
     if( mode.bArrangement )
     {
         //m_exteriorPolygonCache is a cache of the site polygon to detect if need to recalculate the exterior polygon

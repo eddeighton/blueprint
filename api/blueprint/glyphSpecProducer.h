@@ -44,7 +44,7 @@ public:
     virtual int getControlPointCount() { return 0; }
     virtual void getControlPoints( ControlPoint::List& ) {}
     
-    virtual void getMarkupPaths( MarkupPath::List& ) {}
+    //virtual void getMarkupPaths( MarkupPath::List& ) {}
     virtual void getMarkupPolygonGroups( MarkupPolygonGroup::List& ) {}
     virtual void getMarkupTexts( MarkupText::List& ) {}
 

@@ -2,13 +2,10 @@
 #ifndef CLIP_23_NOV_2020
 #define CLIP_23_NOV_2020
 
-#include "spaceUtils.h"
 #include "basicFeature.h"
 
 #include "blueprint/buffer.h"
 #include "blueprint/site.h"
-
-#include "wykobi.hpp"
 
 #include <boost/optional.hpp>
 
@@ -50,7 +47,6 @@ public:
     
     //Site
     virtual Feature_Contour::Ptr getContour() const { return ( Feature_Contour::Ptr() ); }
-    virtual boost::optional< Polygon2D > getContourPolygon() { return ( Polygon2D() ); }
 };
 }
 

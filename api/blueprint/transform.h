@@ -14,218 +14,178 @@
 namespace Blueprint
 {
     
-class Matrix
-{
-public:
-    Matrix(){}
-    Matrix( Float x, Float y )
-        :   m31( x ),
-            m32( y )
-    {}
-    
-    inline Float M11() const { return m11; }
-    inline Float M12() const { return m12; }
-    inline Float M21() const { return m21; }
-    inline Float M22() const { return m22; }
-    inline Float M31() const { return m31; }
-    inline Float M32() const { return m32; }
-    inline Float X()   const { return m31; }
-    inline Float Y()   const { return m32; }
-    
-    void assign( const Matrix& a )
+    inline Transform translate( const Vector v )
     {
-        m11 = a.m11 ;
-        m21 = a.m21 ;
-        m31 = a.m31 ;
-        m12 = a.m12 ;
-        m22 = a.m22 ;
-        m32 = a.m32 ;
+        return Transform( CGAL::TRANSLATION, v );
     }
     
-    inline void transform( Float& x, Float& y ) const
+    inline Transform rotate( Math::Angle< 8 >::Value angle )
     {
-        Float xTemp = x;
-        Float yTemp = y;
+        //Float dx, dy;
+        //Math::toVectorDiscrete< Math::Angle< 8 >, Float >( angle, dx, dy );
+        //return Transform( CGAL::ROTATION, Direction( dx, dy ), 1, 100 );
         
-        x = ( m11 * xTemp ) + ( m21 * yTemp ) + m31;
-        y = ( m12 * xTemp ) + ( m22 * yTemp ) + m32;
+        const double a = ( angle * MY_PI * 2.0 ) / Math::Angle< 8 >::TOTAL_ANGLES;
+        return Transform( CGAL::ROTATION, sin( a ), cos( a ) );
     }
     
-    inline void transform( Matrix& matrix ) const
+    inline const Transform& mirrorX()
     {
-        const Matrix temp = matrix;
-        
-        matrix.m11 = ( m11 * temp.m11 ) + ( m21 * temp.m12 );// + ( m31 * temp.m13 );
-        matrix.m21 = ( m11 * temp.m21 ) + ( m21 * temp.m22 );// + ( m31 * temp.m23 );
-        matrix.m31 = ( m11 * temp.m31 ) + ( m21 * temp.m32 ) + ( m31 /** temp.m33*/ );
-        
-        matrix.m12 = ( m12 * temp.m11 ) + ( m22 * temp.m12 );// + ( m32 * temp.m13 );
-        matrix.m22 = ( m12 * temp.m21 ) + ( m22 * temp.m22 );// + ( m32 * temp.m23 );
-        matrix.m32 = ( m12 * temp.m31 ) + ( m22 * temp.m32 ) + ( m32 /** temp.m33*/ );
-        
-       // matrix.m13 = ( m13 * temp.m11 ) + ( m23 * temp.m12 ) + ( m33 * temp.m13 );
-       // matrix.m23 = ( m13 * temp.m21 ) + ( m23 * temp.m22 ) + ( m33 * temp.m23 );
-       // matrix.m33 = ( m13 * temp.m31 ) + ( m23 * temp.m32 ) + ( m33 * temp.m33 );
+        static Transform reflectX( CGAL::REFLECTION, Line( Point( 0, 0 ), Point( 1, 0 ) ) );
+        return reflectX;
     }
     
-    void setTranslation( Float x, Float y )
+    inline const Transform& mirrorY()
     {
-        m31 = x;
-        m32 = y;
+        static Transform reflectY( CGAL::REFLECTION, Line( Point( 0, 0 ), Point( 0, 1 ) ) );
+        return reflectY;
     }
     
-    void translateBy( Float x, Float y )
-    {
-        m31 += x;
-        m32 += y;
-    }
+    /*
+    inline Transform translateRotateMirror( Float x, Float y, Math::Angle< 8 >::Value angle, bool bMirrorX, bool bMirrorY )
+    {        
+        Transform result = rotate( angle );
+        
+        if( bMirrorX )
+        {
+            result = result * mirrorX();
+        }
+        if( bMirrorY )
+        {
+            result = result * mirrorY();
+        }
+        
+        result = result * translate( Vector( x, y ) );
+        
+        return result;
+    }*/
     
-    void decompose( Float& fTranslateX, Float& fTranslateY, Float& scaleX, Float& scaleY, Float& angle ) const
+    /*
+    inline void decompose( const Transform& transform,
+        Float& fTranslateX, Float& fTranslateY, Float& scaleX, Float& scaleY, Float& angle )
     {
         //convert to transform from matrix
         //https://stackoverflow.com/questions/45159314/decompose-2d-transformation-matrix
         
-        fTranslateX = m31;
-        fTranslateY = m32;
+        fTranslateX = CGAL::to_double( transform.m( 0, 2 ) );
+        fTranslateY = CGAL::to_double( transform.m( 1, 2 ) );
 
-        scaleX = sqrt( ( m11 * m11 ) + ( m21 * m21 ) );
-        scaleY = sqrt( ( m12 * m12 ) + ( m22 * m22 ) );
+        scaleX = sqrt( CGAL::to_double( ( transform.m( 0, 0 ) * transform.m( 0, 0 ) ) + ( transform.m( 0, 1 ) * transform.m( 0, 1 ) ) ) );
+        scaleY = sqrt( CGAL::to_double( ( transform.m( 1, 0 ) * transform.m( 1, 0 ) ) + ( transform.m( 1, 1 ) * transform.m( 1, 1 ) ) ) );
         
-        angle = atan2( m21, m11 );
+        angle = atan2( CGAL::to_double( transform.m( 0, 1 ) ), 
+                        CGAL::to_double( transform.m( 0, 0 ) ) );
+    }*/
+    
+    inline Vector getTranslation( const Transform& transform )
+    {
+        return Vector( transform.m( 0, 2 ), transform.m( 1, 2 ) );
     }
     
-    //  m(x,y) for row,column
-    //                col 0       col 1       col 2
-    Float /*row 0*/   m11 = 1.0f, m21= 0.0f,  m31 = 0.0f, 
-          /*row 1*/   m12 = 0.0f, m22 = 1.0f, m32 = 0.0f;
-          /*row 2*/// m13 = 0     m23 - 0     m33 = 1
-};
-
-class Transform : public Matrix
-{
-public:
-    Transform()
+    inline void setTranslation( Transform& transform, Float fTranslateX, Float fTranslateY )
     {
+        transform = Transform( 
+            transform.m( 0, 0 ), transform.m( 0, 1 ), fTranslateX,
+            transform.m( 1, 0 ), transform.m( 1, 1 ), fTranslateY );
     }
     
-    Transform( Float x, Float y )
-        :   Matrix( x, y ),
-            m_angle( Math::Angle< 8 >::eEast ),
-            m_bMirrorX( false ),
-            m_bMirrorY( false )
-    {}
-    
-    Transform( Float x, Float y, Math::Angle< 8 >::Value angle, bool bMirrorX, bool bMirrorY )
-        :   Matrix( x, y ),
-            m_angle( angle ),
-            m_bMirrorX( bMirrorX ),
-            m_bMirrorY( bMirrorY )
+    inline Transform transformWithinBounds( const Transform& existing, const Transform& transform, const Rect& transformBounds )
     {
-        updateMatrix();
+        Transform result = existing;
+        {
+            const auto fCentreX = transformBounds.xmin() + ( transformBounds.xmax() - transformBounds.xmin() ) / 2.0f;
+            const auto fCentreY = transformBounds.ymin() + ( transformBounds.ymax() - transformBounds.ymin() ) / 2.0f;
+            
+            const Transform translateToBoundsCentre = translate( Vector( -fCentreX, -fCentreY ) );
+            const Transform translateBack           = translate( Vector(  fCentreX,  fCentreY ) );
+            
+            //pre multiply
+            result = translateToBoundsCentre * result;
+            result = transform * result;
+            result = translateBack * result;
+        }
+        return result;
     }
     
-    static Matrix inverse( Float x, Float y, Math::Angle< 8 >::Value angle, bool bMirrorX )
+    static Transform rotateLeft( const Transform& existing, const Rect& transformBounds )
     {
-        Matrix matrix;
+        static const auto leftTurn = Math::rotate< Math::Angle< 8 > >( Math::Angle< 8 >::eEast, 1 );
+        return transformWithinBounds( existing, rotate( leftTurn ), transformBounds );
+    }
+    
+    static Transform rotateRight( const Transform& existing, const Rect& transformBounds )
+    {
+        static const auto rightTurn = Math::rotate< Math::Angle< 8 > >( Math::Angle< 8 >::eEast, -1 );
+        return transformWithinBounds( existing, rotate( rightTurn ), transformBounds );
+    }
+    
+    static Transform flipHorizontally( const Transform& existing, const Rect& transformBounds )
+    {
+        return transformWithinBounds( existing, mirrorY(), transformBounds );
+    }
+    
+    static Transform flipVertically( const Transform& existing, const Rect& transformBounds )
+    {
+        return transformWithinBounds( existing, mirrorX(), transformBounds );
+    }
+    
+/*
+    static Transform inverse( Float x, Float y, Math::Angle< 8 >::Value angle, bool bMirrorX )
+    {
+        Transform matrix;
                 
         {
-            const Transform translation( -x, -y );
+            const TranslateRotateMirror translation( -x, -y );
             translation.transform( matrix );
         }
         
         if( bMirrorX )
         {
-            const Transform mirror( 0, 0, Math::Angle< 8 >::eEast, true, false );
+            const TranslateRotateMirror mirror( 0, 0, Math::Angle< 8 >::eEast, true, false );
             mirror.transform( matrix );
         }
             
         if( angle != Math::Angle< 8 >::eEast )
         {
-            const Transform rotate( 0, 0, 
+            const TranslateRotateMirror rotate( 0, 0, 
                 static_cast< Math::Angle< 8 >::Value >( 8 - ( static_cast< int >( angle ) ) ), 
                 false, false );
             rotate.transform( matrix );
         }
         
         return matrix;
-    }
+    }*/
+    /*
     
-    inline Math::Angle< 8 >::Value Angle() const { return m_angle; }
-    inline bool MirrorX() const { return m_bMirrorX; }
-    inline bool MirrorY() const { return m_bMirrorY; }
+    /*
     
-    void rotateLeft()
+    static Transform rotateLeft( const Transform& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
     {
-        m_angle = Math::rotate< Math::Angle< 8 > >( m_angle, 1 );
-        updateMatrix();
-    }
-    
-    void rotateRight()
-    {
-        m_angle = Math::rotate< Math::Angle< 8 > >( m_angle, -1 );
-        updateMatrix();
-    }
-    
-    void flipHorizontally()
-    {
-        m_bMirrorX = !m_bMirrorX;
-        updateMatrix();
-    }
-    
-    void flipVertically()
-    {
-        m_bMirrorY = !m_bMirrorY;
-        updateMatrix();
-    }
-    
-    static Matrix transformWithinBounds( const Matrix& existing, const Matrix& transform, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
-    {
-        Matrix result;
-        {
-            const Float fCentreX = fMinX + ( fMaxX - fMinX ) / 2.0f;
-            const Float fCentreY = fMinY + ( fMaxY - fMinY ) / 2.0f;
-            
-            const Matrix translateToBoundsCentre( -fCentreX, -fCentreY );
-            const Matrix translateBack( fCentreX, fCentreY );
-            
-            //pre multiply
-            existing.transform( result );
-            translateToBoundsCentre.transform( result );
-            transform.transform( result );
-            translateBack.transform( result );
-        }
-        return result;
-    }
-    
-    static Matrix rotateLeft( const Matrix& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
-    {
-        const Transform transform( 0.0f, 0.0f, 
+        const TranslateRotateMirror transform( 0.0f, 0.0f, 
             Math::rotate< Math::Angle< 8 > >( Math::Angle< 8 >::eEast, 1 ), 
             false, false );
         return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
     }
     
-    static Matrix rotateRight( const Matrix& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
+    static Transform rotateRight( const Transform& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
     {
-        const Transform transform( 0.0f, 0.0f, 
+        const TranslateRotateMirror transform( 0.0f, 0.0f, 
             Math::rotate< Math::Angle< 8 > >( Math::Angle< 8 >::eEast, -1 ), 
             false, false );
         return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
     }
     
-    static Matrix flipHorizontally( const Matrix& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
+    static Transform flipHorizontally( const Transform& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
     {
-        const Transform transform( 0.0f, 0.0f, Math::Angle< 8 >::eEast, true, false );
+        const TranslateRotateMirror transform( 0.0f, 0.0f, Math::Angle< 8 >::eEast, true, false );
         return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
     }
     
-    static Matrix flipVertically( const Matrix& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
+    static Transform flipVertically( const Transform& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
     {
-        const Transform transform( 0.0f, 0.0f, Math::Angle< 8 >::eEast, false, true );
+        const TranslateRotateMirror transform( 0.0f, 0.0f, Math::Angle< 8 >::eEast, false, true );
         return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
     }
-    
-private:
     inline void updateMatrix()
     {
         Float dx, dy;
@@ -240,40 +200,41 @@ private:
         
         m11 = dx * mx;      m21 =  dy * mx;
         m12 = -dy * my;     m22 =  dx * my;
-    }
-    
-    Math::Angle< 8 >::Value m_angle = Math::Angle< 8 >::eEast;
-    bool m_bMirrorX = false, m_bMirrorY = false;
-};
-    
+    }*/
+   
 } 
 
 namespace Ed
 {
-    inline OShorthandStream& operator<<( OShorthandStream& os, const Blueprint::Matrix& v )
+    inline OShorthandStream& operator<<( OShorthandStream& os, const Blueprint::Transform& v )
     {
-        os << v.m11
-            << v.m21
-            << v.m31
-            << v.m12
-            << v.m22
-            << v.m32;
+        os <<  CGAL::to_double( v.m( 0, 0 ) )
+            << CGAL::to_double( v.m( 1, 0 ) )
+            << CGAL::to_double( v.m( 0, 1 ) )
+            << CGAL::to_double( v.m( 1, 1 ) )
+            << CGAL::to_double( v.m( 0, 2 ) )
+            << CGAL::to_double( v.m( 1, 2 ) );
         
         return os;
     }
 
-    inline IShorthandStream& operator>>( IShorthandStream& is, Blueprint::Matrix& v )
+    inline IShorthandStream& operator>>( IShorthandStream& is, Blueprint::Transform& v )
     {
-        is >> v.m11
-            >> v.m21
-            >> v.m31
-            >> v.m12
-            >> v.m22
-            >> v.m32;
+        double m00, m01, m02, m10, m11, m12;
+        
+        is  >> m00
+            >> m10
+            >> m01
+            >> m11
+            >> m02
+            >> m12;
+            
+        v = Blueprint::Transform( m00, m01, m02, m10, m11, m12 );
         
         return is;
     }
     
+    /*
     using namespace std::string_literals;
     static const std::string szAngles[] = 
     {
@@ -324,7 +285,7 @@ namespace Ed
         v = Blueprint::Transform( x, y, angle, bMirrorX, bMirrorY );
         
         return is;
-    }
+    }*/
 }
 
 #endif //TRANSFORM_07_NOV_2020
