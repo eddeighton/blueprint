@@ -21,20 +21,48 @@ namespace Blueprint
             return defaultPolygon;
         }
         
+        Point getClosestPointOnSegment( const Segment& segment, const Point& pt )
+        {
+            const Kernel::Construct_projected_point_2 project;
+            
+            const Point projectedPoint = project( segment.supporting_line(), pt ); 
+            
+            if( segment.has_on( projectedPoint ) )
+            {
+                return Point( projectedPoint.x(), projectedPoint.y() );
+            }
+            else
+            {
+                if( CGAL::compare_distance_to_point( projectedPoint, segment[0], segment[1] ) == CGAL::SMALLER )
+                {
+                    return segment[ 0 ];
+                }
+                else
+                {
+                    return segment[ 1 ];
+                }
+            }
+        }
+        
         std::size_t getClosestPoint( const Polygon& poly, const Point& pt )
         {
             if( poly.size() < 2U ) return 0U;
             
+            //for each line segment find the closest point to the input point and record distance
+            const std::size_t szSize = poly.size();
             std::vector< double > distances;
             {
-                for( const auto& p : poly )
+                for( std::size_t sz = 0U; sz != szSize; ++sz )
                 {
-                    const double db = CGAL::to_double( ( p - pt ).squared_length() );
+                    const Point& ptCur = poly[ sz ];
+                    const Point& ptNext = poly[ ( sz + 1U ) % szSize ];
+                    const Point ptClosest = getClosestPointOnSegment( Segment( ptCur, ptNext ), pt );
+                    const double db = CGAL::to_double( ( ptClosest - pt ).squared_length() );
                     distances.push_back( db );
                 }
             }
-            const std::size_t szSize = distances.size();
         
+            //now find the smallest distance
             std::size_t uiLowest = 0U;
             {
                 double dbLowest = std::numeric_limits< double >::max();
@@ -45,23 +73,12 @@ namespace Blueprint
                     if( db < dbLowest )
                     {
                         dbLowest = db;
-                        
-                        //which is closer the left or right point?
-                        if( distances[ ( szSize + ui - 1U ) % szSize ] > 
-                            distances[ ( szSize + ui + 1U ) % szSize ] )
-                        {
-                            uiLowest = ( szSize + ui + 1U ) % szSize;
-                        }
-                        else
-                        {
-                            uiLowest = ui;
-                        }
-                        
+                        uiLowest = ui;
                     }
                     ++ui;
                 }
             }
-            return uiLowest;
+            return ( szSize + uiLowest + 1U ) % szSize; //off by one
         }
         
         void getSelectionBounds( const std::vector< Site* >& sites, Rect& transformBounds )
@@ -74,7 +91,10 @@ namespace Blueprint
                     p = pSite->getTransform()( p );
                 contours.push_back( poly );
             }
-            transformBounds = CGAL::bbox_2( contours.begin(), contours.end() );
+            if( !contours.empty() )
+            {
+                transformBounds = CGAL::bbox_2( contours.begin(), contours.end() );
+            }
         }
     }
 }

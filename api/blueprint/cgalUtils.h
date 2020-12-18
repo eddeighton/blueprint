@@ -11,6 +11,9 @@ namespace Blueprint
     {
 
         Polygon getDefaultPolygon();
+        
+        Point getClosestPointOnSegment( const Segment& segment, const Point& pt );
+        
         std::size_t getClosestPoint( const Polygon& poly, const Point& pt );
         void getSelectionBounds( const std::vector< Site* >& sites, Rect& transformBounds );
 

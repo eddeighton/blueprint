@@ -272,10 +272,8 @@ void Feature_Contour::recalculateControlPoints()
 
 bool Feature_Contour::cmd_delete( const std::vector< const GlyphSpec* >& selection ) 
 { 
-    THROW_RTE( "TODO" );
-    
     std::vector< int > removals;
-    /*
+    
     {
         int iCounter = m_points.size() - 1;
         for( auto i = m_points.rbegin(),
@@ -293,7 +291,7 @@ bool Feature_Contour::cmd_delete( const std::vector< const GlyphSpec* >& selecti
     
     for( int i : removals )
     {
-        m_polygon.erase( i );
+        m_polygon.erase( m_polygon.begin() + i );
         m_points.erase( m_points.begin() + i );
     }
     
@@ -301,7 +299,7 @@ bool Feature_Contour::cmd_delete( const std::vector< const GlyphSpec* >& selecti
         std::size_t sz = 0U;
         for( PointType* pPoint : m_points )
             pPoint->setIndex( sz++ );
-    }*/
+    }
     
     return !removals.empty(); 
 }

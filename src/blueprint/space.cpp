@@ -47,6 +47,8 @@ void Space::init()
 {
     if( !m_pExteriorPolygons.get() )
         m_pExteriorPolygons.reset( new ExteriorGroupImpl( this, m_exteriorPolyMap, false ) );
+    if( !m_pInteriorContourPathImpl.get() )
+        m_pInteriorContourPathImpl.reset( new SimplePolygonMarkup( this, m_interiorPolygon, false ) );
 
     if( !( m_pContour = get< Feature_Contour >( "contour" ) ) )
     {
@@ -77,6 +79,48 @@ void Space::evaluate( const EvaluationMode& mode, EvaluationResults& results )
     if( m_contourPolygon != polygon )
     {
         m_contourPolygon = polygon;
+        
+        if( !m_contourPolygon.is_empty() && m_contourPolygon.is_simple() )
+        {
+            typedef boost::shared_ptr< Polygon > PolygonPtr ;
+            typedef std::vector< PolygonPtr > PolygonPtrVector ;
+            
+            const Kernel::FT wallWidth = 2;
+
+            //calculate interior
+            {
+                PolygonPtrVector inner_offset_polygons = 
+                    CGAL::create_interior_skeleton_and_offset_polygons_2( 
+                        wallWidth, m_contourPolygon );
+                if( !inner_offset_polygons.empty() )
+                {
+                    m_interiorPolygon = *inner_offset_polygons.front();
+                }
+                else
+                {
+                    m_interiorPolygon = ( Polygon() );
+                }
+            }
+            
+            //calculate exterior
+            {
+                PolygonPtrVector outer_offset_polygons = 
+                    CGAL::create_exterior_skeleton_and_offset_polygons_2( 
+                        wallWidth, m_contourPolygon );
+                if( !outer_offset_polygons.empty() )
+                {
+                    m_exteriorPolygon = *outer_offset_polygons.front();
+                }
+                else
+                {
+                    m_exteriorPolygon = ( Polygon() );
+                }
+            }
+        }
+        else
+        {
+            m_interiorPolygon = ( Polygon() );
+        }
     }
 
     //bottom up recursion
