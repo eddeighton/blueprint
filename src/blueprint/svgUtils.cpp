@@ -18,7 +18,7 @@ namespace
         "black"
     };
 
-    void svgLine( const Blueprint::SVGStyle& style, Blueprint::Arr_with_hist_2::Halfedge_const_handle h, 
+    void svgLine( const Blueprint::SVGStyle& style, Blueprint::Arrangement::Halfedge_const_handle h, 
         double minX, double minY, double scale, const char* pszColour, 
         std::ostream& os )
     {
@@ -61,7 +61,7 @@ namespace
 namespace Blueprint
 {
     void generateHTML( const boost::filesystem::path& filepath,
-            const Arr_with_hist_2& arr,
+            const Arrangement& arr,
             const EdgeVectorVector& edgeGroups,
             const SVGStyle& style )
     {
@@ -122,7 +122,7 @@ namespace Blueprint
         {
             const char* pszColour = SVG_COLOURS[ iColour ];
             iColour = ( iColour + 1 ) % SVG_COLOURS.size();
-            for( Arr_with_hist_2::Halfedge_const_handle h : edges )
+            for( Arrangement::Halfedge_const_handle h : edges )
             {
                 if( h->target()->point() == h->curve().source() )
                     h = h->twin();
@@ -157,8 +157,8 @@ namespace Blueprint
                         }*/
                     }
                     {
-                        float x = startX + ( endX - startX ) / 2.0f;
-                        float y = startY + ( endY - startY ) / 2.0f;
+                        Float x = startX + ( endX - startX ) / 2.0f;
+                        Float y = startY + ( endY - startY ) / 2.0f;
                         *os << "       <text x=\"" << x << "\" y=\"" << y <<
                                          "\" fill=\"green\" transform=\"rotate(30 " <<
                                             x << "," << y << ")\" >" << osText.str() << " </text>\n";

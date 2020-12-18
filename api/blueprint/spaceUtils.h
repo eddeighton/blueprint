@@ -50,11 +50,13 @@ typedef std::tuple< unsigned int, float, wykobi::point2d< float > > SegmentIDRat
 static SegmentIDRatioPointTuple findClosestPointOnContour( 
     const wykobi::polygon< float, 2 >& contour, const wykobi::point2d< float >& pt )
 {
+    THROW_RTE( "TODO" );
+    
     float fBest = std::numeric_limits< float >::max();
     wykobi::point2d< float > ptResult = pt;
     unsigned int uiBestIndex = 0u;
     float fBestRatio = 0.0f;
-    {
+    /*{
         unsigned int uiIndex = 0u;
         for( wykobi::polygon< float, 2 >::const_iterator 
             i = contour.begin(),
@@ -77,7 +79,7 @@ static SegmentIDRatioPointTuple findClosestPointOnContour(
                 fBestRatio = wykobi::distance( *i, ptClosest ) / wykobi::distance( *i, *iNext );
             }
         }
-    }
+    }*/
 
     return SegmentIDRatioPointTuple( uiBestIndex, fBestRatio, ptResult );
 }

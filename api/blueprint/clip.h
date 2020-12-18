@@ -45,7 +45,7 @@ public:
     virtual const GlyphSpec* getParent() const { return 0u; }
 
     //Origin
-    virtual void set( float fX, float fY ){}
+    virtual void set( Float fX, Float fY ){}
     virtual bool canEdit() const { return false; }
     
     //Site

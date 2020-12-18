@@ -50,7 +50,7 @@ GlyphSpecProducer* EditBase::fromGlyph( IGlyph* pGlyph ) const
 }
 
 
-IInteraction::Ptr EditBase::interaction_start( ToolMode toolMode, float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection )
+IInteraction::Ptr EditBase::interaction_start( ToolMode toolMode, Float x, Float y, Float qX, Float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection )
 {
     ASSERT( !m_pActiveInteraction );
     
@@ -66,7 +66,7 @@ IInteraction::Ptr EditBase::interaction_start( ToolMode toolMode, float x, float
     return make_interaction_ptr( this, m_pActiveInteraction );
 }
 
-IInteraction::Ptr EditBase::interaction_draw( ToolMode toolMode, float x, float y, float qX, float qY, Site::Ptr pSite )
+IInteraction::Ptr EditBase::interaction_draw( ToolMode toolMode, Float x, Float y, Float qX, Float qY, Site::Ptr pSite )
 {
     ASSERT( !m_pActiveInteraction );
     
@@ -110,7 +110,7 @@ IInteraction::Ptr EditBase::interaction_draw( ToolMode toolMode, float x, float 
             boost::dynamic_pointer_cast< Blueprint >( pSite ) )
         {
             //determine the centroid of the clip and offset accordingly
-            //std::vector< wykobi::point2d< float > > points;
+            //std::vector< wykobi::point2d< Float > > points;
             for( Node::PtrVector::const_iterator 
                 i = pSite->getChildren().begin(),
                 iEnd = pSite->getChildren().end(); i!=iEnd; ++i )
@@ -396,7 +396,7 @@ Node::Ptr EditBase::cmd_copy( const std::set< IGlyph* >& selection )
     return pResult;
 }
 
-IInteraction::Ptr EditBase::cmd_paste( Node::Ptr pPaste, float x, float y, float qX, float qY )
+IInteraction::Ptr EditBase::cmd_paste( Node::Ptr pPaste, Float x, Float y, Float qX, Float qY )
 {
     IInteraction::Ptr pNewInteraction;
     
@@ -421,7 +421,7 @@ IInteraction::Ptr EditBase::cmd_paste( Node::Ptr pPaste, float x, float y, float
     return cmd_paste( sites, x, y, qX, qY );
 }
 
-IInteraction::Ptr EditBase::cmd_paste( IGlyph* pGlyph, float x, float y, float qX, float qY )
+IInteraction::Ptr EditBase::cmd_paste( IGlyph* pGlyph, Float x, Float y, Float qX, Float qY )
 {
     Site::PtrVector sites;
     if( const Site* pSite = dynamic_cast< const Site* >( pGlyph->getGlyphSpec() ) )
@@ -434,7 +434,7 @@ IInteraction::Ptr EditBase::cmd_paste( IGlyph* pGlyph, float x, float y, float q
     }
     return cmd_paste( sites, x, y, qX, qY );
 }
-IInteraction::Ptr EditBase::cmd_paste( const std::set< IGlyph* >& selection, float x, float y, float qX, float qY )
+IInteraction::Ptr EditBase::cmd_paste( const std::set< IGlyph* >& selection, Float x, Float y, Float qX, Float qY )
 {
     Site::PtrVector sites;
     for( std::set< IGlyph* >::iterator 
@@ -453,7 +453,7 @@ IInteraction::Ptr EditBase::cmd_paste( const std::set< IGlyph* >& selection, flo
     return cmd_paste( sites, x, y, qX, qY );
 }
 
-IInteraction::Ptr EditBase::cmd_paste( Site::PtrVector sites, float x, float y, float qX, float qY )
+IInteraction::Ptr EditBase::cmd_paste( Site::PtrVector sites, Float x, Float y, Float qX, Float qY )
 {
     ASSERT( !m_pActiveInteraction );
 
@@ -488,6 +488,8 @@ IInteraction::Ptr EditBase::cmd_paste( Site::PtrVector sites, float x, float y, 
 
 void getSelectionBounds( const std::vector< Site* >& sites, Rect2D& transformBounds )
 {
+    THROW_RTE( "TODO" );
+    /*
     Point2D ptBoundsTopLeft, ptBoundsBotRight;
     
     bool bFirst = true;
@@ -525,9 +527,9 @@ void getSelectionBounds( const std::vector< Site* >& sites, Rect2D& transformBou
     }
     
     transformBounds = 
-        wykobi::make_rectangle< float >( 
+        wykobi::make_rectangle< Float >( 
             ptBoundsTopLeft, 
-            ptBoundsBotRight );
+            ptBoundsBotRight );*/
 }
 
 void EditBase::cmd_rotateLeft( const std::set< IGlyph* >& selection )
@@ -678,7 +680,7 @@ void EditBase::cmd_editProperties( const Node::PtrCstVector& nodes, const std::s
     interaction_evaluate();
 }
     
-std::set< IGlyph* > EditBase::generateExtrusion( float fAmount, bool bConvexHull )
+std::set< IGlyph* > EditBase::generateExtrusion( Float fAmount, bool bConvexHull )
 {
     
     /*

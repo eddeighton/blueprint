@@ -9,7 +9,7 @@ namespace Blueprint
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 Interaction::Interaction( EditBase& edit, IEditContext::ToolMode toolMode, 
-                float x, float y, float qX, float qY, 
+                Float x, Float y, Float qX, Float qY, 
                 IGlyph::Ptr pHitGlyph, const IGlyph::PtrSet& totalSelection )
     :   m_edit( edit ),
         m_toolMode( toolMode ),
@@ -60,10 +60,10 @@ Interaction::Interaction( EditBase& edit, IEditContext::ToolMode toolMode,
     }
 }
 
-void Interaction::OnMove( float x, float y )
+void Interaction::OnMove( Float x, Float y )
 {
-    float fDeltaX = Math::quantize_roundUp( x - m_startX, m_qX );
-    float fDeltaY = Math::quantize_roundUp( y - m_startY, m_qY );
+    Float fDeltaX = Math::quantize_roundUp( x - m_startX, m_qX );
+    Float fDeltaY = Math::quantize_roundUp( y - m_startY, m_qY );
 
     InitialValueVector::iterator iValue = m_initialValues.begin();
     for( IGlyph::PtrVector::iterator i = m_interacted.begin(),
@@ -91,7 +91,7 @@ InteractionToolWrapper::InteractionToolWrapper( EditBase& edit, IInteraction::Pt
 {
 }
 
-void InteractionToolWrapper::OnMove( float x, float y )
+void InteractionToolWrapper::OnMove( Float x, Float y )
 {
     m_pToolInteraction->OnMove( x, y );
     m_edit.interaction_evaluate();
@@ -105,7 +105,7 @@ Site::Ptr InteractionToolWrapper::GetInteractionSite() const
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
-Polygon_Interaction::Polygon_Interaction( Site& site, float x, float y, float qX, float qY )
+Polygon_Interaction::Polygon_Interaction( Site& site, Float x, Float y, Float qX, Float qY )
     :   m_site( site ),
         m_qX( qX ),
         m_qY( qY )
@@ -117,8 +117,8 @@ Polygon_Interaction::Polygon_Interaction( Site& site, float x, float y, float qX
     {
         m_originalPolygon = pContour->getPolygon();
         
-        const Point2D pt = wykobi::make_point< float >( m_startX, m_startY );
-        Polygon2D newPoly = m_originalPolygon;
+        const Point pt( m_startX, m_startY );
+        Polygon newPoly = m_originalPolygon;
         newPoly.push_back( pt );
         pContour->set( newPoly );
         
@@ -126,35 +126,37 @@ Polygon_Interaction::Polygon_Interaction( Site& site, float x, float y, float qX
     }
 }
 
-void Polygon_Interaction::OnMove( float x, float y )
+void Polygon_Interaction::OnMove( Float x, Float y )
 {
     if( Feature_Contour::Ptr pContour = m_site.getContour() )
     {
-        const float fDeltaX = Math::quantize_roundUp( x, m_qX );
-        const float fDeltaY = Math::quantize_roundUp( y, m_qY );
-        const Point2D pt = wykobi::make_point< float >( fDeltaX, fDeltaY );
-        const SegmentIDRatioPointTuple sirpt =
-            findClosestPointOnContour( m_originalPolygon, pt );
+        const Float fDeltaX = Math::quantize_roundUp( x, m_qX );
+        const Float fDeltaY = Math::quantize_roundUp( y, m_qY );
+        const Point pt( fDeltaX, fDeltaY );
+        //const SegmentIDRatioPointTuple sirpt =
+        //    findClosestPointOnContour( m_originalPolygon, pt );
         
-        unsigned int uiIndex = std::get< 0 >( sirpt );
+        unsigned int uiIndex = 0;//std::get< 0 >( sirpt );
         VERIFY_RTE( uiIndex < m_originalPolygon.size() || uiIndex == 0 );
         if( m_originalPolygon.size() > 0 )
             uiIndex = ( uiIndex + 1 ) % m_originalPolygon.size();
         
-        Polygon2D newPoly;
+        Polygon newPoly;
         for( std::size_t sz = 0U; ( sz != uiIndex ) && ( sz < m_originalPolygon.size() ); ++sz )
             newPoly.push_back( m_originalPolygon[ sz ] );
         newPoly.push_back( pt );
         for( std::size_t sz = uiIndex; sz < m_originalPolygon.size(); ++sz )
             newPoly.push_back( m_originalPolygon[ sz ] );
         
-        if( wykobi::polygon_orientation( newPoly ) == wykobi::Clockwise )
+        if( !newPoly.is_counterclockwise_oriented() )
             std::reverse( newPoly.begin(), newPoly.end() );
         
         //set all the points without reallocating control points
         for( std::size_t sz = 0; sz != newPoly.size(); ++sz )
         {
-            pContour->set( sz, newPoly[ sz ].x, newPoly[ sz ].y );
+            pContour->set( sz, 
+                CGAL::to_double( newPoly[ sz ].x() ), 
+                CGAL::to_double( newPoly[ sz ].y() ) );
         }
     }
 }

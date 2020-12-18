@@ -23,6 +23,8 @@ namespace Blueprint
 class Rasteriser
 {
 public:
+    using Float = double;
+    
     //typedef agg::pixfmt_bgra32                          PixelFormatType;
     typedef agg::pixfmt_gray8                           PixelFormatType;
     typedef PixelFormatType::color_type                 ColourType;
@@ -41,7 +43,7 @@ public:
     }
 
     template< class T >
-    void renderPath( T& path, const ColourType& colour, float fGamma = 0.0f )
+    void renderPath( T& path, const ColourType& colour, Float fGamma = 0.0f )
     {
         RasterizerType ras;
         ras.gamma( agg::gamma_threshold( fGamma ) );
@@ -50,7 +52,7 @@ public:
     }
 
     template< class T >
-    void renderPath( T& path, const ColourType& colour, float fX, float fY, float fGamma = 0.0f )
+    void renderPath( T& path, const ColourType& colour, Float fX, Float fY, Float fGamma = 0.0f )
     {
         agg::trans_affine transform;
         transform *= agg::trans_affine_translation( fX, fY );

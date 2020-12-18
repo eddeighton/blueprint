@@ -59,7 +59,7 @@ void Connection::init()
     Site::init();
 }
 
-void Connection::init( float x, float y )
+void Connection::init( Float x, Float y )
 {
     Site::init();
     
@@ -78,8 +78,8 @@ void Connection::evaluate( const EvaluationMode& mode, EvaluationResults& result
     typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
     typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
     
-    const float fWidth                  = fabsf( Math::quantize( m_pControlPoint->getX( 0 ), 1.0f ) );
-    const float fConnectionHalfHeight   = fabsf( Math::quantize( m_pControlPoint->getY( 0 ), 1.0f ) );
+    const float fWidth                  = fabsf( Math::quantize< Float >( m_pControlPoint->getX( 0 ), 1.0f ) );
+    const float fConnectionHalfHeight   = fabsf( Math::quantize< Float >( m_pControlPoint->getY( 0 ), 1.0f ) );
     
     m_firstSegment = wykobi::make_segment( 
         -fWidth,    -fConnectionHalfHeight, 
@@ -88,8 +88,8 @@ void Connection::evaluate( const EvaluationMode& mode, EvaluationResults& result
         fWidth,     -fConnectionHalfHeight, 
         fWidth,     fConnectionHalfHeight );
     
-    Polygon2D polygon;
-    {
+    Polygon polygon;
+    /*{
         polygon.push_back( m_firstSegment[ 0 ] );
         polygon.push_back( m_firstSegment[ 1 ] );
         polygon.push_back( wykobi::make_point< float >(  -fWidth / 2.0f, fConnectionHalfHeight ) );
@@ -97,7 +97,7 @@ void Connection::evaluate( const EvaluationMode& mode, EvaluationResults& result
         polygon.push_back( wykobi::make_point< float >(  fWidth / 2.0f,  fConnectionHalfHeight ) );
         polygon.push_back( m_secondSegment[ 1 ] );
         polygon.push_back( m_secondSegment[ 0 ] );
-    }
+    }*/
     
     if( !(m_polygonCache) || 
         !( m_polygonCache.get().size() == polygon.size() ) || 
@@ -105,15 +105,16 @@ void Connection::evaluate( const EvaluationMode& mode, EvaluationResults& result
     {
         m_polygonCache = polygon;
         
+        /*
         typedef PathImpl::AGGContainerAdaptor< Polygon2D > WykobiPolygonAdaptor;
         typedef agg::poly_container_adaptor< WykobiPolygonAdaptor > Adaptor;
         PathImpl::aggPathToMarkupPath( 
             m_contourPath, 
             Adaptor( WykobiPolygonAdaptor( polygon ), true ) );
+        */
     
     
-    
-        /*float fExtra = 2.0f;
+        /*Float fExtra = 2.0f;
         
         m_contourPath.clear();
         

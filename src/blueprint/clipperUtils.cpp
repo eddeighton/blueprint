@@ -12,7 +12,7 @@ namespace
 
 namespace Blueprint
 {
-
+/*
 void toClipperPoly( const Polygon2D& polygon, int iOrientation, ClipperLib::Path& path )
 {
     for( const Point2D& pt : polygon )
@@ -110,5 +110,5 @@ bool unionAndClipPolygons(
     }
         
     return false;
-}
+}*/
 }

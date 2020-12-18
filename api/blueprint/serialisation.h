@@ -1,7 +1,10 @@
 #ifndef SERIALISATION
 #define SERIALISATION
 
-#include "wykobi.hpp"
+#include "blueprint/cgalSettings.h"
+
+#include "ed/node.hpp"
+#include "ed/nodeio.hpp"
 
 #include <ostream>
 #include <istream>
@@ -10,6 +13,40 @@
 
 namespace Ed
 {
+    
+    inline OShorthandStream& operator<<( OShorthandStream& os, const Blueprint::Point& pt )
+    {
+        return os << CGAL::to_double( pt.x() ) << CGAL::to_double( pt.y() );
+    }
+    inline IShorthandStream& operator>>( IShorthandStream& is, Blueprint::Point& pt )
+    {
+        double x,y;
+        is >> x >> y;
+        pt = Blueprint::Point( x, y );
+        return is;
+    }
+    
+    inline OShorthandStream& operator<<( OShorthandStream& os, const Blueprint::Polygon& polygon )
+    {
+        os << polygon.size();
+        for( auto i = polygon.begin(), iEnd = polygon.end(); i!=iEnd; ++i )
+            os << *i;
+        return os;
+    }
+    inline IShorthandStream& operator>>( IShorthandStream& is, Blueprint::Polygon& polygon )
+    {
+        std::size_t size = 0;
+        is >> size;
+        for( size_t i = 0; i != size; ++i )
+        {
+            Blueprint::Point pt;
+            is >> pt;
+            polygon.push_back( pt );
+        }
+        return is;
+    }
+    
+    /*
     inline OShorthandStream& operator<<( OShorthandStream& os, const wykobi::point2d< float >& pt )
     {
         return os << pt.x << pt.y;
@@ -65,7 +102,7 @@ namespace Ed
             polygon.push_back( pt );
         }
         return is;
-    }
+    }*/
 }
 
 #endif// SERIALISATION

@@ -9,14 +9,14 @@
 
 namespace
 {
-    
-    inline Blueprint::Point2D make_source_point( Blueprint::Arr_with_hist_2::Halfedge_const_handle halfedge )
+    /*
+    inline Blueprint::Point2D make_source_point( Blueprint::Arrangement::Halfedge_const_handle halfedge )
     {
         return wykobi::make_point< float >(
                 CGAL::to_double( halfedge->source()->point().x() ),
                 CGAL::to_double( halfedge->source()->point().y() ) );
     }
-    inline Blueprint::Point2D make_target_point( Blueprint::Arr_with_hist_2::Halfedge_const_handle halfedge )
+    inline Blueprint::Point2D make_target_point( Blueprint::Arrangement::Halfedge_const_handle halfedge )
     {
         return wykobi::make_point< float >(
                 CGAL::to_double( halfedge->target()->point().x() ),
@@ -24,10 +24,10 @@ namespace
     }
     
         
-    Blueprint::Point2D getFaceInteriorPoint( Blueprint::Arr_with_hist_2::Face_const_handle hFace )
+    Blueprint::Point2D getFaceInteriorPoint( Blueprint::Arrangement::Face_const_handle hFace )
     {
-        Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator halfedgeCirculator = hFace->outer_ccb();
-        Blueprint::Arr_with_hist_2::Halfedge_const_handle hEdge = halfedgeCirculator;
+        Blueprint::Arrangement::Ccb_halfedge_const_circulator halfedgeCirculator = hFace->outer_ccb();
+        Blueprint::Arrangement::Halfedge_const_handle hEdge = halfedgeCirculator;
 
         //deterine an interior point of the face
         const Blueprint::Point2D ptSource = make_source_point( hEdge );
@@ -41,14 +41,14 @@ namespace
         const Blueprint::Point2D ptInterior = ptMid + vNorm * 0.1f;
 
         return ptInterior;
-    }  
-    
-    void faceToPolygon( Blueprint::Arr_with_hist_2::Face_const_handle hFace, Blueprint::Polygon2D& polygon )
+    }  */
+    /*
+    void faceToPolygon( Blueprint::Arrangement::Face_const_handle hFace, Blueprint::Polygon2D& polygon )
     {
         VERIFY_RTE( !hFace->is_unbounded() );
 
-        Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator iter = hFace->outer_ccb();
-        Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator first = iter;
+        Blueprint::Arrangement::Ccb_halfedge_const_circulator iter = hFace->outer_ccb();
+        Blueprint::Arrangement::Ccb_halfedge_const_circulator first = iter;
         do
         {
             polygon.push_back( make_source_point( iter ) );
@@ -57,12 +57,12 @@ namespace
         while( iter != first );
     }
 
-    void faceToPolygonWithHoles( Blueprint::Arr_with_hist_2::Face_const_handle hFace, Blueprint::PolygonWithHoles& polygon )
+    void faceToPolygonWithHoles( Blueprint::Arrangement::Face_const_handle hFace, Blueprint::PolygonWithHoles& polygon )
     {
         if( !hFace->is_unbounded() )
         {
-            Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator iter = hFace->outer_ccb();
-            Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator first = iter;
+            Blueprint::Arrangement::Ccb_halfedge_const_circulator iter = hFace->outer_ccb();
+            Blueprint::Arrangement::Ccb_halfedge_const_circulator first = iter;
             do
             {
                 polygon.outer.push_back( make_source_point( iter ) );
@@ -71,14 +71,14 @@ namespace
             while( iter != first );
         }
 
-        for( Blueprint::Arr_with_hist_2::Hole_const_iterator
+        for( Blueprint::Arrangement::Hole_const_iterator
             holeIter = hFace->holes_begin(),
             holeIterEnd = hFace->holes_end();
                 holeIter != holeIterEnd; ++holeIter )
         {
             Blueprint::Polygon2D hole;
-            Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
-            Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+            Blueprint::Arrangement::Ccb_halfedge_const_circulator iter = *holeIter;
+            Blueprint::Arrangement::Ccb_halfedge_const_circulator start = iter;
             do
             {
                 hole.push_back( make_source_point( iter ) );
@@ -87,14 +87,16 @@ namespace
             while( iter != start );
             polygon.holes.emplace_back( hole );
         }
-    }
+    }*/
 
     void wallSection(
-            Blueprint::Arr_with_hist_2::Halfedge_const_handle hStart,
-            Blueprint::Arr_with_hist_2::Halfedge_const_handle hEnd,
+            Blueprint::Arrangement::Halfedge_const_handle hStart,
+            Blueprint::Arrangement::Halfedge_const_handle hEnd,
             Blueprint::Wall& wall )
     {
-        Blueprint::Arr_with_hist_2::Halfedge_const_handle hIter = hStart;
+        THROW_RTE( "TODO" );
+        /*
+        Blueprint::Arrangement::Halfedge_const_handle hIter = hStart;
         do
         {
             if( hStart != hIter )
@@ -104,12 +106,14 @@ namespace
             wall.points.push_back( make_target_point( hIter ) );
             hIter = hIter->next();
         }
-        while( hIter != hEnd );
+        while( hIter != hEnd );*/
     }
 
-    void floorToWalls( Blueprint::Arr_with_hist_2::Face_const_handle hFloor, std::vector< Blueprint::Wall >& walls )
+    void floorToWalls( Blueprint::Arrangement::Face_const_handle hFloor, std::vector< Blueprint::Wall >& walls )
     {
-        using DoorStepVector = std::vector< Blueprint::Arr_with_hist_2::Halfedge_const_handle >;
+        THROW_RTE( "TODO" );
+        /*
+        using DoorStepVector = std::vector< Blueprint::Arrangement::Halfedge_const_handle >;
 
         if( !hFloor->is_unbounded() )
         {
@@ -117,8 +121,8 @@ namespace
             DoorStepVector doorsteps;
             {
                 //outer ccb winds COUNTERCLOCKWISE around the outer contour
-                Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator iter = hFloor->outer_ccb();
-                Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator first = iter;
+                Blueprint::Arrangement::Ccb_halfedge_const_circulator iter = hFloor->outer_ccb();
+                Blueprint::Arrangement::Ccb_halfedge_const_circulator first = iter;
                 do
                 {
                     if( iter->data().get() )
@@ -147,8 +151,8 @@ namespace
             else
             {
                 Blueprint::Wall wall( true, true );
-                Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator iter = hFloor->outer_ccb();
-                Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+                Blueprint::Arrangement::Ccb_halfedge_const_circulator iter = hFloor->outer_ccb();
+                Blueprint::Arrangement::Ccb_halfedge_const_circulator start = iter;
                 do
                 {
                     wall.points.push_back( make_source_point( iter ) );
@@ -159,7 +163,7 @@ namespace
             }
         }
 
-        for( Blueprint::Arr_with_hist_2::Hole_const_iterator
+        for( Blueprint::Arrangement::Hole_const_iterator
             holeIter = hFloor->holes_begin(),
             holeIterEnd = hFloor->holes_end();
                 holeIter != holeIterEnd; ++holeIter )
@@ -167,8 +171,8 @@ namespace
             DoorStepVector doorsteps;
             {
                 //the hole circulators wind CLOCKWISE around the hole contours
-                Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
-                Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+                Blueprint::Arrangement::Ccb_halfedge_const_circulator iter = *holeIter;
+                Blueprint::Arrangement::Ccb_halfedge_const_circulator start = iter;
                 do
                 {
                     if( iter->data().get() )
@@ -197,8 +201,8 @@ namespace
             else
             {
                 Blueprint::Wall wall( true, false );
-                Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
-                Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+                Blueprint::Arrangement::Ccb_halfedge_const_circulator iter = *holeIter;
+                Blueprint::Arrangement::Ccb_halfedge_const_circulator start = iter;
                 do
                 {
                     wall.points.push_back( make_source_point( iter ) );
@@ -207,7 +211,7 @@ namespace
                 while( iter != start );
                 walls.emplace_back( wall );
             }
-        }
+        }*/
     }
 
 }
@@ -217,6 +221,9 @@ namespace Blueprint
 
 void Compilation::findSpaceFaces( Space::Ptr pSpace, FaceHandleSet& faces, FaceHandleSet& spaceFaces )
 {
+    
+    THROW_RTE( "TODO" );
+    /*
     //check orientation
     Polygon2D spaceContourPolygon = pSpace->getContourPolygon().get();
     if( wykobi::polygon_orientation( spaceContourPolygon ) == wykobi::Clockwise )
@@ -246,12 +253,15 @@ void Compilation::findSpaceFaces( Space::Ptr pSpace, FaceHandleSet& faces, FaceH
             iEnd = removals.rend(); i!=iEnd; ++i )
     {
         faces.erase( *i );
-    }
+    }*/
 }
 
 void Compilation::recursePolyMap( Site::Ptr pSite, SpacePolyMap& spacePolyMap,
         FaceHandleSet& floorFaces, FaceHandleSet& fillerFaces )
 {
+    
+    THROW_RTE( "TODO" );
+    /*
     //bottom up recursion
     for( Site::Ptr pNestedSite : pSite->getSites() )
     {
@@ -292,7 +302,7 @@ void Compilation::recursePolyMap( Site::Ptr pSite, SpacePolyMap& spacePolyMap,
 
         spacePolyMap.insert( std::make_pair( pSpace, pSpacePolyInfo ) );
 
-    }
+    }*/
 
 }
 

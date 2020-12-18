@@ -8,7 +8,7 @@ namespace Blueprint
     
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
-DataBitmap::Claim::Claim( float x, float y, NavBitmap::Ptr pBuffer, boost::shared_ptr< Site > pSite )
+DataBitmap::Claim::Claim( Float x, Float y, NavBitmap::Ptr pBuffer, boost::shared_ptr< Site > pSite )
     :   m_x( x ),
         m_y( y ),
         m_pBuffer( pBuffer ),

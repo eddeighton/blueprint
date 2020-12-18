@@ -22,6 +22,8 @@ namespace Blueprint
 class Factory;
 class Blueprint;
 
+
+
 class GlyphSpec
 {
 public:
@@ -60,9 +62,9 @@ public:
             path_flags_mask  = 0xF0       //----path_flags_mask 
         };
 
-        float x,y;
+        Float x,y;
         unsigned int cmd;
-        Cmd( float _x, float _y, unsigned int _cmd )
+        Cmd( Float _x, Float _y, unsigned int _cmd )
             : x( _x ), y( _y ), cmd( _cmd )
         {}
     };
@@ -76,7 +78,7 @@ class MarkupPolygonGroup : public GlyphSpec
 public:
     typedef std::list< MarkupPolygonGroup* > List;
     
-    using Point = std::pair< float, float >;
+    using Point = std::pair< Float, Float >;
     using Polygon = std::vector< Point >;
     
     virtual bool isPolygonsFilled() const = 0;
@@ -97,15 +99,15 @@ public:
     };
     virtual const std::string& getText() const = 0;
     virtual TextType getType() const = 0;
-    virtual float getX() const = 0;
-    virtual float getY() const = 0;
+    virtual Float getX() const = 0;
+    virtual Float getY() const = 0;
     virtual bool canEdit() const { return false; }
 };
 
 class GlyphSpecInteractive : public GlyphSpec
 {
 public:
-    virtual void set( float fX, float fY ) = 0;
+    virtual void set( Float fX, Float fY ) = 0;
 };
 
 class ControlPoint : public GlyphSpecInteractive
@@ -113,8 +115,8 @@ class ControlPoint : public GlyphSpecInteractive
 public:
     typedef std::list< ControlPoint* > List;
 
-    virtual float getX() const = 0;
-    virtual float getY() const = 0;
+    virtual Float getX() const = 0;
+    virtual Float getY() const = 0;
 };
 
 class Origin : public GlyphSpecInteractive
@@ -132,10 +134,10 @@ protected:
 class ImageSpec : public GlyphSpecInteractive
 {
 public:
-    //virtual float getX() const = 0;
-    //virtual float getY() const = 0;
-    virtual float getOffsetX() const = 0;
-    virtual float getOffsetY() const = 0;
+    //virtual Float getX() const = 0;
+    //virtual Float getY() const = 0;
+    virtual Float getOffsetX() const = 0;
+    virtual Float getOffsetY() const = 0;
     virtual NavBitmap::Ptr getBuffer() const = 0;
 };
 */

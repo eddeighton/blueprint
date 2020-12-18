@@ -64,7 +64,7 @@ public:
     virtual const MarkupPath* getPolygon()  const { return nullptr; }
     
     virtual bool canEdit()                  const { return false; }
-    virtual void set( float fX, float fY ) {}
+    virtual void set( Float fX, Float fY ) {}
 
     //Site
     virtual void evaluate( const EvaluationMode& mode, EvaluationResults& results );

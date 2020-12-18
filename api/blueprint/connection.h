@@ -1,6 +1,7 @@
 #ifndef CONNECTION_07_NOV_2020
 #define CONNECTION_07_NOV_2020
 
+#include "blueprint/cgalSettings.h"
 #include "blueprint/site.h"
 
 namespace Blueprint
@@ -21,7 +22,7 @@ public:
     virtual void save( Ed::Node& node ) const;
     virtual std::string getStatement() const;
     void init();
-    void init( float x, float y );
+    void init( Float x, Float y );
     
     //Site
     virtual void evaluate( const EvaluationMode& mode, EvaluationResults& results );

@@ -1,7 +1,7 @@
 #ifndef FEATURE_18_09_2013
 #define FEATURE_18_09_2013
 
-#include "blueprint/geometry.h"
+#include "blueprint/cgalSettings.h"
 #include "blueprint/property.h"
 #include "blueprint/glyphSpec.h"
 #include "blueprint/glyphSpecProducer.h"
@@ -70,16 +70,14 @@ public:
     
     //ControlPointCallback
     const GlyphSpec* getParent( int id ) const;
-    float getX( int ) const { return m_ptOrigin.x; }
-    float getY( int ) const { return m_ptOrigin.y; }
-    void set( int, float fX, float fY )
+    Float getX( int ) const { return CGAL::to_double( m_ptOrigin.x() ); }
+    Float getY( int ) const { return CGAL::to_double( m_ptOrigin.y() ); }
+    void set( int, Float fX, Float fY )
     {
-        const float fNewValueX = Map_FloorAverage()( fX );
-        const float fNewValueY = Map_FloorAverage()( fY );
-        if( m_ptOrigin.x != fNewValueX || m_ptOrigin.y != fNewValueY )
+        const Point ptNew( Map_FloorAverage()( fX ), Map_FloorAverage()( fY ) );
+        if( m_ptOrigin != ptNew )
         {
-            m_ptOrigin.x = fNewValueX;
-            m_ptOrigin.y = fNewValueY;
+            m_ptOrigin = ptNew;
             setModified();
         }
     }
@@ -91,9 +89,9 @@ public:
         controlPoints.push_back( &m_point );
     }
 
-    const Point2D& get() const { return m_ptOrigin; }
+    //const Point& get() const { return m_ptOrigin; }
 
-    Point2D m_ptOrigin;
+    Point m_ptOrigin;
     ControlPointCallback< Feature_Point > m_point;
 };
 
@@ -120,65 +118,23 @@ public:
     virtual std::string getStatement() const;
     bool isAutoCalculate() const;
 
-    const wykobi::polygon< float, 2 >& getPolygon() const { return m_polygon; }
+    const Polygon& getPolygon() const { return m_polygon; }
+    const std::string& getName( int ) const { return Node::getName(); }
     
     //ControlPointCallback
     const GlyphSpec* getParent( int id ) const;
-    float getX( int id ) const 
-    { 
-        return m_polygon[ id ].x; 
-    }
-    float getY( int id ) const 
-    { 
-        return m_polygon[ id ].y; 
-    }
-    void set( int id, float fX, float fY ) 
-    { 
-        if( id >= 0 && id < m_polygon.size() )
-        {
-            const float fNewValueX = Map_FloorAverage()( fX );
-            //const float fNewValueX = fX;
-            if( m_polygon[ id ].x != fNewValueX )
-            {
-                m_polygon[ id ].x = fNewValueX;
-                setModified();
-            }
-            const float fNewValueY = Map_FloorAverage()( fY );
-            //const float fNewValueY = fY;
-            if( m_polygon[ id ].y != fNewValueY )
-            {
-                m_polygon[ id ].y = fNewValueY;
-                setModified();
-            }
-        }
-    }
-    const std::string& getName( int ) const { return Node::getName(); }
+    Float getX( int id ) const;
+    Float getY( int id ) const;
+    void set( int id, Float fX, Float fY );
+    void setSinglePoint( Float x, Float y );
+    void set( const Polygon& shape );
     
-    void setSinglePoint( float x, float y )
-    {
-        m_polygon.clear();
-        m_polygon.push_back( wykobi::make_point< float >( Map_FloorAverage()( x ), Map_FloorAverage()( y ) ) );
-        recalculateControlPoints();
-    }
-    
-    void set( const wykobi::polygon< float, 2 >& shape )
-    {
-        if( !( m_polygon.size() == shape.size() ) || 
-            !std::equal( m_polygon.begin(), m_polygon.end(), shape.begin() ) )
-        {
-            m_polygon = shape;
-            for( wykobi::polygon< float, 2 >::iterator i = m_polygon.begin(),
-                iEnd = m_polygon.end(); i!=iEnd; ++i )
-                *i = wykobi::make_point< float >( Map_FloorAverage()( i->x ), Map_FloorAverage()( i->y ) );
-            recalculateControlPoints();
-        }
-    }
-    
+    /*
     template< class T >
     void set( const T& shape )
     {
         set( wykobi::make_polygon( shape ) );
-    }
+    }*/
     
     void recalculateControlPoints();
     
@@ -198,13 +154,14 @@ public:
     
 
 private:
-    Polygon2D m_polygon;
+    Polygon m_polygon;
     PointVector m_points;
     Property::Ptr m_pAutoCalc;
 };
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
+/*
 class Feature_ContourPoint : public Feature
 {
 public:
@@ -220,13 +177,13 @@ public:
     virtual std::string getStatement() const;
 
     const unsigned int getContourPointIndex() const { return m_uiContourPointIndex; }
-    float getRatio() const { return m_fRatio; }
+    Float getRatio() const { return m_fRatio; }
     
     //ControlPointCallback
     virtual const GlyphSpec* getParent( int id ) const;
-    virtual float getX( int id ) const;
-    virtual float getY( int id ) const;
-    virtual void set( int id, float fX, float fY );
+    virtual Float getX( int id ) const;
+    virtual Float getY( int id ) const;
+    virtual void set( int id, Float fX, Float fY );
     const std::string& getName( int ) const { return Node::getName(); }
     
     virtual int getControlPointCount() { return 1; }
@@ -237,12 +194,12 @@ public:
 
 protected:
     unsigned int m_uiContourPointIndex;
-    float m_fRatio;
+    Float m_fRatio;
 
     ControlPointCallback< Feature_ContourPoint > m_point;
     Feature_Contour::WeakPtrCst m_pContour;
 };
-
+*/
 
 }
 

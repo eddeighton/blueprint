@@ -8,12 +8,12 @@
 
 namespace
 {
-    bool doesFaceHaveDoorstep( Blueprint::Arr_with_hist_2::Face_const_handle hFace )
+    bool doesFaceHaveDoorstep( Blueprint::Arrangement::Face_const_handle hFace )
     {
         if( !hFace->is_unbounded() )
         {
-            Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator iter = hFace->outer_ccb();
-            Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+            Blueprint::Arrangement::Ccb_halfedge_const_circulator iter = hFace->outer_ccb();
+            Blueprint::Arrangement::Ccb_halfedge_const_circulator start = iter;
             do
             {
                 if( iter->data().get() )
@@ -26,13 +26,13 @@ namespace
         }
 
         //search through all holes
-        for( Blueprint::Arr_with_hist_2::Hole_const_iterator
+        for( Blueprint::Arrangement::Hole_const_iterator
             holeIter = hFace->holes_begin(),
             holeIterEnd = hFace->holes_end();
                 holeIter != holeIterEnd; ++holeIter )
         {
-            Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
-            Blueprint::Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+            Blueprint::Arrangement::Ccb_halfedge_const_circulator iter = *holeIter;
+            Blueprint::Arrangement::Ccb_halfedge_const_circulator start = iter;
             do
             {
                 if( iter->data().get() )
@@ -63,7 +63,7 @@ Compilation::Compilation( Blueprint::Ptr pBlueprint )
     }
     
     //record ALL doorsteps
-    std::vector< Arr_with_hist_2::Halfedge_handle > edges;
+    std::vector< Arrangement::Halfedge_handle > edges;
     for( auto i = m_arr.edges_begin(); i != m_arr.edges_end(); ++i )
     {
         if( i->data().get() )
@@ -77,7 +77,7 @@ Compilation::Compilation( Blueprint::Ptr pBlueprint )
         recursePost( pSite );
     }
     
-    for( Arr_with_hist_2::Halfedge_handle i : edges )
+    for( Arrangement::Halfedge_handle i : edges )
     {
         if( !i->data().get() )
         {
@@ -86,10 +86,11 @@ Compilation::Compilation( Blueprint::Ptr pBlueprint )
     }
 }
 
-void Compilation::renderContour( Arr_with_hist_2& arr, const Matrix& transform, Polygon2D poly, int iOrientation )
+void Compilation::renderContour( Arrangement& arr, const Matrix& transform, Polygon2D poly, int iOrientation )
 {
+    THROW_RTE( "TODO" );
     //transform to absolute coordinates
-    for( Point2D& pt : poly )
+    /*for( Point2D& pt : poly )
         transform.transform( pt.x, pt.y );
 
     //ensure orientate counter clockwise
@@ -110,9 +111,9 @@ void Compilation::renderContour( Arr_with_hist_2& arr, const Matrix& transform, 
 
         //Curve_handle ch =
         CGAL::insert( arr,
-            Curve_2(  Point_2( i->x,      i->y ),
-                      Point_2( iNext->x,  iNext->y ) ) );
-    }
+            Curve(  Point( i->x,      i->y ),
+                      Point( iNext->x,  iNext->y ) ) );
+    }*/
 }
 
 void Compilation::recurse( Site::Ptr pSite )
@@ -141,12 +142,13 @@ void Compilation::recurse( Site::Ptr pSite )
 
 void Compilation::recursePost( Site::Ptr pSite )
 {
+    THROW_RTE( "TODO" );
     if( Space::Ptr pSpace = boost::dynamic_pointer_cast< Space >( pSite ) )
     {
         const Matrix transform = pSpace->getAbsoluteTransform();
 
         //render the site polygon
-        renderContour( m_arr, transform, pSpace->getContourPolygon().get(), wykobi::CounterClockwise );
+        //renderContour( m_arr, transform, pSpace->getContourPolygon().get(), wykobi::CounterClockwise );
     }
 
     for( Site::Ptr pNestedSite : pSite->getSites() )
@@ -155,35 +157,35 @@ void Compilation::recursePost( Site::Ptr pSite )
     }
 }
 
-void constructConnectionEdges( Arr_with_hist_2& arr, Connection::Ptr pConnection,
-        Arr_with_hist_2::Halfedge_handle firstBisectorEdge,
-        Arr_with_hist_2::Halfedge_handle secondBisectorEdge )
+void constructConnectionEdges( Arrangement& arr, Connection::Ptr pConnection,
+        Arrangement::Halfedge_handle firstBisectorEdge,
+        Arrangement::Halfedge_handle secondBisectorEdge )
 {
 
-    Arr_with_hist_2::Vertex_handle vFirstStart  = firstBisectorEdge->source();
-    Arr_with_hist_2::Vertex_handle vFirstEnd    = firstBisectorEdge->target();
-    Arr_with_hist_2::Vertex_handle vSecondStart = secondBisectorEdge->source();
-    Arr_with_hist_2::Vertex_handle vSecondEnd   = secondBisectorEdge->target();
+    Arrangement::Vertex_handle vFirstStart  = firstBisectorEdge->source();
+    Arrangement::Vertex_handle vFirstEnd    = firstBisectorEdge->target();
+    Arrangement::Vertex_handle vSecondStart = secondBisectorEdge->source();
+    Arrangement::Vertex_handle vSecondEnd   = secondBisectorEdge->target();
 
-    const Point_2 ptFirstStart  = vFirstStart->point();
-    const Point_2 ptFirstEnd    = vFirstEnd->point();
-    const Point_2 ptSecondStart = vSecondStart->point();
-    const Point_2 ptSecondEnd   = vSecondEnd->point();
-    const Point_2 ptFirstMid    = ptFirstStart  + ( ptFirstEnd - ptFirstStart )   / 2.0;
-    const Point_2 ptSecondMid   = ptSecondStart + ( ptSecondEnd - ptSecondStart ) / 2.0;
+    const Point ptFirstStart  = vFirstStart->point();
+    const Point ptFirstEnd    = vFirstEnd->point();
+    const Point ptSecondStart = vSecondStart->point();
+    const Point ptSecondEnd   = vSecondEnd->point();
+    const Point ptFirstMid    = ptFirstStart  + ( ptFirstEnd - ptFirstStart )   / 2.0;
+    const Point ptSecondMid   = ptSecondStart + ( ptSecondEnd - ptSecondStart ) / 2.0;
 
-    Arr_with_hist_2::Halfedge_handle hFirstStartToMid =
+    Arrangement::Halfedge_handle hFirstStartToMid =
         arr.split_edge( firstBisectorEdge, ptFirstMid );
-    Arr_with_hist_2::Vertex_handle vFirstMid = hFirstStartToMid->target();
+    Arrangement::Vertex_handle vFirstMid = hFirstStartToMid->target();
 
-    Arr_with_hist_2::Halfedge_handle hSecondStartToMid =
+    Arrangement::Halfedge_handle hSecondStartToMid =
         arr.split_edge( secondBisectorEdge, ptSecondMid );
-    Arr_with_hist_2::Vertex_handle vSecondMid = hSecondStartToMid->target();
+    Arrangement::Vertex_handle vSecondMid = hSecondStartToMid->target();
 
     //create edge between mid points
-    Arr_with_hist_2::Halfedge_handle m_hDoorStep;
+    Arrangement::Halfedge_handle m_hDoorStep;
     {
-        const Curve_2 segDoorStep( ptFirstMid, ptSecondMid );
+        const Curve segDoorStep( ptFirstMid, ptSecondMid );
         m_hDoorStep = arr.insert_at_vertices( segDoorStep, vFirstMid, vSecondMid );
     }
 
@@ -192,7 +194,7 @@ void constructConnectionEdges( Arr_with_hist_2& arr, Connection::Ptr pConnection
 
     {
         bool bFound = false;
-        Arr_with_hist_2::Halfedge_around_vertex_circulator first, iter;
+        Arrangement::Halfedge_around_vertex_circulator first, iter;
         first = iter = vFirstStart->incident_halfedges();
         do
         {
@@ -209,7 +211,7 @@ void constructConnectionEdges( Arr_with_hist_2& arr, Connection::Ptr pConnection
     }
     {
         bool bFound = false;
-        Arr_with_hist_2::Halfedge_around_vertex_circulator first, iter;
+        Arrangement::Halfedge_around_vertex_circulator first, iter;
         first = iter = vFirstEnd->incident_halfedges();
         do
         {
@@ -228,29 +230,31 @@ void constructConnectionEdges( Arr_with_hist_2& arr, Connection::Ptr pConnection
 
 void Compilation::connect( Site::Ptr pSite )
 {
+    THROW_RTE( "TODO" );
+    /*
     if( Connection::Ptr pConnection = boost::dynamic_pointer_cast< Connection >( pSite ) )
     {
         const Matrix transform = pConnection->getAbsoluteTransform();
 
         //attempt to find the four connection vertices
-        std::vector< Arr_with_hist_2::Halfedge_handle > toRemove;
-        Arr_with_hist_2::Halfedge_handle firstBisectorEdge, secondBisectorEdge;
+        std::vector< Arrangement::Halfedge_handle > toRemove;
+        Arrangement::Halfedge_handle firstBisectorEdge, secondBisectorEdge;
         bool bFoundFirst = false, bFoundSecond = false;
         {
             Segment2D firstSeg  = pConnection->getFirstSegment();
             transform.transform( firstSeg[ 0 ].x, firstSeg[ 0 ].y );
             transform.transform( firstSeg[ 1 ].x, firstSeg[ 1 ].y );
 
-            const Point_2 ptFirstStart( firstSeg[ 0 ].x, firstSeg[ 0 ].y );
-            const Point_2 ptFirstEnd( firstSeg[ 1 ].x, firstSeg[ 1 ].y );
+            const Point ptFirstStart( firstSeg[ 0 ].x, firstSeg[ 0 ].y );
+            const Point ptFirstEnd( firstSeg[ 1 ].x, firstSeg[ 1 ].y );
 
             Curve_handle firstCurve = CGAL::insert( m_arr,
-                Curve_2( ptFirstStart, ptFirstEnd ) );
+                Curve( ptFirstStart, ptFirstEnd ) );
 
             for( auto   i = m_arr.induced_edges_begin( firstCurve );
                         i != m_arr.induced_edges_end( firstCurve ); ++i )
             {
-                Arr_with_hist_2::Halfedge_handle h = *i;
+                Arrangement::Halfedge_handle h = *i;
 
                 if( ( h->source()->point() == ptFirstStart ) ||
                     ( h->source()->point() == ptFirstEnd   ) ||
@@ -273,16 +277,16 @@ void Compilation::connect( Site::Ptr pSite )
             transform.transform( secondSeg[ 0 ].x, secondSeg[ 0 ].y );
             transform.transform( secondSeg[ 1 ].x, secondSeg[ 1 ].y );
 
-            const Point_2 ptSecondStart( secondSeg[ 1 ].x, secondSeg[ 1 ].y );
-            const Point_2 ptSecondEnd( secondSeg[ 0 ].x, secondSeg[ 0 ].y );
+            const Point ptSecondStart( secondSeg[ 1 ].x, secondSeg[ 1 ].y );
+            const Point ptSecondEnd( secondSeg[ 0 ].x, secondSeg[ 0 ].y );
 
             Curve_handle secondCurve = CGAL::insert( m_arr,
-                Curve_2( ptSecondStart, ptSecondEnd ) );
+                Curve( ptSecondStart, ptSecondEnd ) );
 
             for( auto   i = m_arr.induced_edges_begin( secondCurve );
                         i != m_arr.induced_edges_end( secondCurve ); ++i )
             {
-                Arr_with_hist_2::Halfedge_handle h = *i;
+                Arrangement::Halfedge_handle h = *i;
 
                 if( ( h->source()->point() == ptSecondStart ) ||
                     ( h->source()->point() == ptSecondEnd   ) ||
@@ -304,7 +308,7 @@ void Compilation::connect( Site::Ptr pSite )
         constructConnectionEdges( m_arr, pConnection, firstBisectorEdge, secondBisectorEdge );
 
         //VERIFY_RTE_MSG( toRemove.size() == 4, "Bad connection" );
-        for( Arr_with_hist_2::Halfedge_handle h : toRemove )
+        for( Arrangement::Halfedge_handle h : toRemove )
         {
             m_arr.remove_edge( h );
         }
@@ -314,7 +318,7 @@ void Compilation::connect( Site::Ptr pSite )
     for( Site::Ptr pNestedSite : pSite->getSites() )
     {
         connect( pNestedSite );
-    }
+    }*/
 
 }
 
@@ -323,7 +327,7 @@ void Compilation::getFaces( FaceHandleSet& floorFaces, FaceHandleSet& fillerFace
     for( auto i = m_arr.faces_begin(),
         iEnd = m_arr.faces_end(); i!=iEnd; ++i )
     {
-        Arr_with_hist_2::Face_const_handle hFace = i;
+        Arrangement::Face_const_handle hFace = i;
         //if( !hFace->is_unbounded() && !hFace->is_fictitious() )
         {
             if( doesFaceHaveDoorstep( hFace ) )
@@ -343,7 +347,7 @@ void Compilation::getFaces( FaceHandleSet& floorFaces, FaceHandleSet& fillerFace
 void Compilation::render( const boost::filesystem::path& filepath )
 {
     EdgeVectorVector edgeGroups;
-    std::vector< Arr_with_hist_2::Halfedge_const_handle > edges;
+    std::vector< Arrangement::Halfedge_const_handle > edges;
     for( auto i = m_arr.edges_begin(); i != m_arr.edges_end(); ++i )
         edges.push_back( i );
     edgeGroups.push_back( edges );
@@ -357,7 +361,7 @@ void Compilation::renderFloors( const boost::filesystem::path& filepath )
 {
     EdgeVectorVector edgeGroups;
 
-    using EdgeVector = std::vector< Arr_with_hist_2::Halfedge_const_handle >;
+    using EdgeVector = std::vector< Arrangement::Halfedge_const_handle >;
     for( auto i = m_arr.faces_begin(),
         iEnd = m_arr.faces_end(); i!=iEnd; ++i )
     {
@@ -366,8 +370,8 @@ void Compilation::renderFloors( const boost::filesystem::path& filepath )
         bool bDoesFaceHaveDoorstep = false;
         if( !i->is_unbounded() )
         {
-            Arr_with_hist_2::Ccb_halfedge_const_circulator iter = i->outer_ccb();
-            Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+            Arrangement::Ccb_halfedge_const_circulator iter = i->outer_ccb();
+            Arrangement::Ccb_halfedge_const_circulator start = iter;
             do
             {
                 edges.push_back( iter );
@@ -382,13 +386,13 @@ void Compilation::renderFloors( const boost::filesystem::path& filepath )
             if( !bDoesFaceHaveDoorstep )
             {
                 //search through all holes
-                for( Arr_with_hist_2::Hole_const_iterator
+                for( Arrangement::Hole_const_iterator
                     holeIter = i->holes_begin(),
                     holeIterEnd = i->holes_end();
                         holeIter != holeIterEnd; ++holeIter )
                 {
-                    Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
-                    Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+                    Arrangement::Ccb_halfedge_const_circulator iter = *holeIter;
+                    Arrangement::Ccb_halfedge_const_circulator start = iter;
                     do
                     {
                         if( iter->data().get() )
@@ -405,13 +409,13 @@ void Compilation::renderFloors( const boost::filesystem::path& filepath )
 
         if( bDoesFaceHaveDoorstep )
         {
-            for( Arr_with_hist_2::Hole_const_iterator
+            for( Arrangement::Hole_const_iterator
                 holeIter = i->holes_begin(),
                 holeIterEnd = i->holes_end();
                     holeIter != holeIterEnd; ++holeIter )
             {
-                Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
-                Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+                Arrangement::Ccb_halfedge_const_circulator iter = *holeIter;
+                Arrangement::Ccb_halfedge_const_circulator start = iter;
                 do
                 {
                     edges.push_back( iter );
@@ -440,8 +444,8 @@ void Compilation::renderFillers( const boost::filesystem::path& filepath )
         bool bDoesFaceHaveDoorstep = false;
         if( !i->is_unbounded() )
         {
-            Arr_with_hist_2::Ccb_halfedge_const_circulator iter = i->outer_ccb();
-            Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+            Arrangement::Ccb_halfedge_const_circulator iter = i->outer_ccb();
+            Arrangement::Ccb_halfedge_const_circulator start = iter;
             do
             {
                 edges.push_back( iter );
@@ -456,13 +460,13 @@ void Compilation::renderFillers( const boost::filesystem::path& filepath )
             if( !bDoesFaceHaveDoorstep )
             {
                 //search through all holes
-                for( Arr_with_hist_2::Hole_const_iterator
+                for( Arrangement::Hole_const_iterator
                     holeIter = i->holes_begin(),
                     holeIterEnd = i->holes_end();
                         holeIter != holeIterEnd; ++holeIter )
                 {
-                    Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
-                    Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+                    Arrangement::Ccb_halfedge_const_circulator iter = *holeIter;
+                    Arrangement::Ccb_halfedge_const_circulator start = iter;
                     do
                     {
                         if( iter->data().get() )
@@ -479,13 +483,13 @@ void Compilation::renderFillers( const boost::filesystem::path& filepath )
 
         if( !bDoesFaceHaveDoorstep && !i->is_unbounded() )
         {
-            for( Arr_with_hist_2::Hole_const_iterator
+            for( Arrangement::Hole_const_iterator
                 holeIter = i->holes_begin(),
                 holeIterEnd = i->holes_end();
                     holeIter != holeIterEnd; ++holeIter )
             {
-                Arr_with_hist_2::Ccb_halfedge_const_circulator iter = *holeIter;
-                Arr_with_hist_2::Ccb_halfedge_const_circulator start = iter;
+                Arrangement::Ccb_halfedge_const_circulator iter = *holeIter;
+                Arrangement::Ccb_halfedge_const_circulator start = iter;
                 do
                 {
                     edges.push_back( iter );

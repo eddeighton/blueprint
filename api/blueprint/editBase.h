@@ -33,8 +33,8 @@ public:
     
     //IEditContext
     virtual void activated();
-    virtual IInteraction::Ptr interaction_start( ToolMode toolMode, float x, float y, float qX, float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection );
-    virtual IInteraction::Ptr interaction_draw( ToolMode toolMode, float x, float y, float qX, float qY, Site::Ptr pSite );
+    virtual IInteraction::Ptr interaction_start( ToolMode toolMode, Float x, Float y, Float qX, Float qY, IGlyph* pHitGlyph, const std::set< IGlyph* >& selection );
+    virtual IInteraction::Ptr interaction_draw( ToolMode toolMode, Float x, Float y, Float qX, Float qY, Site::Ptr pSite );
 
     virtual IEditContext* getNestedContext( const std::vector< IGlyph* >& candidates );
     virtual IEditContext* getParent() { return 0u; }
@@ -53,9 +53,9 @@ public:
     virtual void cmd_delete( const std::set< IGlyph* >& selection );
     virtual Node::Ptr cmd_cut( const std::set< IGlyph* >& selection );
     virtual Node::Ptr cmd_copy( const std::set< IGlyph* >& selection );
-    virtual IInteraction::Ptr cmd_paste( Node::Ptr pPaste, float x, float y, float qX, float qY );
-    virtual IInteraction::Ptr cmd_paste( IGlyph* pGlyph, float x, float y, float qX, float qY );
-    virtual IInteraction::Ptr cmd_paste( const std::set< IGlyph* >& selection, float x, float y, float qX, float qY );
+    virtual IInteraction::Ptr cmd_paste( Node::Ptr pPaste, Float x, Float y, Float qX, Float qY );
+    virtual IInteraction::Ptr cmd_paste( IGlyph* pGlyph, Float x, Float y, Float qX, Float qY );
+    virtual IInteraction::Ptr cmd_paste( const std::set< IGlyph* >& selection, Float x, Float y, Float qX, Float qY );
     virtual void cmd_rotateLeft( const std::set< IGlyph* >& selection );
     virtual void cmd_rotateRight( const std::set< IGlyph* >& selection );
     virtual void cmd_flipHorizontally( const std::set< IGlyph* >& selection );
@@ -68,11 +68,11 @@ public:
     
     Site::Ptr getSite() const { return m_pSite; }
     
-    std::set< IGlyph* > generateExtrusion( float fAmount, bool bConvexHull );
+    std::set< IGlyph* > generateExtrusion( Float fAmount, bool bConvexHull );
     void save( const std::set< IGlyph* >& selection, const std::string& strFilePath );
     
 protected:
-    IInteraction::Ptr cmd_paste( Site::PtrVector sites, float x, float y, float qX, float qY );
+    IInteraction::Ptr cmd_paste( Site::PtrVector sites, Float x, Float y, Float qX, Float qY );
 
     EditMain& m_editMain;
     GlyphFactory& m_glyphFactory;

@@ -106,12 +106,12 @@ Node::Ptr Factory::load( Node::Ptr pParent, const Ed::Node& node )
                     ASSERT( !pParent || ( pSiteParent || pFeatureParent ) );
                     pResult = Feature_Point::Ptr( new Feature_Point( pParent, identity ) );
                 }
-                else if( id == Feature_ContourPoint::TypeName() )
+                /*else if( id == Feature_ContourPoint::TypeName() )
                 {
                     Feature_Contour::Ptr pFeatureParent = boost::dynamic_pointer_cast< Feature_Contour >( pParent );
                     ASSERT( pFeatureParent );
                     pResult = Feature_ContourPoint::Ptr( new Feature_ContourPoint( pFeatureParent, identity ) );
-                }
+                }*/
                 else if( id == Feature_Contour::TypeName() )
                 {
                     Site::Ptr pSiteParent = boost::dynamic_pointer_cast< Site >( pParent );

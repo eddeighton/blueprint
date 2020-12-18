@@ -21,7 +21,7 @@ public:
     virtual void save( Ed::Node& node ) const;
     virtual std::string getStatement() const;
     void init();
-    void init( float x, float y );
+    void init( Float x, Float y );
     
     //Site
     virtual void evaluate( const EvaluationMode& mode, EvaluationResults& results );

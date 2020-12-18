@@ -52,7 +52,7 @@ TEST( BlueprintTests, Check )
     ASSERT_EQ( e1, e2 );
 
 }*/
-
+/*
 TEST( Serialisation, Points )
 {
     using namespace Ed;
@@ -71,7 +71,7 @@ TEST( Serialisation, Points )
 TEST( Serialisation, Polygons )
 {
     using namespace Ed;
-    wykobi::polygon< float, 2 > p = wykobi::make_polygon< float >( 
+    wykobi::polygon< Float, 2 > p = wykobi::make_polygon< float >( 
         wykobi::make_circle< float >( 0.0f, 0.0f, 123.456f)  );
     std::ostringstream os;
     os << p;
@@ -79,16 +79,16 @@ TEST( Serialisation, Polygons )
     std::string strResult = os.str();
     std::istringstream is( strResult );
 
-    wykobi::polygon< float, 2 > result;
+    wykobi::polygon< Float, 2 > result;
     is >> result;
     ASSERT_EQ( p.size(), result.size() );
-	for ( wykobi::polygon< float, 2 >::const_iterator 
+	for ( wykobi::polygon< Float, 2 >::const_iterator 
         i = p.begin(), iEnd = p.end(), j = result.begin(); i!=iEnd; ++i,++j)
     {
         ASSERT_NEAR( i->x, j->x, 0.001f );
         ASSERT_NEAR( i->y, j->y, 0.001f );
     }
-}
+}*/
 /*
 TEST( Toolbox, Check1 )
 {
@@ -101,21 +101,21 @@ TEST( CGAL, ErrorTest )
 {
     using namespace Blueprint;
     {
-        const Point_2   p1( 0, 0 ), 
+        const Point   p1( 0, 0 ), 
                         p2( sqrt( 2 ), sqrt( 2 ) ), 
                         p3( 2, 2 );
         
         ASSERT_EQ( CGAL::orientation( p1, p2, p3 ), CGAL::COLLINEAR );
     }
     {
-        const Point_2   p1( 0, 0 ), 
+        const Point   p1( 0, 0 ), 
                         p2( sqrt( 2 ), sqrt( 2 ) ), 
                         p3( 2, 2.0000001f );
         
         ASSERT_EQ( CGAL::orientation( p1, p2, p3 ), CGAL::COLLINEAR );
     }
     {
-        const Point_2   p1( 0, 0 ), 
+        const Point   p1( 0, 0 ), 
                         p2( sqrt( 2 ), sqrt( 2 ) ), 
                         p3( 2, 2.000001f );
         
@@ -128,12 +128,12 @@ TEST( CGAL, BasicTest )
 {
     using namespace Blueprint;
     
-    Arr_with_hist_2 arr;
+    Arrangement arr;
     
-    Point_2 p1(0, 0), 
+    Point p1(0, 0), 
             p2(0, 4);
     
-    Curve_2 s1( p1, p2 );
+    Curve s1( p1, p2 );
     
     Curve_handle ch = CGAL::insert( arr, s1 );
     
@@ -142,10 +142,10 @@ TEST( CGAL, BasicTest )
 
 namespace
 {
-    using PointVector = std::vector< Blueprint::Point_2 >;
+    using PointVector = std::vector< Blueprint::Point >;
     
     std::vector< Blueprint::Curve_handle > insertPolygon( 
-        Blueprint::Arr_with_hist_2& arr, const PointVector& polygon )
+        Blueprint::Arrangement& arr, const PointVector& polygon )
     {
         std::vector< Blueprint::Curve_handle > interiorCurves;
         for( PointVector::const_iterator 
@@ -158,7 +158,7 @@ namespace
                 iNext = polygon.begin();
             
             interiorCurves.push_back( 
-                CGAL::insert( arr, Blueprint::Curve_2( *i, *iNext ) ) );
+                CGAL::insert( arr, Blueprint::Curve( *i, *iNext ) ) );
         }
         return interiorCurves;
     }
@@ -168,14 +168,14 @@ TEST( CGAL, PolygonTest )
 {
     using namespace Blueprint;
     
-    Arr_with_hist_2 arr;
+    Arrangement arr;
     
     const PointVector interior = 
     { 
-        Point_2{ 0, 0 }, 
-        Point_2{ 0, 10 }, 
-        Point_2{ 10, 10 }, 
-        Point_2{ 10, 0 } 
+        Point{ 0, 0 }, 
+        Point{ 0, 10 }, 
+        Point{ 10, 10 }, 
+        Point{ 10, 0 } 
     };
     
     std::vector< Curve_handle > interiorCurves =
@@ -191,14 +191,14 @@ TEST( CGAL, OverlapTest )
 {
     using namespace Blueprint;
     
-    Arr_with_hist_2 arr;
+    Arrangement arr;
     
     const PointVector interior = 
     { 
-        Point_2{  0,  0 }, 
-        Point_2{  0, 10 }, 
-        Point_2{ 10, 10 }, 
-        Point_2{ 10,  0 } 
+        Point{  0,  0 }, 
+        Point{  0, 10 }, 
+        Point{ 10, 10 }, 
+        Point{ 10,  0 } 
     };
     //       +----+----+
     //       |         |
@@ -211,10 +211,10 @@ TEST( CGAL, OverlapTest )
         
     const PointVector exterior = 
     { 
-        Point_2{  5,  0 }, 
-        Point_2{  5, 10 }, 
-        Point_2{ 10, 10 }, 
-        Point_2{ 10,  0 } 
+        Point{  5,  0 }, 
+        Point{  5, 10 }, 
+        Point{ 10, 10 }, 
+        Point{ 10,  0 } 
     };
     //            +----+
     //            |    |

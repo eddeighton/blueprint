@@ -12,6 +12,7 @@ namespace Blueprint
 {
     using Angle8Traits  = Math::Angle< 8 >;
     using Angle8        = Angle8Traits::Value;
+    
     using Point2D       = wykobi::point2d< float >;
     using Polygon2D     = wykobi::polygon< float, 2 >;
     using Rect2D        = wykobi::rectangle< float >;

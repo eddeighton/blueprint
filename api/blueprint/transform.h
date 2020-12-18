@@ -2,6 +2,8 @@
 #ifndef TRANSFORM_07_NOV_2020
 #define TRANSFORM_07_NOV_2020
 
+#include "blueprint/cgalSettings.h"
+
 #include "common/angle.hpp"
 
 #include "ed/nodeio.hpp"
@@ -16,19 +18,19 @@ class Matrix
 {
 public:
     Matrix(){}
-    Matrix( float x, float y )
+    Matrix( Float x, Float y )
         :   m31( x ),
             m32( y )
     {}
     
-    inline float M11() const { return m11; }
-    inline float M12() const { return m12; }
-    inline float M21() const { return m21; }
-    inline float M22() const { return m22; }
-    inline float M31() const { return m31; }
-    inline float M32() const { return m32; }
-    inline float X()   const { return m31; }
-    inline float Y()   const { return m32; }
+    inline Float M11() const { return m11; }
+    inline Float M12() const { return m12; }
+    inline Float M21() const { return m21; }
+    inline Float M22() const { return m22; }
+    inline Float M31() const { return m31; }
+    inline Float M32() const { return m32; }
+    inline Float X()   const { return m31; }
+    inline Float Y()   const { return m32; }
     
     void assign( const Matrix& a )
     {
@@ -40,10 +42,10 @@ public:
         m32 = a.m32 ;
     }
     
-    inline void transform( float& x, float& y ) const
+    inline void transform( Float& x, Float& y ) const
     {
-        float xTemp = x;
-        float yTemp = y;
+        Float xTemp = x;
+        Float yTemp = y;
         
         x = ( m11 * xTemp ) + ( m21 * yTemp ) + m31;
         y = ( m12 * xTemp ) + ( m22 * yTemp ) + m32;
@@ -66,19 +68,19 @@ public:
        // matrix.m33 = ( m13 * temp.m31 ) + ( m23 * temp.m32 ) + ( m33 * temp.m33 );
     }
     
-    void setTranslation( float x, float y )
+    void setTranslation( Float x, Float y )
     {
         m31 = x;
         m32 = y;
     }
     
-    void translateBy( float x, float y )
+    void translateBy( Float x, Float y )
     {
         m31 += x;
         m32 += y;
     }
     
-    void decompose( float& fTranslateX, float& fTranslateY, float& scaleX, float& scaleY, float& angle ) const
+    void decompose( Float& fTranslateX, Float& fTranslateY, Float& scaleX, Float& scaleY, Float& angle ) const
     {
         //convert to transform from matrix
         //https://stackoverflow.com/questions/45159314/decompose-2d-transformation-matrix
@@ -94,11 +96,11 @@ public:
     
     //  m(x,y) for row,column
     //                col 0       col 1       col 2
-    float /*row 0*/   m11 = 1.0f, m21= 0.0f,  m31 = 0.0f, 
+    Float /*row 0*/   m11 = 1.0f, m21= 0.0f,  m31 = 0.0f, 
           /*row 1*/   m12 = 0.0f, m22 = 1.0f, m32 = 0.0f;
           /*row 2*/// m13 = 0     m23 - 0     m33 = 1
 };
-    
+
 class Transform : public Matrix
 {
 public:
@@ -106,14 +108,14 @@ public:
     {
     }
     
-    Transform( float x, float y )
+    Transform( Float x, Float y )
         :   Matrix( x, y ),
             m_angle( Math::Angle< 8 >::eEast ),
             m_bMirrorX( false ),
             m_bMirrorY( false )
     {}
     
-    Transform( float x, float y, Math::Angle< 8 >::Value angle, bool bMirrorX, bool bMirrorY )
+    Transform( Float x, Float y, Math::Angle< 8 >::Value angle, bool bMirrorX, bool bMirrorY )
         :   Matrix( x, y ),
             m_angle( angle ),
             m_bMirrorX( bMirrorX ),
@@ -122,7 +124,7 @@ public:
         updateMatrix();
     }
     
-    static Matrix inverse( float x, float y, Math::Angle< 8 >::Value angle, bool bMirrorX )
+    static Matrix inverse( Float x, Float y, Math::Angle< 8 >::Value angle, bool bMirrorX )
     {
         Matrix matrix;
                 
@@ -176,12 +178,12 @@ public:
         updateMatrix();
     }
     
-    static Matrix transformWithinBounds( const Matrix& existing, const Matrix& transform, float fMinX, float fMinY, float fMaxX, float fMaxY )
+    static Matrix transformWithinBounds( const Matrix& existing, const Matrix& transform, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
     {
         Matrix result;
         {
-            const float fCentreX = fMinX + ( fMaxX - fMinX ) / 2.0f;
-            const float fCentreY = fMinY + ( fMaxY - fMinY ) / 2.0f;
+            const Float fCentreX = fMinX + ( fMaxX - fMinX ) / 2.0f;
+            const Float fCentreY = fMinY + ( fMaxY - fMinY ) / 2.0f;
             
             const Matrix translateToBoundsCentre( -fCentreX, -fCentreY );
             const Matrix translateBack( fCentreX, fCentreY );
@@ -195,7 +197,7 @@ public:
         return result;
     }
     
-    static Matrix rotateLeft( const Matrix& existing, float fMinX, float fMinY, float fMaxX, float fMaxY )
+    static Matrix rotateLeft( const Matrix& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
     {
         const Transform transform( 0.0f, 0.0f, 
             Math::rotate< Math::Angle< 8 > >( Math::Angle< 8 >::eEast, 1 ), 
@@ -203,7 +205,7 @@ public:
         return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
     }
     
-    static Matrix rotateRight( const Matrix& existing, float fMinX, float fMinY, float fMaxX, float fMaxY )
+    static Matrix rotateRight( const Matrix& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
     {
         const Transform transform( 0.0f, 0.0f, 
             Math::rotate< Math::Angle< 8 > >( Math::Angle< 8 >::eEast, -1 ), 
@@ -211,13 +213,13 @@ public:
         return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
     }
     
-    static Matrix flipHorizontally( const Matrix& existing, float fMinX, float fMinY, float fMaxX, float fMaxY )
+    static Matrix flipHorizontally( const Matrix& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
     {
         const Transform transform( 0.0f, 0.0f, Math::Angle< 8 >::eEast, true, false );
         return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
     }
     
-    static Matrix flipVertically( const Matrix& existing, float fMinX, float fMinY, float fMaxX, float fMaxY )
+    static Matrix flipVertically( const Matrix& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
     {
         const Transform transform( 0.0f, 0.0f, Math::Angle< 8 >::eEast, false, true );
         return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
@@ -226,14 +228,14 @@ public:
 private:
     inline void updateMatrix()
     {
-        float dx, dy;
-        Math::toVector< Math::Angle< 8 >, float >( m_angle, dx, dy );
+        Float dx, dy;
+        Math::toVector< Math::Angle< 8 >, Float >( m_angle, dx, dy );
         //with angle of zero   get dx=1  dy=0
         //with angle of pi/2   get dx=0  dy=1
         //with angle of pi     get dx=-1 dy=0
         //with angle of 1.5pi  get dx=0  dy=-1
         
-        const float mx = m_bMirrorX ? -1.0f : 1.0f, 
+        const Float mx = m_bMirrorX ? -1.0f : 1.0f, 
                     my = m_bMirrorY ? -1.0f : 1.0f;
         
         m11 = dx * mx;      m21 =  dy * mx;
@@ -296,7 +298,7 @@ namespace Ed
 
     inline IShorthandStream& operator>>( IShorthandStream& is, Blueprint::Transform& v )
     {
-        float x, y;
+        Blueprint::Float x, y;
         Math::Angle< 8 >::Value angle;
         bool bMirrorX, bMirrorY;
         

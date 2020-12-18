@@ -1,6 +1,8 @@
 #ifndef DATABITMAP_14_09_2013
 #define DATABITMAP_14_09_2013
 
+#include "blueprint/cgalSettings.h"
+
 #include "buffer.h"
 
 #include <vector>
@@ -20,9 +22,9 @@ public:
     public:
         typedef std::vector< Claim > Vector;
 
-        Claim( float x, float y, NavBitmap::Ptr pBuffer, boost::shared_ptr< Site > pSite );
+        Claim( Float x, Float y, NavBitmap::Ptr pBuffer, boost::shared_ptr< Site > pSite );
 
-        float m_x, m_y;
+        Float m_x, m_y;
         NavBitmap::Ptr m_pBuffer;
         boost::shared_ptr< Site > m_pSite;
     };

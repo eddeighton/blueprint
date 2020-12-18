@@ -44,6 +44,8 @@ std::string Space::getStatement() const
 
 void Space::init()
 {
+    THROW_RTE( "TODO" );
+    /*
     if( !m_pExteriorPolygons.get() )
         m_pExteriorPolygons.reset( new ExteriorGroupImpl( this, m_exteriorPolyMap, false ) );
 
@@ -55,7 +57,7 @@ void Space::init()
         add( m_pContour );
     }
     
-    Site::init();
+    Site::init();*/
 }
 
 void Space::init( float x, float y )
@@ -71,8 +73,8 @@ void Space::init( float x, float y )
 
 void Space::evaluate( const EvaluationMode& mode, EvaluationResults& results )
 {
-    const Polygon2D& polygon = m_pContour->getPolygon();
-    
+    const Polygon& polygon = m_pContour->getPolygon();
+    /*
     //calculate the site contour path
     if( !(m_polygonCache) || 
         !( m_polygonCache.get().size() == polygon.size() ) || 
@@ -170,6 +172,6 @@ void Space::evaluate( const EvaluationMode& mode, EvaluationResults& results )
         m_exteriorPolygonCache.reset();
         m_exteriorPolyMap.clear();
         m_innerExteriorsCache.clear();
-    }
+    }*/
 }
 }

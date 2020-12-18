@@ -1,6 +1,7 @@
 #ifndef SITE_13_09_2013
 #define SITE_13_09_2013
 
+#include "blueprint/cgalSettings.h"
 #include "blueprint/geometry.h"
 #include "blueprint/glyphSpec.h"
 #include "blueprint/glyphSpecProducer.h"
@@ -73,10 +74,10 @@ public:
     {
         return m_pContourPathImpl.get();
     }
-    virtual void set( float fX, float fY )
+    virtual void set( Float fX, Float fY )
     {
-        const float fNewValueX = Map_FloorAverage()( fX );
-        const float fNewValueY = Map_FloorAverage()( fY );
+        const Float fNewValueX = Map_FloorAverage()( fX );
+        const Float fNewValueY = Map_FloorAverage()( fY );
         if( ( m_transform.X() != fNewValueX ) || ( m_transform.Y() != fNewValueY ) )
         {
             m_transform.setTranslation( fNewValueX, fNewValueY );
@@ -107,11 +108,11 @@ public:
     
     
     virtual Feature_Contour::Ptr getContour() const = 0;
-    boost::optional< Polygon2D > getContourPolygon() const { return m_polygonCache; }
+    boost::optional< Polygon > getContourPolygon() const { return m_polygonCache; }
     
 protected:
     using PropertyVector = std::vector< Property::Ptr >;
-    boost::optional< Polygon2D > m_polygonCache;
+    boost::optional< Polygon > m_polygonCache;
     
     Site::WeakPtr m_pSiteParent;
     PropertyVector m_properties;

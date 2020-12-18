@@ -23,9 +23,9 @@ public:
     void setIndex( int iIndex ) { m_id = iIndex; }
     
     virtual const GlyphSpec* getParent() const { return m_callback.getParent( m_id ); }
-    virtual float getX() const { return m_callback.getX( m_id ); }
-    virtual float getY() const { return m_callback.getY( m_id ); }
-    virtual void set( float fX, float fY ) { m_callback.set( m_id, fX, fY ); }
+    virtual Float getX() const { return m_callback.getX( m_id ); }
+    virtual Float getY() const { return m_callback.getY( m_id ); }
+    virtual void set( Float fX, Float fY ) { m_callback.set( m_id, fX, fY ); }
     virtual const std::string& getName() const { return m_callback.getName( m_id ); }
     virtual bool canEdit() const { return true; }
 };
@@ -35,7 +35,9 @@ public:
 class TextImpl : public MarkupText
 {
 public:
-    TextImpl( const GlyphSpec* pParent, const std::string& strText, const float fx, const float fy, MarkupText::TextType type = eUnimportant )
+    TextImpl( const GlyphSpec* pParent, const std::string& strText, 
+                const Float fx, const Float fy, 
+                MarkupText::TextType type = eUnimportant )
         :   m_pParent( pParent ),
             m_strText( strText ),
             m_fx( fx ),
@@ -48,15 +50,15 @@ public:
     virtual const GlyphSpec* getParent() const { return m_pParent; }
     virtual const std::string& getText() const { return m_strText; }
     virtual MarkupText::TextType getType() const { return m_type; }
-    virtual float getX() const { return m_fx; }
-    virtual float getY() const { return m_fy; }
+    virtual Float getX() const { return m_fx; }
+    virtual Float getY() const { return m_fy; }
 
     void setPos( const Point2D& pos ) { m_fx = pos.x; m_fy = pos.y; }
 private:
     const GlyphSpec* m_pParent;
     const std::string& m_strText;
     const MarkupText::TextType m_type;
-    float m_fx, m_fy;
+    Float m_fx, m_fy;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -80,7 +82,7 @@ public:
         unsigned cmd;
         vs.rewind( 0u );
         while(!agg::is_stop(cmd = vs.vertex(&x, &y)))
-            path.push_back( MarkupPath::Cmd( static_cast< float >( x ), static_cast< float >( y ), cmd ) );
+            path.push_back( MarkupPath::Cmd( static_cast< Float >( x ), static_cast< Float >( y ), cmd ) );
     }
 
     PathImpl( PathCmdVector& path, const GlyphSpec* pParent = 0u )

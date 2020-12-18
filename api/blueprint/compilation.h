@@ -23,12 +23,12 @@ namespace Blueprint
     public:
         Compilation( boost::shared_ptr< Blueprint > pBlueprint );
         
-        static void renderContour( Arr_with_hist_2& arr, const Matrix& transform, 
+        static void renderContour( Arrangement& arr, const Matrix& transform, 
             Polygon2D poly, int iOrientation );
         
         boost::shared_ptr< Blueprint > getBlueprint() const { return m_pBlueprint; }
         
-        using FaceHandle = Arr_with_hist_2::Face_const_handle;
+        using FaceHandle = Arrangement::Face_const_handle;
         using FaceHandleSet = std::set< FaceHandle >;
         void getFaces( FaceHandleSet& floorFaces, FaceHandleSet& fillerFaces );
         
@@ -52,7 +52,7 @@ namespace Blueprint
             FaceHandleSet& floorFaces, FaceHandleSet& fillerFaces );
         
         boost::shared_ptr< Blueprint > m_pBlueprint;
-        Arr_with_hist_2 m_arr;
+        Arrangement m_arr;
     };
 
     
