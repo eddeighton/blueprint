@@ -9,12 +9,6 @@ include( ${BLUEPRINT_ROOT_DIR}/cmake/cgal_include.cmake )
 #get agg
 include( ${BLUEPRINT_ROOT_DIR}/cmake/agg_include.cmake )
 
-#get wykobi
-#include( ${BLUEPRINT_ROOT_DIR}/cmake/wykobi_include.cmake )
-
-#get clipper
-#include( ${BLUEPRINT_ROOT_DIR}/cmake/clipper_include.cmake )
-
 #get common
 include( ${BLUEPRINT_ROOT_DIR}/cmake/common_include.cmake )
 
@@ -92,7 +86,6 @@ set( BLUEPRINT_SOURCES ${BLUEPRINT_SOURCES_API} ${BLUEPRINT_SOURCES_SRC} )
 source_group( src FILES ${BLUEPRINT_SOURCES} )
 
 add_library( blueprintlib STATIC 
-		${CLIPPER_SOURCE}
         ${AGG_SRC}
 		${BLUEPRINT_SOURCES} 
 		)
@@ -100,13 +93,13 @@ add_library( blueprintlib STATIC
 set_target_properties( blueprintlib PROPERTIES FOLDER blueprintlib )
 set_target_properties( blueprintlib PROPERTIES DEBUG_POSTFIX d )
 
+target_compile_options( blueprintlib PRIVATE /bigobj )
+
 link_boost( blueprintlib filesystem )
 link_boost( blueprintlib iostreams )
 link_boost( blueprintlib serialization )
 link_cgal( blueprintlib )
 link_agg( blueprintlib )
-#link_wykobi( blueprintlib )
-#link_clipper( blueprintlib )
 link_common( blueprintlib )
 link_ed( blueprintlib )
 link_agg( blueprintlib )

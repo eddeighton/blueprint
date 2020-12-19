@@ -155,52 +155,6 @@ namespace Blueprint
         
         return matrix;
     }*/
-    /*
-    
-    /*
-    
-    static Transform rotateLeft( const Transform& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
-    {
-        const TranslateRotateMirror transform( 0.0f, 0.0f, 
-            Math::rotate< Math::Angle< 8 > >( Math::Angle< 8 >::eEast, 1 ), 
-            false, false );
-        return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
-    }
-    
-    static Transform rotateRight( const Transform& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
-    {
-        const TranslateRotateMirror transform( 0.0f, 0.0f, 
-            Math::rotate< Math::Angle< 8 > >( Math::Angle< 8 >::eEast, -1 ), 
-            false, false );
-        return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
-    }
-    
-    static Transform flipHorizontally( const Transform& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
-    {
-        const TranslateRotateMirror transform( 0.0f, 0.0f, Math::Angle< 8 >::eEast, true, false );
-        return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
-    }
-    
-    static Transform flipVertically( const Transform& existing, Float fMinX, Float fMinY, Float fMaxX, Float fMaxY )
-    {
-        const TranslateRotateMirror transform( 0.0f, 0.0f, Math::Angle< 8 >::eEast, false, true );
-        return transformWithinBounds( existing, transform, fMinX, fMinY, fMaxX, fMaxY );
-    }
-    inline void updateMatrix()
-    {
-        Float dx, dy;
-        Math::toVector< Math::Angle< 8 >, Float >( m_angle, dx, dy );
-        //with angle of zero   get dx=1  dy=0
-        //with angle of pi/2   get dx=0  dy=1
-        //with angle of pi     get dx=-1 dy=0
-        //with angle of 1.5pi  get dx=0  dy=-1
-        
-        const Float mx = m_bMirrorX ? -1.0f : 1.0f, 
-                    my = m_bMirrorY ? -1.0f : 1.0f;
-        
-        m11 = dx * mx;      m21 =  dy * mx;
-        m12 = -dy * my;     m22 =  dx * my;
-    }*/
    
 } 
 
@@ -234,58 +188,6 @@ namespace Ed
         return is;
     }
     
-    /*
-    using namespace std::string_literals;
-    static const std::string szAngles[] = 
-    {
-        "East"s,
-        "NorthEast"s,
-        "North"s,
-        "NorthWest"s,
-        "West"s,
-        "SouthWest"s,
-        "South"s,
-        "SouthEast"s
-    };
-    
-    inline OShorthandStream& operator<<( OShorthandStream& os, const Blueprint::Transform& v )
-    {
-        std::ostringstream osAngle;
-        {
-            osAngle << szAngles[ v.Angle() ] << ';';
-        }
-        return os << v.X() << v.Y() << osAngle.str() << v.MirrorX() << v.MirrorY();
-    }
-
-    inline IShorthandStream& operator>>( IShorthandStream& is, Blueprint::Transform& v )
-    {
-        Blueprint::Float x, y;
-        Math::Angle< 8 >::Value angle;
-        bool bMirrorX, bMirrorY;
-        
-        {
-            std::string strAngle;
-            is >> x >> y >> strAngle >> bMirrorX >> bMirrorY;  
-
-            if( strAngle.empty() || strAngle.back() != ';' )
-                throw std::runtime_error( "Invalid angle" );
-            strAngle.pop_back();
-
-            {
-                const std::string* pFind =
-                    std::find( szAngles, szAngles + 8, strAngle );
-                const std::size_t szDistance = std::distance( szAngles, pFind );
-                if( szDistance >= 8 )
-                    throw std::runtime_error( "Invalid angle" );
-                
-                angle = static_cast< Math::Angle< 8 >::Value >( szDistance );
-            }
-        }
-        
-        v = Blueprint::Transform( x, y, angle, bMirrorX, bMirrorY );
-        
-        return is;
-    }*/
 }
 
 #endif //TRANSFORM_07_NOV_2020

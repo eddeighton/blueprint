@@ -1,7 +1,6 @@
 #include "blueprint/site.h"
 
 #include "blueprint/markup.h"
-#include "blueprint/rasteriser.h"
 
 #include "common/compose.hpp"
 #include "common/assert_verify.hpp"

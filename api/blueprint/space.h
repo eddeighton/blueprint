@@ -2,7 +2,6 @@
 #define SPACE_01_DEC_2020
 
 #include "blueprint/site.h"
-#include "blueprint/clipperUtils.h"
 
 namespace Blueprint
 {

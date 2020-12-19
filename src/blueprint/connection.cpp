@@ -1,7 +1,6 @@
 
 
 #include "blueprint/connection.h"
-#include "blueprint/rasteriser.h"
 #include "blueprint/cgalUtils.h"
 
 #include "common/assert_verify.hpp"

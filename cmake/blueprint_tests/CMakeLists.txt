@@ -9,12 +9,6 @@ include( ${BLUEPRINT_ROOT_DIR}/cmake/cgal_include.cmake )
 #get agg
 include( ${BLUEPRINT_ROOT_DIR}/cmake/agg_include.cmake )
 
-#get wykobi
-include( ${BLUEPRINT_ROOT_DIR}/cmake/wykobi_include.cmake )
-
-#get clipper
-include( ${BLUEPRINT_ROOT_DIR}/cmake/clipper_include.cmake )
-
 #get common
 include( ${BLUEPRINT_ROOT_DIR}/cmake/common_include.cmake )
 
@@ -57,8 +51,6 @@ link_boost( blueprint_tests iostreams )
 link_boost( blueprint_tests serialization )
 link_cgal( blueprint_tests )
 link_agg( blueprint_tests )
-link_wykobi( blueprint_tests )
-link_clipper( blueprint_tests )
 link_common( blueprint_tests )
 link_ed( blueprint_tests )
 

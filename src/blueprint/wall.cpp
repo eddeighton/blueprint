@@ -1,6 +1,5 @@
 
 #include "blueprint/wall.h"
-#include "blueprint/rasteriser.h"
 #include "blueprint/cgalUtils.h"
 
 namespace Blueprint

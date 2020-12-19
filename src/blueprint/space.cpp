@@ -1,6 +1,5 @@
 
 #include "blueprint/space.h"
-#include "blueprint/rasteriser.h"
 #include "blueprint/cgalUtils.h"
 
 namespace Blueprint
@@ -79,12 +78,11 @@ void Space::evaluate( const EvaluationMode& mode, EvaluationResults& results )
     const Polygon& polygon = m_pContour->getPolygon();
     
     //calculate the site contour path and interior and exterior extrusions
-    if( m_contourPolygon != polygon || m_interiorPolygon.is_empty() )
+    if( m_contourPolygon != polygon || m_exteriorPolygon.is_empty() )
     {
         m_contourPolygon = polygon;
         
         m_exteriorPolygon.clear();
-        m_interiorPolygon.clear();
         
         if( mode.bArrangement )
         {
@@ -118,11 +116,15 @@ void Space::evaluate( const EvaluationMode& mode, EvaluationResults& results )
                 }
             }
         }
+        else
+        {
+            m_interiorPolygon = m_contourPolygon;
+        }
     }
     else if( !mode.bArrangement )
     {
         m_exteriorPolygon.clear();
-        m_interiorPolygon.clear();
+        m_interiorPolygon = m_contourPolygon;
     }
 
     //bottom up recursion
