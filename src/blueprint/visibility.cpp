@@ -6,8 +6,6 @@
 
 #include "CGAL/Arr_landmarks_point_location.h"
 
-//#include "common/variant_utils.hpp"
-
 namespace
 {
     void renderFloorFace( Blueprint::Arrangement& arr, Blueprint::Arrangement::Face_const_handle hFace )
@@ -105,6 +103,11 @@ public:
     }
 };
     */
+FloorAnalysis::FloorAnalysis()
+    :   m_hFloorFace( nullptr )
+{
+}
+    
 FloorAnalysis::FloorAnalysis( Compilation& compilation, boost::shared_ptr< Blueprint > pBlueprint )
     :   m_hFloorFace( nullptr )
 {
@@ -122,24 +125,32 @@ FloorAnalysis::FloorAnalysis( Compilation& compilation, boost::shared_ptr< Bluep
         recurseObjects( pNestedSite );
     }
     
-    {
-        int iFloorFaceCount = 0;
-        Arrangement::Face_handle hOuterFace = m_arr.unbounded_face();
-        for( Arrangement::Hole_iterator
-            holeIter = hOuterFace->holes_begin(),
-            holeIterEnd = hOuterFace->holes_end();
-                holeIter != holeIterEnd; ++holeIter )
-        {
-            Arrangement::Ccb_halfedge_circulator iter = *holeIter;
-            m_hFloorFace = iter->twin()->face();
-            ++iFloorFaceCount;
-        }
-        VERIFY_RTE_MSG( iFloorFaceCount == 1, "Invalid number of floors: " << iFloorFaceCount );
-    }
-    
-    VERIFY_RTE_MSG( !m_hFloorFace->is_unbounded(), "Floor face is unbounded" );
+    findFloorFace();
     
     m_hFloorFace->set_data( (DefaultedBool( true )) );
+    
+    VERIFY_RTE( m_arr.is_valid() );
+    
+    //calculate the bounding box
+    calculateBounds();
+}
+    
+void FloorAnalysis::findFloorFace()
+{
+    int iFloorFaceCount = 0;
+    Arrangement::Face_handle hOuterFace = m_arr.unbounded_face();
+    for( Arrangement::Hole_iterator
+        holeIter = hOuterFace->holes_begin(),
+        holeIterEnd = hOuterFace->holes_end();
+            holeIter != holeIterEnd; ++holeIter )
+    {
+        Arrangement::Ccb_halfedge_circulator iter = *holeIter;
+        m_hFloorFace = iter->twin()->face();
+        ++iFloorFaceCount;
+    }
+    VERIFY_RTE_MSG( iFloorFaceCount == 1, "Invalid number of floors: " << iFloorFaceCount );
+
+    VERIFY_RTE_MSG( !m_hFloorFace->is_unbounded(), "Floor face is unbounded" );
     
     //paranoia check
     {
@@ -152,36 +163,30 @@ FloorAnalysis::FloorAnalysis( Compilation& compilation, boost::shared_ptr< Bluep
             }
         }
     }
-    
-    VERIFY_RTE( m_arr.is_valid() );
-    
-    //calculate the bounding box
+}
+
+void FloorAnalysis::calculateBounds()
+{
+    std::vector< Segment > outerSegments;
+    Arrangement::Ccb_halfedge_const_circulator iter = m_hFloorFace->outer_ccb();
+    Arrangement::Ccb_halfedge_const_circulator start = iter;
+    do
     {
-        std::vector< Segment > outerSegments;
-        Arrangement::Ccb_halfedge_const_circulator iter = m_hFloorFace->outer_ccb();
-        Arrangement::Ccb_halfedge_const_circulator start = iter;
-        do
-        {
-            outerSegments.push_back( iter->curve() );
-            ++iter;
-        }
-        while( iter != start );
-        
-        m_boundingBox = CGAL::bbox_2( outerSegments.begin(), outerSegments.end() );
+        outerSegments.push_back( iter->curve() );
+        ++iter;
     }
+    while( iter != start );
+    
+    m_boundingBox = CGAL::bbox_2( outerSegments.begin(), outerSegments.end() );
 }
 
 void FloorAnalysis::recurseObjects( Site::Ptr pSite )
 {
-    THROW_RTE( "TODO" );
-    
-    /*if( Object::Ptr pObject = boost::dynamic_pointer_cast< Object >( pSite ) )
+    if( Object::Ptr pObject = boost::dynamic_pointer_cast< Object >( pSite ) )
     {
-        boost::optional< Polygon > contourOpt = pObject->getContourPolygon();
-        VERIFY_RTE( contourOpt );
         Compilation::renderContour( m_arr, pObject->getAbsoluteTransform(), 
-            contourOpt.get(), wykobi::CounterClockwise );
-    }*/
+            pObject->getContourPolygon() );
+    }
     //else if( Wall::Ptr pWall = boost::dynamic_pointer_cast< Wall >( pSite ) )
     //{
     //    
@@ -505,13 +510,35 @@ void FloorAnalysis::render( const boost::filesystem::path& filepath )
     generateHTML( filepath, m_arr, edgeGroups, style );
 }
 
+void FloorAnalysis::save( std::ostream& os ) const
+{
+    Formatter formatter;
+    CGAL::write( m_arr, os, formatter );
+}
+
+void FloorAnalysis::load( std::istream& is )
+{
+    Formatter formatter;
+    CGAL::read( m_arr, is, formatter );
+    
+    findFloorFace();
+    
+    //VERIFY_RTE( m_arr.is_valid() );
+    
+    calculateBounds();
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Visibility::Visibility( FloorAnalysis& floor )
-    :   m_floor( floor )
+Visibility::Visibility()
 {
-    Arrangement::Face_const_handle hFloor = m_floor.getFloorFace();
+    
+}
+
+Visibility::Visibility( FloorAnalysis& floor )
+{
+    Arrangement::Face_const_handle hFloor = floor.getFloorFace();
     
     std::vector< Curve > segments;
     
@@ -583,7 +610,7 @@ Visibility::Visibility( FloorAnalysis& floor )
     for( const Curve& segment : segments )
     {
         if( boost::optional< Curve > bisectorOpt = 
-            m_floor.getFloorBisector( segment, true ) )
+            floor.getFloorBisector( segment, true ) )
         {
             CGAL::insert( m_arr, bisectorOpt.get() );
         }
@@ -603,10 +630,10 @@ Visibility::Visibility( FloorAnalysis& floor )
             Arrangement::Vertex_const_handle v2 = *j;
             if( v1 != v2 )
             {
-                if( m_floor.isWithinFloor( v1, v2 ) )
+                if( floor.isWithinFloor( v1, v2 ) )
                 {
                     if( boost::optional< Curve > bisectorOpt = 
-                        m_floor.getFloorBisector( v1, v2, false ) )
+                        floor.getFloorBisector( v1, v2, false ) )
                     {
                         CGAL::insert( m_arr, bisectorOpt.get() );
                     }
@@ -631,6 +658,73 @@ void Visibility::render( const boost::filesystem::path& filepath )
         style.bArrows = false;
     }
     generateHTML( filepath, m_arr, edgeGroups, style );
+}
+
+void Visibility::save( std::ostream& os ) const
+{
+    Formatter formatter;
+    CGAL::write( m_arr, os, formatter );
+}
+
+void Visibility::load( std::istream& is )
+{
+    Formatter formatter;
+    CGAL::read( m_arr, is, formatter );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Analysis::Analysis()
+{
+}
+
+Analysis::Analysis( boost::shared_ptr< Blueprint > pBlueprint )
+    :   m_compilation( pBlueprint ),
+        m_floor( m_compilation, pBlueprint ),
+        m_visibility( m_floor )
+{
+    
+}
+
+Analysis::Ptr Analysis::constructFromBlueprint( boost::shared_ptr< Blueprint > pBlueprint )
+{
+    Analysis::Ptr pAnalysis( new Analysis( pBlueprint ) );
+    return pAnalysis;
+}
+
+Analysis::Ptr Analysis::constructFromStream( std::istream& is )
+{
+    Analysis::Ptr pAnalysis( new Analysis );
+    
+    pAnalysis->m_compilation.load( is );
+    pAnalysis->m_floor.load( is );
+    pAnalysis->m_visibility.load( is );
+    
+    return pAnalysis;
+}
+
+void Analysis::save( std::ostream& os ) const
+{
+    m_compilation.save( os );
+    m_floor.save( os );
+    m_visibility.save( os );
+}
+
+void Analysis::renderFloor( IPainter& painter ) const
+{
+    const Arrangement& floor = m_floor.getFloor();
+    for( auto i = floor.edges_begin(); i != floor.edges_end(); ++i )
+    {
+        Arrangement::Halfedge_const_handle h = i;
+        
+        painter.moveTo( 
+            CGAL::to_double( h->source()->point().x() ),  
+            CGAL::to_double( h->source()->point().y() ) );
+            
+        painter.lineTo( 
+            CGAL::to_double( h->target()->point().x() ),  
+            CGAL::to_double( h->target()->point().y() ) );
+    }
 }
 
 }

@@ -20,6 +20,7 @@
 #include "blueprint/blueprint.h"
 #include "blueprint/factory.h"
 #include "blueprint/compilation.h"
+#include "blueprint/visibility.h"
 
 #include "common/assert_verify.hpp"
 #include "common/file.hpp"
@@ -50,7 +51,7 @@ boost::filesystem::path constructPath( const std::string& strHTMLFile, const cha
 
 void command_compile( bool bHelp, const std::vector< std::string >& args )
 {
-    std::string strDirectory, strProject, strBlueprint, strHTML;
+    std::string strDirectory, strProject, strBlueprint, strHTML, strIn, strOut, strVis;
 
     namespace po = boost::program_options;
     po::options_description commandOptions(" Build Project Command");
@@ -59,7 +60,10 @@ void command_compile( bool bHelp, const std::vector< std::string >& args )
             ("dir",         po::value< std::string >( &strDirectory ),  "Project directory")
             ("project",     po::value< std::string >( &strProject ),    "Project Name" )
             ("file",        po::value< std::string >( &strBlueprint ),  "Blueprint File" )
-            ("html",        po::value< std::string >( &strHTML ),       "HTML file to generate" );
+            ("html",        po::value< std::string >( &strHTML ),       "HTML file to generate" )
+            ("in",          po::value< std::string >( &strIn ),         "Input file" )
+            ("out",         po::value< std::string >( &strOut ),        "Output file" )
+            ("vis",         po::value< std::string >( &strVis ),        "Visibility file" );
             
         ;
     }
@@ -94,30 +98,75 @@ void command_compile( bool bHelp, const std::vector< std::string >& args )
         
         {
             Blueprint::Factory factory;
-            Blueprint::Blueprint::Ptr pTest = 
+            Blueprint::Blueprint::Ptr pBlueprint = 
                 boost::dynamic_pointer_cast< ::Blueprint::Blueprint >( 
                     factory.load( blueprintFilePath.string() ) );
-            VERIFY_RTE_MSG( pTest, "Failed to load blueprint: " << blueprintFilePath.generic_string() );
+            VERIFY_RTE_MSG( pBlueprint, "Failed to load blueprint: " << blueprintFilePath.generic_string() );
         
             std::cout << "Loaded blueprint: " << blueprintFilePath.string() << std::endl;
             {
                 const Blueprint::Site::EvaluationMode mode = { true, false, false };
                 Blueprint::Site::EvaluationResults results;
-                pTest->evaluate( mode, results );
+                pBlueprint->evaluate( mode, results );
             }
             std::cout << "Evaluated blueprint: " << blueprintFilePath.string() << std::endl;
             
+            Blueprint::Analysis::Ptr pAnalysis = 
+                Blueprint::Analysis::constructFromBlueprint( pBlueprint );
+            
+            std::cout << "Analysis completed" << std::endl;
+            
+            if( !strOut.empty() )
+            {
+                const boost::filesystem::path compilationFilePath =
+                    constructPath( strOut, ".bluc" );
+                    
+                std::unique_ptr< boost::filesystem::ofstream > pOutFile =
+                    boost::filesystem::createBinaryOutputFileStream( compilationFilePath );
+                    
+                pAnalysis->save( *pOutFile );
+            }
+            /*
             Blueprint::Compilation compilation( pTest );
             std::cout << "Compiled blueprint: " << blueprintFilePath.string() << std::endl;
         
+            Blueprint::FloorAnalysis floor( compilation, pTest );
+            
             if( !strHTML.empty() )
             {
                 compilation.render(         constructPath( strHTML, ".html" ) );
                 compilation.renderFillers(  constructPath( strHTML, "__fillers.html" ) );
                 compilation.renderFloors(   constructPath( strHTML, "__floors.html" ) );
+                floor.render( constructPath( strHTML, "__floor.html" ) );
             }
             
+            if( !strOut.empty() )
+            {
+                const boost::filesystem::path compilationFilePath =
+                    constructPath( strOut, ".bluc" );
+                    
+                std::unique_ptr< boost::filesystem::ofstream > pOutFile =
+                    boost::filesystem::createBinaryOutputFileStream( compilationFilePath );
+                    
+                compilation.save( *pOutFile );
+            }
             
+            if( !strVis.empty() )
+            {
+                Blueprint::Visibility visibility( floor );
+                if( !strHTML.empty() )
+                {
+                    visibility.render( constructPath( strHTML, "__vis.html" ) );
+                }
+                
+                const boost::filesystem::path visibilityFilePath =
+                    constructPath( strVis, ".vis" );
+                    
+                std::unique_ptr< boost::filesystem::ofstream > pOutFile =
+                    createBinaryOutputFileStream( visibilityFilePath );
+                    
+                visibility.save( *pOutFile );
+            }*/
         }
 
     }

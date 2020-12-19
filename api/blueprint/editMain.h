@@ -6,6 +6,8 @@
 namespace Blueprint
 {
 
+class Analysis;
+
 class EditMain : public EditBase
 {
     EditMain( GlyphFactory& glyphFactory, Site::Ptr pSite,
@@ -25,6 +27,9 @@ public:
     void setViewMode( bool bArrangement, bool bCellComplex, bool bClearance );
     
     const Site::EvaluationMode getEvaluationMode() const;
+    
+    std::shared_ptr< Analysis > loadAnalysis( const std::string& strFilePath ) const;
+    
     
 private:
     std::string m_strFilePath;

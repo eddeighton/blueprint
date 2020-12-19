@@ -20,8 +20,44 @@
 #include <CGAL/Arr_extended_dcel.h>
 #include <CGAL/Arr_simple_point_location.h>
 
+#include <CGAL/IO/Arr_text_formatter.h>
+#include <CGAL/IO/Arr_iostream.h>
+
 #include <CGAL/create_offset_polygons_2.h>
 #include <CGAL/Boolean_set_operations_2.h>
+
+#include <ostream>
+#include <istream>
+
+namespace Blueprint
+{
+    struct DefaultedBool
+    {
+        DefaultedBool(){}
+        DefaultedBool( bool b ) : m_bValue( b ) {}
+        bool get() const { return m_bValue; }
+        void set( bool b ) { m_bValue = b; }
+    private:
+        bool m_bValue = false;
+    };
+}
+
+namespace CGAL
+{
+    inline std::ostream& operator<<( std::ostream& os, const Blueprint::DefaultedBool& defBool)
+    {
+        return os << defBool.get();
+    }
+
+    inline std::istream& operator>>( std::istream& is, Blueprint::DefaultedBool& defBool )
+    {
+        bool bValue;
+        is >> bValue;
+        defBool.set( bValue );
+        return is;
+    }
+}
+
 
 namespace Blueprint
 {
@@ -53,22 +89,13 @@ namespace Blueprint
     typedef CGAL::Polygon_with_holes_2< Kernel >                    Polygon_with_holes;
     typedef CGAL::Arr_segment_traits_2< Kernel >                    Traits;
     typedef Traits::X_monotone_curve_2                              Curve;
-
-    struct DefaultedBool
-    {
-        DefaultedBool(){}
-        DefaultedBool( bool b ) : m_bValue( b ) {}
-        bool get() const { return m_bValue; }
-        void set( bool b ) { m_bValue = b; }
-    private:
-        bool m_bValue = false;
-    };
     
     typedef CGAL::Arr_extended_dcel< Traits, DefaultedBool, DefaultedBool, DefaultedBool > Dcel;
     typedef CGAL::Arrangement_with_history_2< Traits, Dcel >        Arrangement;
     typedef Arrangement::Curve_handle                               Curve_handle;
     typedef CGAL::Arr_simple_point_location< Arrangement >          Point_location;
-
+    typedef CGAL::Arr_extended_dcel_text_formatter< Arrangement >   Formatter;
 }
+
 
 #endif //CGAL_SETINGS_26_NOV_2020

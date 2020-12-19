@@ -50,6 +50,11 @@ namespace
 namespace Blueprint
 {
 
+Compilation::Compilation()
+{
+    
+}
+
 Compilation::Compilation( Blueprint::Ptr pBlueprint )
 {
     for( Site::Ptr pSite : pBlueprint->getSites() )
@@ -489,6 +494,17 @@ void Compilation::renderFillers( const boost::filesystem::path& filepath )
     SVGStyle style;
     generateHTML( filepath, m_arr, edgeGroups, style );
 }
-   
+
+void Compilation::save( std::ostream& os ) const
+{
+    Formatter formatter;
+    CGAL::write( m_arr, os, formatter );
+}
+
+void Compilation::load( std::istream& is )
+{
+    Formatter formatter;
+    CGAL::read( m_arr, is, formatter );
+}
 
 }

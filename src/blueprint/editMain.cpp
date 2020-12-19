@@ -8,9 +8,11 @@
 #include "blueprint/property.h"
 #include "blueprint/dataBitmap.h"
 #include "blueprint/factory.h"
+#include "blueprint/visibility.h"
 
 #include "common/assert_verify.hpp"
 #include "common/rounding.hpp"
+#include "common/file.hpp"
 
 #include <sstream>
 #include <map>
@@ -90,6 +92,24 @@ void EditMain::setViewMode( bool bArrangement, bool bCellComplex, bool bClearanc
     m_bViewClearance    = bClearance;
     
     interaction_evaluate();
+}
+
+std::shared_ptr< Analysis > EditMain::loadAnalysis( const std::string& strFilePath ) const
+{
+    std::shared_ptr< Analysis > pAnalysis;
+    
+    const boost::filesystem::path visibilityPath =
+        boost::filesystem::edsCannonicalise(
+            boost::filesystem::absolute( strFilePath ) );
+
+    if( boost::filesystem::exists( visibilityPath ) )
+    {
+        std::unique_ptr< boost::filesystem::ifstream > pOutFile =
+            boost::filesystem::createBinaryInputFileStream( visibilityPath );
+        pAnalysis = Analysis::constructFromStream( *pOutFile );
+    }
+    
+    return pAnalysis;
 }
 
 }

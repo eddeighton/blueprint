@@ -10,8 +10,12 @@
 namespace Blueprint
 {
     
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 class FloorAnalysis
 {
+    friend class Analysis;
+    FloorAnalysis();
 public:
     using VertexHandle = 
         Arrangement::Vertex_const_handle;
@@ -26,7 +30,13 @@ public:
     boost::optional< Curve > getFloorBisector( const Segment& segment, bool bKeepSingleEnded ) const;
     
     void render( const boost::filesystem::path& filepath );
+    
+    void save( std::ostream& os ) const;
+    void load( std::istream& is );
 private:
+    void findFloorFace();
+    void calculateBounds();
+
     void recurseObjects( Site::Ptr pSpace );
 
     mutable Arrangement m_arr;
@@ -35,15 +45,53 @@ private:
     
 };
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 class Visibility
 {
+    friend class Analysis;
+    
+    Visibility();
 public:
     Visibility( FloorAnalysis& floor );
     
+    const Arrangement& getArrangement() const { return m_arr; }
+    
     void render( const boost::filesystem::path& filepath );
+    
+    void save( std::ostream& os ) const;
+    void load( std::istream& is );
+    
 private:
-    FloorAnalysis& m_floor;
     Arrangement m_arr;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+class Analysis
+{
+    Analysis();
+    Analysis( boost::shared_ptr< Blueprint > pBlueprint );
+public:
+    using Ptr = std::shared_ptr< Analysis >;
+
+    static Ptr constructFromBlueprint( boost::shared_ptr< Blueprint > pBlueprint );
+    static Ptr constructFromStream( std::istream& is );
+    
+    struct IPainter
+    {
+        virtual void moveTo( float x, float y ) = 0;
+        virtual void lineTo( float x, float y ) = 0;
+    };
+    
+    void renderFloor( IPainter& painter ) const;
+
+    void save( std::ostream& os ) const;
+    
+private:
+    Compilation     m_compilation;
+    FloorAnalysis   m_floor;
+    Visibility      m_visibility;
 };
 
 }
