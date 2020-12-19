@@ -2,6 +2,10 @@
 #ifndef CGAL_SETINGS_26_NOV_2020
 #define CGAL_SETINGS_26_NOV_2020
 
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+//#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+//#include <CGAL/Simple_cartesian.h>
+//#include <CGAL/Exact_rational.h>
 
 #include <CGAL/Cartesian.h>
 #include <CGAL/Bbox_2.h>
@@ -9,19 +13,15 @@
 #include <CGAL/Ray_2.h>
 #include <CGAL/Line_2.h>
 #include <CGAL/Iso_rectangle_2.h>
-//#include <CGAL/Simple_cartesian.h>
-#include <CGAL/Exact_rational.h>
+
 #include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Arrangement_on_surface_with_history_2.h>
 #include <CGAL/Arrangement_with_history_2.h>
 #include <CGAL/Arr_extended_dcel.h>
 #include <CGAL/Arr_simple_point_location.h>
-#include <CGAL/Boolean_set_operations_2.h>
-
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
-//#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include <CGAL/create_offset_polygons_2.h>
+#include <CGAL/Boolean_set_operations_2.h>
 
 namespace Blueprint
 {
@@ -29,14 +29,14 @@ namespace Blueprint
 
     //typedef double                                                Number_type;
     //typedef CGAL::MP_Float                                        Number_type;
-    typedef CGAL::Quotient< CGAL::MP_Float >                        Number_type;
+    //typedef CGAL::Quotient< CGAL::MP_Float >                      Number_type;
     //typedef CGAL::Quotient< double >                              Number_type;
     //typedef CGAL::Exact_rational                                  Number_type;
     
     //typedef CGAL::Cartesian< Number_type >                        Kernel;
-    typedef CGAL::Simple_cartesian< Number_type >                   Kernel;
-    //typedef CGAL::Exact_predicates_exact_constructions_kernel     Kernel;
+    //typedef CGAL::Simple_cartesian< Number_type >                 Kernel;
     //typedef CGAL::Exact_predicates_inexact_constructions_kernel   Kernel;
+    typedef CGAL::Exact_predicates_exact_constructions_kernel       Kernel;
     
     typedef Kernel::Aff_transformation_2                            Transform;
     typedef Kernel::Line_2                                          Line;

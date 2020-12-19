@@ -74,139 +74,125 @@ void Space::init( float x, float y )
 
 void Space::evaluate( const EvaluationMode& mode, EvaluationResults& results )
 {
+    const Kernel::FT wallWidth = 2;
+                
     const Polygon& polygon = m_pContour->getPolygon();
-    //calculate the site contour path
-    if( m_contourPolygon != polygon )
+    
+    //calculate the site contour path and interior and exterior extrusions
+    if( m_contourPolygon != polygon || m_interiorPolygon.is_empty() )
     {
         m_contourPolygon = polygon;
         
-        if( !m_contourPolygon.is_empty() && m_contourPolygon.is_simple() )
+        m_exteriorPolygon.clear();
+        m_interiorPolygon.clear();
+        
+        if( mode.bArrangement )
         {
-            typedef boost::shared_ptr< Polygon > PolygonPtr ;
-            typedef std::vector< PolygonPtr > PolygonPtrVector ;
-            
-            const Kernel::FT wallWidth = 2;
-
-            //calculate interior
+            if( !m_contourPolygon.is_empty() && m_contourPolygon.is_simple() )
             {
-                PolygonPtrVector inner_offset_polygons = 
-                    CGAL::create_interior_skeleton_and_offset_polygons_2( 
-                        wallWidth, m_contourPolygon );
-                if( !inner_offset_polygons.empty() )
+                typedef boost::shared_ptr< Polygon > PolygonPtr ;
+                typedef std::vector< PolygonPtr > PolygonPtrVector ;
+                
+                //calculate interior
                 {
-                    m_interiorPolygon = *inner_offset_polygons.front();
+                    PolygonPtrVector inner_offset_polygons = 
+                        CGAL::create_interior_skeleton_and_offset_polygons_2
+                            < Kernel::FT, Polygon, Kernel, Kernel >
+                            ( wallWidth, m_contourPolygon, ( Kernel() ), ( Kernel() ) );
+                    if( !inner_offset_polygons.empty() )
+                    {
+                        m_interiorPolygon = *inner_offset_polygons.front();
+                    }
                 }
-                else
+                
+                //calculate exterior
                 {
-                    m_interiorPolygon = ( Polygon() );
-                }
-            }
-            
-            //calculate exterior
-            {
-                PolygonPtrVector outer_offset_polygons = 
-                    CGAL::create_exterior_skeleton_and_offset_polygons_2( 
-                        wallWidth, m_contourPolygon );
-                if( !outer_offset_polygons.empty() )
-                {
-                    m_exteriorPolygon = *outer_offset_polygons.front();
-                }
-                else
-                {
-                    m_exteriorPolygon = ( Polygon() );
+                    PolygonPtrVector outer_offset_polygons = 
+                        CGAL::create_exterior_skeleton_and_offset_polygons_2
+                            < Kernel::FT, Polygon, Kernel, Kernel >
+                            ( wallWidth, m_contourPolygon, ( Kernel() ), ( Kernel() ) );
+                    if( !outer_offset_polygons.empty() )
+                    {
+                        m_exteriorPolygon = *outer_offset_polygons.back();
+                    }
                 }
             }
         }
-        else
-        {
-            m_interiorPolygon = ( Polygon() );
-        }
+    }
+    else if( !mode.bArrangement )
+    {
+        m_exteriorPolygon.clear();
+        m_interiorPolygon.clear();
     }
 
     //bottom up recursion
-    //m_innerExteriors.clear();
+    m_innerExteriors.clear();
     for( PtrVector::iterator i = m_sites.begin(),
         iEnd = m_sites.end(); i!=iEnd; ++i )
     {
         (*i)->evaluate( mode, results );
         
-        /*if( mode.bArrangement )
+        if( mode.bArrangement )
         {
             if( Space::Ptr pSpace = boost::dynamic_pointer_cast< Space >( *i ) )
             {
-                ClipperLib::Path inputClipperPath;
-                toClipperPoly( pSpace->getExteriorPolygon(), pSpace->getTransform(), 
-                    wykobi::CounterClockwise, inputClipperPath );
-                m_innerExteriors.push_back( inputClipperPath );
+                Polygon poly = pSpace->getExteriorPolygon();
+                if( !poly.is_empty() && poly.is_simple() )
+                {
+                    for( auto& p : poly )
+                        p = pSpace->getTransform()( p );
+                    
+                    if( !poly.is_counterclockwise_oriented() )
+                        poly.reverse_orientation();
+                    
+                    m_innerExteriors.push_back( poly );
+                }
             }
-        }*/
+        }
     }
 
-    /*
     if( mode.bArrangement )
     {
-        //m_exteriorPolygonCache is a cache of the site polygon to detect if need to recalculate the exterior polygon
-        if( !(m_exteriorPolygonCache) || 
-            !( m_exteriorPolygonCache.get().size() == polygon.size() ) || 
-            !std::equal( polygon.begin(), polygon.end(), m_exteriorPolygonCache.get().begin() ) ||
+        m_exteriorPolyMap.clear();
+        
+        //compute the union of ALL inner exterior contours
+        std::vector< Polygon_with_holes > exteriorUnion;
+        CGAL::join( m_innerExteriors.begin(), m_innerExteriors.end(), 
+            std::back_inserter( exteriorUnion ) );
             
-            !( m_innerExteriors.size() == m_innerExteriorsCache.size() ) ||
-            !std::equal( m_innerExteriors.begin(), m_innerExteriors.end(), m_innerExteriorsCache.begin() ) 
-            )
+        int szCounter = 0;
+        for( const Polygon_with_holes& polyWithHole : exteriorUnion )
         {
-            m_exteriorPolygonCache = polygon;
-            m_innerExteriorsCache = m_innerExteriors;
-            
-            static const double fExtrusionAmt = 2.0;
-            
-            ClipperLib::Path interiorPath;
+            if( !polyWithHole.is_unbounded() )
             {
-                ClipperLib::Path clipperPolygon;
-                toClipperPoly( polygon, wykobi::CounterClockwise, clipperPolygon );
-                if( wykobi::polygon_orientation( polygon ) == wykobi::Clockwise )
-                    std::reverse( clipperPolygon.begin(), clipperPolygon.end() );
-                
-                ClipperLib::Paths interiorPaths, exteriorPath;
-                extrudePoly( clipperPolygon, -fExtrusionAmt, interiorPaths );
-                extrudePoly( clipperPolygon, fExtrusionAmt, exteriorPath );
-                
-                fromClipperPolys( interiorPaths, m_interiorPolygon );
-                fromClipperPolys( exteriorPath, m_exteriorPolygon );
-                
-                if( !interiorPaths.empty() )
+                const Polygon& outer = polyWithHole.outer_boundary();
+                if( !outer.is_empty() && outer.is_simple() )
                 {
-                    interiorPath = interiorPaths.front();
-                    //std::reverse( interiorPath.begin(), interiorPath.end() );
-                }
-            }
-            
-            //calculate the exteriors
-            {
-                m_exteriorPolyMap.clear();
-                int iCounter = 0;
-                m_exteriorPolyMap.insert( std::make_pair( iCounter++, m_interiorPolygon ) );
-                ClipperLib::Paths innerExteriorPolygons;
-                if( unionAndClipPolygons( m_innerExteriors, interiorPath, innerExteriorPolygons ) )
-                {
-                    for( const ClipperLib::Path& exteriorPolygonPath : innerExteriorPolygons )
+                    //clip the exterior to the interior
+                    std::vector< Polygon_with_holes > clippedExterior;
+                    CGAL::intersection( outer, m_interiorPolygon,
+                        std::back_inserter( clippedExterior ) );
+                        
+                    //gather the outer boundaries of the results
+                    for( const Polygon_with_holes& clip : clippedExterior )
                     {
-                        Polygon2D exteriorPolygon;
-                        fromClipperPoly( exteriorPolygonPath, exteriorPolygon );
-                        m_exteriorPolyMap.insert( std::make_pair( iCounter++, exteriorPolygon ) );
+                        if( !clip.is_unbounded() )
+                        {
+                            const Polygon& clipOuter = clip.outer_boundary();
+                            if( !clipOuter.is_empty() && clipOuter.is_simple() )
+                            {
+                                m_exteriorPolyMap.insert( std::make_pair( szCounter++, clipOuter ) );
+                            }
+                        }
                     }
-                }
-                else
-                {
-                    //TODO - report error
                 }
             }
         }
     }
     else
     {
-        m_exteriorPolygonCache.reset();
         m_exteriorPolyMap.clear();
-        m_innerExteriorsCache.clear();
-    }*/
+    }
 }
+
 }

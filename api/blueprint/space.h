@@ -51,8 +51,7 @@ protected:
     std::unique_ptr< SimplePolygonMarkup > m_pInteriorContourPathImpl;
     std::unique_ptr< ExteriorGroupImpl > m_pExteriorPolygons;
     
-    boost::optional< Polygon > m_exteriorPolygonCache;
-    //ClipperLib::Paths m_innerExteriors, m_innerExteriorsCache;
+    std::vector< Polygon > m_innerExteriors;
 };
 
 }

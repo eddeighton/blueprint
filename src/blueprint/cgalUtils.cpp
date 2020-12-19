@@ -23,7 +23,7 @@ namespace Blueprint
         
         Point getClosestPointOnSegment( const Segment& segment, const Point& pt )
         {
-            const Kernel::Construct_projected_point_2 project;
+            Kernel::Construct_projected_point_2 project;
             
             const Point projectedPoint = project( segment.supporting_line(), pt ); 
             
