@@ -85,18 +85,14 @@ Compilation::Compilation( Blueprint::Ptr pBlueprint )
     }
 }
 
-void Compilation::renderContour( Arrangement& arr, const Transform& transform, Polygon poly, int iOrientation )
+void Compilation::renderContour( Arrangement& arr, const Transform& transform, const Polygon& polyOriginal )
 {
-    THROW_RTE( "TODO" );
+    Polygon poly = polyOriginal;
+    
     //transform to absolute coordinates
-    /*for( Point2D& pt : poly )
-        transform.transform( pt.x, pt.y );
-
-    //ensure orientate counter clockwise
-    const int polyOrientation = wykobi::polygon_orientation( poly );
-    if( polyOrientation != iOrientation )
+    for( Point& pt : poly )
     {
-        std::reverse( poly.begin(), poly.end() );
+        pt = transform( pt );
     }
 
     //render the line segments
@@ -107,29 +103,24 @@ void Compilation::renderContour( Arrangement& arr, const Transform& transform, P
     {
         ++iNext;
         if( iNext == iEnd ) iNext = poly.begin();
-
-        //Curve_handle ch =
-        CGAL::insert( arr,
-            Curve(  Point( i->x,      i->y ),
-                      Point( iNext->x,  iNext->y ) ) );
-    }*/
+        CGAL::insert( arr, Curve( *i, *iNext ) );
+    }
 }
 
 void Compilation::recurse( Site::Ptr pSite )
 {
-    THROW_RTE( "TODO" );
-    /*if( Space::Ptr pSpace = boost::dynamic_pointer_cast< Space >( pSite ) )
+    if( Space::Ptr pSpace = boost::dynamic_pointer_cast< Space >( pSite ) )
     {
         const Transform transform = pSpace->getAbsoluteTransform();
 
         //render the interior polygon
-        renderContour( m_arr, transform, pSpace->getInteriorPolygon(), wykobi::CounterClockwise );
+        renderContour( m_arr, transform, pSpace->getInteriorPolygon() );
 
         //render the exterior polygons
         {
             for( const auto& p : pSpace->getInnerAreaExteriorPolygons() )
             {
-                renderContour( m_arr, transform, p.second, wykobi::Clockwise );
+                renderContour( m_arr, transform, p.second );
             }
         }
     }
@@ -137,18 +128,17 @@ void Compilation::recurse( Site::Ptr pSite )
     for( Site::Ptr pNestedSite : pSite->getSites() )
     {
         recurse( pNestedSite );
-    }*/
+    }
 }
 
 void Compilation::recursePost( Site::Ptr pSite )
 {
-    THROW_RTE( "TODO" );
     if( Space::Ptr pSpace = boost::dynamic_pointer_cast< Space >( pSite ) )
     {
         const Transform transform = pSpace->getAbsoluteTransform();
 
         //render the site polygon
-        //renderContour( m_arr, transform, pSpace->getContourPolygon().get(), wykobi::CounterClockwise );
+        renderContour( m_arr, transform, pSpace->getContourPolygon() );
     }
 
     for( Site::Ptr pNestedSite : pSite->getSites() )
@@ -230,8 +220,6 @@ void constructConnectionEdges( Arrangement& arr, Connection::Ptr pConnection,
 
 void Compilation::connect( Site::Ptr pSite )
 {
-    THROW_RTE( "TODO" );
-    /*
     if( Connection::Ptr pConnection = boost::dynamic_pointer_cast< Connection >( pSite ) )
     {
         const Transform transform = pConnection->getAbsoluteTransform();
@@ -241,12 +229,11 @@ void Compilation::connect( Site::Ptr pSite )
         Arrangement::Halfedge_handle firstBisectorEdge, secondBisectorEdge;
         bool bFoundFirst = false, bFoundSecond = false;
         {
-            Segment2D firstSeg  = pConnection->getFirstSegment();
-            transform.transform( firstSeg[ 0 ].x, firstSeg[ 0 ].y );
-            transform.transform( firstSeg[ 1 ].x, firstSeg[ 1 ].y );
+            const Segment firstSeg = 
+                pConnection->getFirstSegment().transform( transform );
 
-            const Point ptFirstStart( firstSeg[ 0 ].x, firstSeg[ 0 ].y );
-            const Point ptFirstEnd( firstSeg[ 1 ].x, firstSeg[ 1 ].y );
+            const Point ptFirstStart( firstSeg[ 0 ] );
+            const Point ptFirstEnd(   firstSeg[ 1 ] );
 
             Curve_handle firstCurve = CGAL::insert( m_arr,
                 Curve( ptFirstStart, ptFirstEnd ) );
@@ -273,12 +260,11 @@ void Compilation::connect( Site::Ptr pSite )
         }
 
         {
-            Segment2D secondSeg = pConnection->getSecondSegment();
-            transform.transform( secondSeg[ 0 ].x, secondSeg[ 0 ].y );
-            transform.transform( secondSeg[ 1 ].x, secondSeg[ 1 ].y );
+            const Segment secondSeg = 
+                pConnection->getSecondSegment().transform( transform );
 
-            const Point ptSecondStart( secondSeg[ 1 ].x, secondSeg[ 1 ].y );
-            const Point ptSecondEnd( secondSeg[ 0 ].x, secondSeg[ 0 ].y );
+            const Point ptSecondStart( secondSeg[ 1 ] );
+            const Point ptSecondEnd(   secondSeg[ 0 ] );
 
             Curve_handle secondCurve = CGAL::insert( m_arr,
                 Curve( ptSecondStart, ptSecondEnd ) );
@@ -318,8 +304,7 @@ void Compilation::connect( Site::Ptr pSite )
     for( Site::Ptr pNestedSite : pSite->getSites() )
     {
         connect( pNestedSite );
-    }*/
-
+    }
 }
 
 void Compilation::getFaces( FaceHandleSet& floorFaces, FaceHandleSet& fillerFaces )

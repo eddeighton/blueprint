@@ -81,8 +81,12 @@ public:
 class Origin : public GlyphSpecInteractive
 {
 public:
+    Origin()
+     : m_transform( CGAL::IDENTITY )
+    {
+    }
+
     virtual const Transform& getTransform() const { return m_transform; }
-    
     virtual const MarkupPolygonGroup* getMarkupContour() const = 0;
     
 protected:

@@ -17,6 +17,10 @@
 //  NEGLIGENCE) OR STRICT LIABILITY, EVEN IF COPYRIGHT OWNERS ARE ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGES.
 
+#include "blueprint/blueprint.h"
+#include "blueprint/factory.h"
+#include "blueprint/compilation.h"
+
 #include "common/assert_verify.hpp"
 #include "common/file.hpp"
 
@@ -35,9 +39,18 @@
 #include <memory>
 #include <map>
 
+boost::filesystem::path constructPath( const std::string& strHTMLFile, const char* pszExt )
+{
+    boost::filesystem::path t = strHTMLFile;
+    t.replace_extension( "" );
+    std::ostringstream os;
+    os << t.filename().string() << pszExt;
+    return t.parent_path() / os.str();
+}
+
 void command_compile( bool bHelp, const std::vector< std::string >& args )
 {
-    std::string strDirectory, strProject, strBlueprint;
+    std::string strDirectory, strProject, strBlueprint, strHTML;
 
     namespace po = boost::program_options;
     po::options_description commandOptions(" Build Project Command");
@@ -46,6 +59,7 @@ void command_compile( bool bHelp, const std::vector< std::string >& args )
             ("dir",         po::value< std::string >( &strDirectory ),  "Project directory")
             ("project",     po::value< std::string >( &strProject ),    "Project Name" )
             ("file",        po::value< std::string >( &strBlueprint ),  "Blueprint File" )
+            ("html",        po::value< std::string >( &strHTML ),       "HTML file to generate" );
             
         ;
     }
@@ -78,7 +92,33 @@ void command_compile( bool bHelp, const std::vector< std::string >& args )
             THROW_RTE( "Specified blueprint file does not exist: " << blueprintFilePath.generic_string() );
         }
         
+        {
+            Blueprint::Factory factory;
+            Blueprint::Blueprint::Ptr pTest = 
+                boost::dynamic_pointer_cast< ::Blueprint::Blueprint >( 
+                    factory.load( blueprintFilePath.string() ) );
+            VERIFY_RTE_MSG( pTest, "Failed to load blueprint: " << blueprintFilePath.generic_string() );
         
+            std::cout << "Loaded blueprint: " << blueprintFilePath.string() << std::endl;
+            {
+                const Blueprint::Site::EvaluationMode mode = { true, false, false };
+                Blueprint::Site::EvaluationResults results;
+                pTest->evaluate( mode, results );
+            }
+            std::cout << "Evaluated blueprint: " << blueprintFilePath.string() << std::endl;
+            
+            Blueprint::Compilation compilation( pTest );
+            std::cout << "Compiled blueprint: " << blueprintFilePath.string() << std::endl;
+        
+            if( !strHTML.empty() )
+            {
+                compilation.render(         constructPath( strHTML, ".html" ) );
+                compilation.renderFillers(  constructPath( strHTML, "__fillers.html" ) );
+                compilation.renderFloors(   constructPath( strHTML, "__floors.html" ) );
+            }
+            
+            
+        }
 
     }
 

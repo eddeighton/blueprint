@@ -23,8 +23,7 @@ namespace Blueprint
     public:
         Compilation( boost::shared_ptr< Blueprint > pBlueprint );
         
-        static void renderContour( Arrangement& arr, const Transform& transform, 
-            Polygon poly, int iOrientation );
+        static void renderContour( Arrangement& arr, const Transform& transform, const Polygon& poly );
         
         using FaceHandle = Arrangement::Face_const_handle;
         using FaceHandleSet = std::set< FaceHandle >;

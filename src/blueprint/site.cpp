@@ -134,7 +134,7 @@ void Site::remove( Node::Ptr pNode )
 
 Transform Site::getAbsoluteTransform() const
 {
-    Transform transform;
+    Transform transform( CGAL::IDENTITY );
     Site::PtrCst pIter = boost::dynamic_pointer_cast< const Site >( getPtr() );
     while( pIter )
     {
@@ -143,7 +143,6 @@ Transform Site::getAbsoluteTransform() const
     }
     return transform;
 }
-
 
 void Site::setTransform( const Transform& transform )
 { 
