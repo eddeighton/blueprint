@@ -51,13 +51,12 @@ namespace Blueprint
 {
 
 Compilation::Compilation( Blueprint::Ptr pBlueprint )
-    :   m_pBlueprint( pBlueprint )
 {
-    for( Site::Ptr pSite : m_pBlueprint->getSites() )
+    for( Site::Ptr pSite : pBlueprint->getSites() )
     {
         recurse( pSite );
     }
-    for( Site::Ptr pSite : m_pBlueprint->getSites() )
+    for( Site::Ptr pSite : pBlueprint->getSites() )
     {
         connect( pSite );
     }
@@ -72,7 +71,7 @@ Compilation::Compilation( Blueprint::Ptr pBlueprint )
         }
     }
     
-    for( Site::Ptr pSite : m_pBlueprint->getSites() )
+    for( Site::Ptr pSite : pBlueprint->getSites() )
     {
         recursePost( pSite );
     }

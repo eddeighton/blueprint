@@ -38,3 +38,4 @@ include (InstallRequiredSystemLibraries)
 
 add_subdirectory( blueprint )
 add_subdirectory( blueprint_tests )
+add_subdirectory( compiler )

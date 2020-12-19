@@ -16,7 +16,7 @@ public:
     using VertexHandle = 
         Arrangement::Vertex_const_handle;
         
-    FloorAnalysis( Compilation& compilation );
+    FloorAnalysis( Compilation& compilation, boost::shared_ptr< Blueprint > pBlueprint );
     
     const Arrangement& getFloor() const { return m_arr; }
     const Arrangement::Face_const_handle getFloorFace() const { return m_hFloorFace; }

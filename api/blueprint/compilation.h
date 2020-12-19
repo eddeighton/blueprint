@@ -26,8 +26,6 @@ namespace Blueprint
         static void renderContour( Arrangement& arr, const Transform& transform, 
             Polygon poly, int iOrientation );
         
-        boost::shared_ptr< Blueprint > getBlueprint() const { return m_pBlueprint; }
-        
         using FaceHandle = Arrangement::Face_const_handle;
         using FaceHandleSet = std::set< FaceHandle >;
         void getFaces( FaceHandleSet& floorFaces, FaceHandleSet& fillerFaces );
@@ -51,7 +49,6 @@ namespace Blueprint
         //void recursePolyMap( Site::Ptr pSite, SpacePolyMap& spacePolyMap, 
         //    FaceHandleSet& floorFaces, FaceHandleSet& fillerFaces );
         
-        boost::shared_ptr< Blueprint > m_pBlueprint;
         Arrangement m_arr;
     };
 

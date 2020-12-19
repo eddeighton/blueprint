@@ -105,7 +105,7 @@ public:
     }
 };
     */
-FloorAnalysis::FloorAnalysis( Compilation& compilation )
+FloorAnalysis::FloorAnalysis( Compilation& compilation, boost::shared_ptr< Blueprint > pBlueprint )
     :   m_hFloorFace( nullptr )
 {
     Compilation::FaceHandleSet floorFaces;
@@ -117,7 +117,7 @@ FloorAnalysis::FloorAnalysis( Compilation& compilation )
         renderFloorFace( m_arr, hFace );
     }
     
-    for( Site::Ptr pNestedSite : compilation.getBlueprint()->getSites() )
+    for( Site::Ptr pNestedSite : pBlueprint->getSites() )
     {
         recurseObjects( pNestedSite );
     }
