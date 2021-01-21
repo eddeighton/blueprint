@@ -51,7 +51,7 @@ boost::filesystem::path constructPath( const std::string& strHTMLFile, const cha
 
 void command_compile( bool bHelp, const std::vector< std::string >& args )
 {
-    std::string strDirectory, strProject, strBlueprint, strHTML, strIn, strOut, strVis;
+    std::string strDirectory, strProject, strBlueprint, strOut;//, strVis, strHTML, strIn;
 
     namespace po = boost::program_options;
     po::options_description commandOptions(" Build Project Command");
@@ -60,10 +60,10 @@ void command_compile( bool bHelp, const std::vector< std::string >& args )
             ("dir",         po::value< std::string >( &strDirectory ),  "Project directory")
             ("project",     po::value< std::string >( &strProject ),    "Project Name" )
             ("file",        po::value< std::string >( &strBlueprint ),  "Blueprint File" )
-            ("html",        po::value< std::string >( &strHTML ),       "HTML file to generate" )
-            ("in",          po::value< std::string >( &strIn ),         "Input file" )
+            //("html",        po::value< std::string >( &strHTML ),       "HTML file to generate" )
+            //("in",          po::value< std::string >( &strIn ),         "Input file" )
             ("out",         po::value< std::string >( &strOut ),        "Output file" )
-            ("vis",         po::value< std::string >( &strVis ),        "Visibility file" );
+            //("vis",         po::value< std::string >( &strVis ),        "Visibility file" );
             
         ;
     }
