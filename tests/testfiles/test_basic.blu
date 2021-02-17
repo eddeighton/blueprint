@@ -1,0 +1,10 @@
+test_basic<blueprint>(1,0,0,1,0,0)
+{
+    spac_0000<space>(1,0,0,1,16,-16)
+    {
+        contour<contour>(4,-16,-16,16,-16,16,16,-16,16)
+        {
+            auto<property>(false)
+        }
+    }
+}
